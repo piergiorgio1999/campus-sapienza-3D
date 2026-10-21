@@ -52,7 +52,8 @@
     .ed-card input[type=range]{width:100%;height:32px;margin:0;accent-color:#822433}
     .ed-card textarea{width:100%;min-height:84px;box-sizing:border-box;padding:8px;border:1px solid #d6cfcc;border-radius:8px;font:14px/1.4 Arial,Helvetica,sans-serif;resize:vertical}
     .ed-card .ed-row{display:flex;gap:8px;justify-content:flex-end;margin-top:8px;flex-wrap:wrap}
-    .ed-card .ed-row button{min-height:40px;padding:0 12px;border-radius:8px;border:1px solid #d6cfcc;background:#fff;font:600 13px Arial,Helvetica,sans-serif;cursor:pointer}
+    .ed-card .ed-row button{min-height:40px;padding:0 12px;border-radius:8px;border:1px solid #d6cfcc;background:#fff;color:#211d1d;font:600 13px Arial,Helvetica,sans-serif;cursor:pointer}
+    .ed-card input,.ed-card select,.ed-card textarea{color:#211d1d;background-color:#fff;color-scheme:light} /* testi scuri anche col tema scuro del sistema */
     .ed-card .ed-row button.ed-primary{background:#822433;border-color:#822433;color:#fff}
     .ed-card .ed-meta{color:#6f6866;font-size:12px}
     .ed-card p{margin:0 0 6px;white-space:pre-wrap;overflow-wrap:anywhere}

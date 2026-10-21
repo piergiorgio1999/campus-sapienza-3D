@@ -105,15 +105,22 @@ Da confermare con le foto: larghezza e posizione del varco (basta cambiare `varc
 ha porte o finestre, se il cancello ha un architrave sopra (ora arriva quasi al soffitto) e il materiale della parete
 (ora travertino, come la fascia bassa dei muri del cortile; la facciata in mattoni sta sopra il soffitto).
 
-### Commento 4 — rotazione (`segnalazioni/wvncis7t2zxs4pi37fwp`)
-Fatto: transenna a strisce nel catalogo; «Ruota di 90°» per gli oggetti del catalogo.
-Da fare: rotazione anche per parallelepipedi, cilindri e sfere, e un angolo libero per tutti.
-- Campo `angolo` (gradi) sulle primitive con `box`.
-- In `buildPrimitive` un gruppo-perno al centro della scatola con `rotation.y`.
-- Nell'editor una cornice ruotata (`rot:<id>`, un Object3D figlio della cornice base messo al centro della
-  scatola), così maniglie e scatola girano con l'oggetto; `apply` riporta il centro nella cornice base.
-- In `refreshSel` va aggiornato `sel.frameKey`.
-- Nella scheda: tasto «Ruota di 90°» per i solidi e cursore «Rotazione» 0–355°.
+### Commento 4 — rotazione (`segnalazioni/wvncis7t2zxs4pi37fwp`) — fatto
+Transenna a strisce nel catalogo; «Ruota di 90°» per gli oggetti del catalogo (`ruota`); rotazione anche per
+parallelepipedi, cilindri e sfere, e angolo libero per tutti.
+- Campo `angolo` (gradi, positivo = antiorario visto dall'alto, come `ruota`) sulle primitive con `box` (`box`,
+  `cilindro`, `sfera`, `oggetto`): ruota l'oggetto attorno al centro della scatola, che nel file resta quella dritta.
+- `buildPrimitive` (campus-3d.js, `rotatedAboutCenter`): gruppo-perno al centro della scatola con `rotation.y`.
+- Editor: cornice ruotata `rot:<id>` (Object3D figlio della cornice base, ruotato attorno al centro della scatola, che
+  resta ferma: u/v/h sono ancora quelle della cornice base), così maniglie e scatola girano con l'oggetto; `apply`
+  riporta la scatola trascinata nella cornice base (`unturnBox`). `frameBy` risolve `rot:<id>`; `select`/`refreshSel`
+  aggiornano `sel.frameKey`; `itemAt` tocca il solido nella sua cornice ruotata. La calamita non aggancia vicini di
+  un'altra cornice né vicini ruotati (le loro scatole sono nella cornice dritta).
+- Scheda dei solidi: «Ruota di 90°» (+90° all'`angolo`) e cursore «Rotazione» 0–355° (passo 5°); per gli oggetti del
+  catalogo solo il cursore (il tasto resta quello di `ruota`). `angolo` è nei `fields` dell'`aggiunta` (con 0 il campo
+  resta; «Ripristina» lo toglie) e `Duplica` lo copia insieme al resto.
+- Limiti noti: «Solo questo pezzo» (deformazione per primitiva) su un solido ruotato lavora sulla scatola dritta del
+  pezzo; marciapiedi e aiuole (`poligono`) non hanno angolo (si ruotano spostando i vertici).
 
 ### Commento 5 — bordo dei marciapiedi (`segnalazioni/471gbrlr71ggbi0hzmf2`)
 Bordo a cornice in blocchi di travertino bianco.

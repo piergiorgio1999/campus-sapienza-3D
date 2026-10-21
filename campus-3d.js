@@ -2729,8 +2729,18 @@
     fit.position.set(px, py, pz);
     return fit;
   }
+  // angolo libero (pr.angolo, gradi; positivo = antiorario visto dall'alto, come ruota) attorno al centro della scatola: un
+  // gruppo-perno al centro in u/v, con dentro l'oggetto spostato di conseguenza; senza angolo l'oggetto resta com'è
+  function rotatedAboutCenter(pr, obj) {
+    const a = (Number(pr.angolo) || 0) % 360, b = pr.box;
+    if (!a || !b) return obj;
+    const cu = (b.u0 + b.u1) / 2, cv = (b.v0 + b.v1) / 2, pivot = new THREE.Group();
+    pivot.position.set(cu, 0, -cv); pivot.rotation.y = (a * Math.PI) / 180; pivot.userData.primitiva = pr.id;
+    obj.position.x -= cu; obj.position.z += cv; pivot.add(obj);
+    return pivot;
+  }
   function buildPrimitive(pr) {
-    if (pr.forma === 'oggetto') return buildCatalogObject(pr);
+    if (pr.forma === 'oggetto') return rotatedAboutCenter(pr, buildCatalogObject(pr));
     if (pr.forma === 'marciapiede' || pr.forma === 'aiuola') { const g = pr.forma === 'marciapiede' ? buildSidewalk(pr) : buildBed(pr); g.userData.primitiva = pr.id; return g; }
     const b = pr.box, du = Math.max(0.02, b.u1 - b.u0), dv = Math.max(0.02, b.v1 - b.v0), dh = Math.max(0.02, b.h1 - b.h0);
     let geo;
@@ -2741,7 +2751,7 @@
     const m = new THREE.Mesh(geo, primitiveMaterial(pr.materiale || 'travertino'));
     m.position.set((b.u0 + b.u1) / 2, (b.h0 + b.h1) / 2, -(b.v0 + b.v1) / 2);
     m.castShadow = true; m.receiveShadow = true; m.userData.primitiva = pr.id;
-    return m;
+    return rotatedAboutCenter(pr, m);
   }
   /* ---------- ingresso principale dell'Istituto Chimico (foto dell'utente del 21/10/2026) ---------- */
   // rivestimento chiaro attorno al portone in legno, scritta ISTITUTO CHIMICO, targhe rosse, percorso tattile fino alla strada,

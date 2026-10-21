@@ -133,7 +133,32 @@
   // tutto il resto usa il lato 0 di Chimica, allineato con gli edifici vicini
   function frameEsterni(i) { const h = scene.getObjectByName('chimica-esterni'); return h ? h.children.find((g) => g.userData.elemento === i) || null : null; }
   function frameCortile() { const h = scene.getObjectByName('cortile-modello'); return h ? h.children[0] : null; }
-  function frameBy(key) { if (key === 'cortile') return frameCortile(); const m = /^esterni:(\d+)$/.exec(key || ''); return frameEsterni(m ? Number(m[1]) : 'lato0'); }
+  function frameBy(key) {
+    if (key === 'cortile') return frameCortile();
+    const r = /^rot:(.+)$/.exec(key || ''); if (r) return frameRot(r[1]);
+    const m = /^esterni:(\d+)$/.exec(key || ''); return frameEsterni(m ? Number(m[1]) : 'lato0');
+  }
+  // cornice ruotata (`rot:<id>`) di un solido con angolo (pr.angolo, gradi, positivo = antiorario visto dall'alto): un Object3D figlio
+  // della cornice base, ruotato attorno al centro della scatola. Le coordinate u/v/h restano quelle della cornice base (il centro della
+  // scatola sta fermo), così maniglie e scatola girano con l'oggetto; senza angolo è la cornice base stessa.
+  const TURNABLE = ['box', 'cilindro', 'sfera', 'oggetto'];
+  const angleOf = (pr) => (pr && pr.box && TURNABLE.includes(pr.forma) ? (((Number(pr.angolo) || 0) % 360) + 360) % 360 : 0);
+  const frameOfItem = (it) => (it.primitiva && angleOf(it.obj) ? 'rot:' + it.obj.id : it.frameKey);
+  function frameRot(id) {
+    const pr = ((C.esterni.cfg && C.esterni.cfg.primitive) || []).find((x) => x.id === id && !x.rimosso); if (!pr) return null;
+    const base = frameBy(pr.cornice || 'lato0'), a = angleOf(pr); if (!base || !a) return base;
+    let f = base.children.find((c) => c.userData.rotId === id);
+    if (!f) { f = new T.Object3D(); f.name = 'ed-rot'; f.userData.rotId = id; base.add(f); }
+    const rad = (a * Math.PI) / 180, c = new T.Vector3((pr.box.u0 + pr.box.u1) / 2, 0, -(pr.box.v0 + pr.box.v1) / 2);
+    f.rotation.set(0, rad, 0); f.position.copy(c).sub(c.clone().applyAxisAngle(new T.Vector3(0, 1, 0), rad)); f.updateMatrix();
+    return f;
+  }
+  // una scatola trascinata nella cornice ruotata torna nella cornice base: stesse misure, centro riportato con la rotazione
+  function unturnBox(n, o, deg) {
+    const a = (deg * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a), cu = (o.u0 + o.u1) / 2, cv = (o.v0 + o.v1) / 2;
+    const du = (n.u0 + n.u1) / 2 - cu, dv = (n.v0 + n.v1) / 2 - cv, mu = cu + du * c - dv * s, mv = cv + du * s + dv * c, hu = (n.u1 - n.u0) / 2, hv = (n.v1 - n.v0) / 2;
+    return { u0: mu - hu, u1: mu + hu, v0: mv - hv, v1: mv + hv, h0: n.h0, h1: n.h1 };
+  }
   function frameKeyOf(obj) {
     for (let o = obj; o; o = o.parent) {
       if (o.parent && o.parent.name === 'chimica-esterni' && o.userData.elemento !== undefined) return typeof o.userData.elemento === 'number' ? 'esterni:' + o.userData.elemento : 'lato0';
@@ -187,7 +212,7 @@
       out.push(Object.assign(it, {
         key: `${it.sorgente}:${it.percorso}`, lock: it.lock || {},
         get: () => { const r = {}; for (const k of fields) if (obj[k] !== undefined) r[k] = clone(obj[k]); return r; },
-        set: (val) => { for (const k of fields) { if (val && val[k] !== undefined) obj[k] = clone(val[k]); else if (k === 'rimosso') delete obj.rimosso; } },
+        set: (val) => { for (const k of fields) { if (val && val[k] !== undefined) obj[k] = clone(val[k]); else if (k === 'rimosso' || k === 'angolo') delete obj[k]; } },
         remove: it.fixed ? null : (it.remove || (() => { obj.rimosso = true; })),
         gone: () => own() || !!(it.parent && it.parent !== obj && it.parent.rimosso),
       }));
@@ -318,10 +343,10 @@
     if (E) (E.primitive || []).forEach((pr) => {
       const poly = pr.forma === 'marciapiede' || (pr.forma === 'aiuola' && pr.tipo !== 'rotonda');
       const label = pr.forma === 'oggetto' ? nomeOggetto(pr.modello) : pr.forma === 'marciapiede' ? 'Marciapiede' : pr.forma === 'aiuola' ? `Aiuola ${TIPI_AIUOLA[pr.tipo] || ''} (${TERRENI[pr.terreno] || 'prato'})` : `${FORME[pr.forma] || FORME.box} in ${pr.materiale || 'travertino'}`;
-      add({ sorgente: 'aggiunta', frameKey: pr.cornice || 'lato0', obj: pr, percorso: pr.id, nome: pr.id, label, fields: ['id', 'forma', 'materiale', 'box', 'poligono', 'base', 'altezza', 'tipo', 'terreno', 'cordolo', 'discese', 'raggio', 'raggi', 'modello', 'ruota', 'scritta', 'cartello', 'logoMuseo', 'cornice'], primitiva: true,
+      add({ sorgente: 'aggiunta', frameKey: pr.cornice || 'lato0', obj: pr, percorso: pr.id, nome: pr.id, label, fields: ['id', 'forma', 'materiale', 'box', 'poligono', 'base', 'altezza', 'tipo', 'terreno', 'cordolo', 'discese', 'raggio', 'raggi', 'modello', 'ruota', 'angolo', 'scritta', 'cartello', 'logoMuseo', 'cornice'], primitiva: true,
         lock: pr.forma === 'marciapiede' || pr.forma === 'aiuola' ? { h0: true } : {},
         box: poly ? () => ({ ...bboxPts(pr.poligono), h0: Number(pr.base) || 0, h1: (Number(pr.base) || 0) + (Number(pr.altezza) || 0.15) }) : () => pr.box,
-        apply: poly ? (o, n) => { pr.poligono = scalePts(pr.poligono, o, n); pr.altezza = round(Math.max(0.05, n.h1 - n.h0)); } : (o, n) => { pr.box = roundBox(n); },
+        apply: poly ? (o, n) => { pr.poligono = scalePts(pr.poligono, o, n); pr.altezza = round(Math.max(0.05, n.h1 - n.h0)); } : (o, n) => { pr.box = roundBox(angleOf(pr) ? unturnBox(n, o, angleOf(pr)) : n); }, // con un angolo la scatola è nella cornice ruotata
         verts: poly ? { get: () => pr.poligono, set: (q) => { pr.poligono = q; } } : undefined });
     });
     return out;
@@ -335,7 +360,7 @@
     let best = null;
     for (const it of liveItems()) {
       if (it.sorgente === 'albero' || it.gone()) continue; // gli alberi si prendono toccando tronco o chioma
-      const f = frameBy(it.frameKey); if (!f) continue;
+      const f = frameBy(frameOfItem(it)); if (!f) continue; // un solido ruotato si tocca nella sua cornice ruotata
       const b = it.box();
       if (inBox(b, toLocal(f, world), 0.25) && (!best || vol(b) < best.v)) best = { it, v: vol(b) };
     }
@@ -434,7 +459,7 @@
   function select(t) {
     deselect();
     sel = Object.assign({ vis: new T.Group(), handles: [] }, t);
-    sel.frameKey = t.type === 'item' ? t.it.frameKey : t.p.frameKey;
+    sel.frameKey = t.type === 'item' ? frameOfItem(t.it) : t.p.frameKey;
     sel.box = selBox();
     if (t.type === 'prim') sel.orig = primBox(t.p, true);
     fx.add(sel.vis); drawSel(); infoCard();
@@ -492,6 +517,15 @@
     r.addEventListener('change', () => { sliding = false; clearTimeout(slideTimer); slideTimer = 0; if (sel && sel.type === 'item') { saveItem(sel.it); rebuild('aggiunta'); } });
     return [l, r];
   }
+  // cursore «Rotazione» 0–355° (passo 5°): gira il solido attorno al centro della scatola (positivo = antiorario visto dall'alto);
+  // come gli altri cursori ricostruisce mentre lo trascini e salva al rilascio
+  function angleSlider(pr) {
+    const l = el('label'), r = el('input'); r.type = 'range'; r.min = '0'; r.max = '355'; r.step = '5'; r.value = String(angleOf(pr));
+    const show = () => { l.textContent = `Rotazione: ${Number(r.value)}°`; }; show();
+    r.addEventListener('input', () => { sliding = true; show(); pr.angolo = Number(r.value); if (!slideTimer) slideTimer = setTimeout(() => { slideTimer = 0; rebuild('aggiunta'); }, 90); });
+    r.addEventListener('change', () => { sliding = false; clearTimeout(slideTimer); slideTimer = 0; if (sel && sel.type === 'item') { saveItem(sel.it); rebuild('aggiunta'); } });
+    return [l, r];
+  }
   // scatola con le misure naturali dell'oggetto (e la sua rotazione), stesso centro e stessa base
   function fitNatural(pr) {
     const m = C.esterni.misura(pr.modello, Number(pr.ruota) || 0) || { du: 1, dv: 1, dh: 1 }, b = pr.box, cu = (b.u0 + b.u1) / 2, cv = (b.v0 + b.v1) / 2;
@@ -502,6 +536,8 @@
     pr.ruota = ((Number(pr.ruota) || 0) + 90) % 360;
     pr.box = roundBox({ u0: cu - dv / 2, u1: cu + dv / 2, v0: cv - du / 2, v1: cv + du / 2, h0: b.h0, h1: b.h1 });
   }
+  // «Ruota di 90°» dei solidi (parallelepipedi, cilindri, sfere): aumenta l'angolo libero, la scatola resta com'è e gira con l'oggetto
+  function turnFree(pr) { pr.angolo = (angleOf(pr) + 90) % 360; }
   // cartelli del totem: codice («CU» resta in grassetto), testi del cartello con la formattazione fissa di ogni voce
   // (vuoto: la voce sparisce), spunta del logo del museo. Si salva all'uscita dal campo, non a ogni tasto.
   const TOTEM_VOCI = [['nome', 'Nome dell’edificio (grassetto, grande, nero)', true], ['facolta', 'Facoltà (piccolo, grassetto, rosso)'],
@@ -544,12 +580,14 @@
           nodes.push(el('label', '', 'Testo della scritta'), inp);
         }
         const r2 = el('div', 'ed-row'); r2.append(button('Ruota di 90°', redo(turn90)), button('Misure originali', redo(fitNatural))); nodes.push(r2);
+        nodes.push(...angleSlider(pr)); // angolo libero oltre ai 90° di «ruota»
       } else if (pr.forma === 'aiuola') {
         nodes.push(...pick('Forma dell’aiuola', Object.entries(TIPI_AIUOLA), pr.tipo || 'squadrata', (v) => { reshapeBed(pr, v); saveItem(sel.it); rebuild('aggiunta'); }));
         nodes.push(...pick('Terreno', Object.entries(TERRENI), pr.terreno || 'prato', (v) => change('terreno', v)));
       } else if (pr.forma !== 'marciapiede') {
         nodes.push(...pick('Forma', [['box', FORME.box], ['cilindro', FORME.cilindro], ['sfera', FORME.sfera]], pr.forma || 'box', (v) => change('forma', v)));
         nodes.push(...pick('Materiale', C.esterni.materiali.map((m) => [m, m]), pr.materiale || 'travertino', (v) => change('materiale', v)));
+        const r3 = el('div', 'ed-row'); r3.append(button('Ruota di 90°', redo(turnFree))); nodes.push(r3, ...angleSlider(pr));
       }
       if (sel.it.verts) { // raggio degli angoli arrotondati: tutti insieme o solo quello scelto toccando la sua maniglia gialla
         const P = pr.poligono, all = pr.raggio != null ? Number(pr.raggio) : pr.forma === 'marciapiede' ? 0.3 : 0;
@@ -623,7 +661,7 @@
   function copyOf(it, b, shift) {
     const P = it.percorso, e = it.obj;
     if (it.sorgente === 'aggiunta') {
-      const pr = clone(e);
+      const pr = clone(e); // porta con sé anche angolo e ruota
       if (pr.box) pr.box = { ...pr.box, u0: round(pr.box.u0 + shift), u1: round(pr.box.u1 + shift) };
       if (Array.isArray(pr.poligono)) pr.poligono = pr.poligono.map(([u, v]) => [round(u + shift), v]);
       return pr;
@@ -640,7 +678,7 @@
     return { forma: 'box', materiale: it.sorgente === 'cortile' ? 'travertino a lastre' : 'travertino', box: b };
   }
   function duplicateSel() {
-    const it = sel.it, b = roundBox(it.box()), shift = round(b.u1 - b.u0 + 0.5), done = (n) => { if (!n) return; saveItem(n); select({ type: 'item', it: n }); hint('Copia creata accanto all’originale: spostala con la maniglia rossa.'); };
+    const it = sel.it, b = roundBox(it.box()), ang = it.primitiva ? (angleOf(it.obj) * Math.PI) / 180 : 0, shift = round(Math.abs((b.u1 - b.u0) * Math.cos(ang)) + Math.abs((b.v1 - b.v0) * Math.sin(ang)) + 0.5), done = (n) => { if (!n) return; saveItem(n); select({ type: 'item', it: n }); hint('Copia creata accanto all’originale: spostala con la maniglia rossa.'); };
     if (it.sorgente === 'albero') {
       const t = it.obj, f = frameBy('lato0'), q = toLocal(f, C.project(t.p)), ll = C.toLonLat(toWorld(f, q.u + shift, q.v, 0));
       const copy = { id: newId('n'), p: [Number(ll[0].toFixed(7)), Number(ll[1].toFixed(7))], r: t.r, g: t.g || null, nuovo: true };
@@ -700,7 +738,7 @@
   function neighbours() {
     const me = sel.type === 'item' ? sel.it.key : null, b = drag.box0, out = [];
     for (const it of liveItems()) {
-      if (it.key === me || it.frameKey !== sel.frameKey || it.gone()) continue;
+      if (it.key === me || it.frameKey !== sel.frameKey || it.gone() || (it.primitiva && angleOf(it.obj))) continue; // niente vicini di un'altra cornice, né ruotati
       let nb = null; try { nb = it.box(); } catch (_) { /* scatola non calcolabile */ }
       if (!nb || !KEYS.every((k) => Number.isFinite(nb[k]))) continue;
       if (Math.hypot(mid(nb, 'u') - mid(b, 'u'), mid(nb, 'v') - mid(b, 'v')) > MAG_RANGE) continue;
@@ -1000,7 +1038,7 @@
   }
   function refreshSel() {
     if (!sel || !boxed()) return;
-    if (sel.type === 'item') { const it = findItem(sel.it.key); if (!it) { deselect(); return; } sel.it = it; }
+    if (sel.type === 'item') { const it = findItem(sel.it.key); if (!it) { deselect(); return; } sel.it = it; sel.frameKey = frameOfItem(it); } // l'angolo può essere cambiato: cornice base o ruotata
     else if (!rootOf(sel.p.mesh) || !scene.getObjectById(sel.p.mesh.id)) { deselect(); return; }
     if (!drag) { sel.box = selBox(); drawSel(); if (!sliding) infoCard(); } // il cursore del raggio non va ridisegnato mentre lo trascini
   }

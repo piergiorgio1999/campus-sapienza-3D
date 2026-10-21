@@ -2,17 +2,24 @@
   'use strict';
   // Passeggiata in prima persona, stile videogioco. Occhi a 1,7 m; si sale su gradini, cordoli e panchine fino a 45 cm,
   // muri, ringhiere, gabbie e tronchi fermano il passo; si cade dai bordi e si può saltare.
-  // · Tastiera: W A S D (o frecce su e giù) per camminare, frecce sinistra e destra per girarsi, Maiuscolo per correre,
-  //   Spazio per saltare, Esc per uscire. Trascinando col mouse ti guardi intorno.
-  // · iPad: levetta in basso a sinistra per camminare (spinta fino in fondo corre), trascina altrove per guardarti intorno.
+  // · Tastiera: W A S D (o frecce su e giù) per camminare, frecce sinistra e destra per girarsi, tasti 1–9 per la velocità
+  //   (1 lentissimo … 9 velocissimo, 4 è il passo normale), Maiuscolo per correre, Spazio per saltare. Il mouse è catturato
+  //   come in un videogioco: muovendolo ti guardi intorno; Esc lo libera (clic per riprenderlo), un secondo Esc esce.
+  //   Se il browser non lo cattura si guarda trascinando.
+  // · Mirino al centro: E modifica e C commenta quello che miri (tasti «Modifica» e «Commenta» anche a schermo). La
+  //   passeggiata si ferma, il mouse si libera per la scheda dell'editor; chiusa la scheda si riprende a camminare.
+  // · Telefono e iPad (schermo touch): levetta in basso a sinistra per camminare (spinta fino in fondo corre), tasti «Corri»
+  //   e «Salta», trascina altrove per guardarti intorno. Da computer levetta e tasti non compaiono.
   // Le collisioni usano una copia dei triangoli vicini (edifici, esterni di Chimica, cortile), divisa in celle di 2 m:
   // il corpo e il raggio verso terra controllano solo i triangoli delle celle che toccano.
-  const EYE = 1.7, STEP = 0.45, RADIUS = 0.3, WALK = 3.2, RUN = 8, JUMP = 4.4, GRAVITY = 9.8, LOOK = 0.0042, TURN = 1.9;
+  const EYE = 1.7, STEP = 0.45, RADIUS = 0.3, RUN = 2.5, JUMP = 4.4, GRAVITY = 9.8, LOOK = 0.0042, TURN = 1.9;
+  // velocità dei tasti 1–9 in m/s (4 = passo normale); correre moltiplica per RUN
+  const SPEEDS = [0.6, 1.2, 2, 3.2, 5, 8, 11, 15, 20], SPEED0 = 4;
   const ROOTS = ['edifici', 'chimica-esterni', 'cortile-modello', 'minerva'];
   const CELL = 2, HALF = 70; // regione di collisione: 140 × 140 m attorno a chi cammina
-  let C = null, T = null, on = false, saved = null, last = 0, tilesAt = 0;
+  let C = null, T = null, on = false, paused = false, saved = null, last = 0, tilesAt = 0;
   const ui = {};
-  const st = { x: 0, feet: 0, z: 0, eye: 0, vy: 0, yaw: 0, pitch: 0, grounded: true, keys: new Set(), stick: { x: 0, y: 0, id: null }, look: null, jump: false, run: false };
+  const st = { x: 0, feet: 0, z: 0, eye: 0, vy: 0, yaw: 0, pitch: 0, grounded: true, keys: new Set(), stick: { x: 0, y: 0, id: null }, look: null, jump: false, run: false, speed: SPEED0 };
 
   /* ---------- triangoli vicini, in celle ---------- */
   const soup = { cx: 0, cz: 0, tris: null, cells: null, sig: '', checked: 0 };
@@ -145,20 +152,20 @@
     const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000)); last = now;
     if (Math.hypot(st.x - soup.cx, st.z - soup.cz) > HALF / 2 || (now - soup.checked > 1000 && ((soup.checked = now), signature() !== soup.sig))) buildSoup(st.x, st.z);
     refreshTrunks(now);
-    const k = st.keys;
+    const k = paused ? new Set() : st.keys;
     if (k.has('ArrowLeft')) st.yaw += TURN * dt;
     if (k.has('ArrowRight')) st.yaw -= TURN * dt;
     let f = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0) - st.stick.y;
     let s = (k.has('KeyD') ? 1 : 0) - (k.has('KeyA') ? 1 : 0) + st.stick.x;
     const mag = Math.hypot(f, s); if (mag > 1) { f /= mag; s /= mag; }
     const run = st.run || k.has('ShiftLeft') || k.has('ShiftRight') || Math.hypot(st.stick.x, st.stick.y) > 0.92;
-    const sp = (run ? RUN : WALK) * dt, sy = Math.sin(st.yaw), cy = Math.cos(st.yaw);
+    const sp = SPEEDS[st.speed - 1] * (run ? RUN : 1) * dt, sy = Math.sin(st.yaw), cy = Math.cos(st.yaw);
     const dx = (-sy * f + cy * s) * sp, dz = (-cy * f - sy * s) * sp;
     const moved = Math.abs(dx) + Math.abs(dz) > 1e-6;
     if (moved) { tryMove(dx, dz); trunksOut(); }
     // terreno sotto i piedi: si sale fino a STEP, si scende a scalini restando attaccati, altrimenti si cade
     const g = groundAt(st.x, st.z, st.feet + STEP + 0.05), gy = g === null ? 0 : g;
-    if (st.jump && st.grounded) { st.vy = JUMP; st.grounded = false; }
+    if (st.jump && st.grounded && !paused) { st.vy = JUMP; st.grounded = false; }
     st.jump = false;
     if (st.vy > 0 || st.feet > gy + (st.grounded ? STEP : 0.001)) {
       st.vy -= GRAVITY * dt; st.feet += st.vy * dt;
@@ -195,12 +202,17 @@
     cam.fov = 70; cam.near = 0.1; cam.updateProjectionMatrix();
     on = true; last = performance.now();
     ui.host.classList.add('cm-on'); ui.layer.hidden = false; ui.run.setAttribute('aria-pressed', 'false');
+    const touch = isTouch(); ui.layer.classList.toggle('cm-touch', touch);
+    ui.help.textContent = touch ? HELP.touch : HELP.free;
     const fx = C.scene.getObjectByName('editor-maniglie'); if (fx) fx.visible = false;
     C.primaPersona(step);
     ui.layer.focus({ preventScroll: true }); // non su un tasto: lo Spazio lo premerebbe
+    if (!touch) lockMouse(); // il clic su «Cammina» basta al browser per catturare il mouse
   }
   function exit() {
     if (!on) return;
+    if (paused) resume(false);
+    unlockMouse();
     on = false; C.primaPersona(null);
     const cam = C.camera, sy = Math.sin(st.yaw), cy = Math.cos(st.yaw);
     cam.fov = saved.fov; cam.near = saved.near; cam.updateProjectionMatrix(); cam.rotation.order = 'XYZ';
@@ -214,21 +226,85 @@
     ui.walk.focus({ preventScroll: true });
   }
 
+  /* ---------- mouse catturato ---------- */
+  const locked = () => document.pointerLockElement === ui.layer;
+  function lockMouse() {
+    if (!on || paused || isTouch() || locked() || !ui.layer.requestPointerLock) return;
+    try { const p = ui.layer.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (_) { /* resta il trascinamento */ }
+  }
+  function unlockMouse() { if (locked()) document.exitPointerLock(); }
+  function onLockChange() {
+    if (locked() && (!on || paused)) { document.exitPointerLock(); return; } // concessa in ritardo, dopo l'uscita o la pausa
+    if (!on) return;
+    if (!isTouch()) ui.help.textContent = locked() ? HELP.locked : HELP.free;
+  }
+  const HELP = {
+    locked: 'W A S D cammina · muovi il mouse per guardarti intorno · 1–9 velocità · Maiuscolo corre · Spazio salta · E modifica · C commenta · Esc libera il mouse',
+    free: 'Clic sulla scena per guardarti intorno col mouse · W A S D cammina · 1–9 velocità · E modifica · C commenta · Esc esce',
+    touch: 'Levetta: cammina (fino in fondo corre) · trascina per guardarti intorno · Modifica e Commenta agiscono sul mirino',
+  };
+
+  /* ---------- mirino: modifica e commenta al centro dello schermo ---------- */
+  let cardWatch = null;
+  function aim(kind) {
+    const E = window.campus3dEditor;
+    if (!on || paused || !E || !E.mira) return;
+    paused = true; st.keys.clear(); resetStick(); st.look = null;
+    unlockMouse();
+    ui.host.classList.add('cm-pausa'); ui.layer.classList.add('cm-pause'); ui.resume.hidden = false;
+    const fx = C.scene.getObjectByName('editor-maniglie'); if (fx) fx.visible = true;
+    if (!E.mira(kind)) { resume(true); flash(kind === 'commenta' ? 'Niente da commentare al centro: mira un oggetto' : 'Niente da modificare al centro: mira un oggetto'); return; }
+    // chiusa la scheda (Fine, Annulla, Salva, ✕) si riprende a camminare
+    cardWatch = new MutationObserver(() => { if (E.scheda.hidden) resume(true); });
+    cardWatch.observe(E.scheda, { attributes: true, attributeFilter: ['hidden'] });
+  }
+  function resume(relock) {
+    if (!paused) return;
+    paused = false;
+    if (cardWatch) { cardWatch.disconnect(); cardWatch = null; }
+    const E = window.campus3dEditor; if (E && E.chiudi) E.chiudi();
+    ui.host.classList.remove('cm-pausa'); ui.layer.classList.remove('cm-pause'); ui.resume.hidden = true;
+    const fx = C.scene.getObjectByName('editor-maniglie'); if (fx) fx.visible = false;
+    if (C.controls) C.controls.enabled = false;
+    ui.layer.focus({ preventScroll: true });
+    onLockChange();
+    if (relock) lockMouse();
+  }
+  function flash(text) {
+    ui.speed.textContent = text; ui.speed.classList.add('cm-show');
+    clearTimeout(speedTimer); speedTimer = setTimeout(() => ui.speed.classList.remove('cm-show'), 1600);
+  }
+
   /* ---------- comandi ---------- */
   function resetStick() { st.stick.x = 0; st.stick.y = 0; st.stick.id = null; if (ui.knob) ui.knob.style.transform = ''; }
+  // comandi a schermo solo dove si tocca lo schermo: puntatore grossolano, o touch senza un puntatore fine
+  const isTouch = () => matchMedia('(pointer: coarse)').matches || (navigator.maxTouchPoints > 0 && !matchMedia('(pointer: fine)').matches);
+  let speedTimer = 0;
+  function setSpeed(n) {
+    st.speed = Math.max(1, Math.min(9, n));
+    try { localStorage.setItem('cammina-velocita', String(st.speed)); } catch (_) { /* senza memoria del browser */ }
+    flash(`Velocità ${st.speed}`);
+  }
   const KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ShiftLeft', 'ShiftRight', 'Space']);
   function onKey(e) {
     if (!on) return;
     const typing = e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
-    if (e.type === 'keydown' && e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); exit(); return; }
-    if (typing || !KEYS.has(e.code)) return;
+    if (e.type === 'keydown' && e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); if (paused) resume(true); else exit(); return; }
+    if (typing || paused) return;
+    if (e.code === 'KeyE' || e.code === 'KeyC') { e.preventDefault(); e.stopImmediatePropagation(); if (e.type === 'keydown' && !e.repeat) aim(e.code === 'KeyE' ? 'modifica' : 'commenta'); return; }
+    const digit = /^(?:Digit|Numpad)([1-9])$/.exec(e.code);
+    if (digit) { e.preventDefault(); e.stopImmediatePropagation(); if (e.type === 'keydown' && !e.repeat) setSpeed(Number(digit[1])); return; }
+    if (!KEYS.has(e.code)) return;
     e.preventDefault(); e.stopImmediatePropagation();
     if (e.type === 'keydown') { if (e.code === 'Space') st.jump = true; else st.keys.add(e.code); } else st.keys.delete(e.code);
   }
   function css() {
     const s = document.createElement('style');
     s.textContent = `
-    .cm-on .ed-bar,.cm-on .ed-card,.cm-on .ed-hint{display:none!important}
+    .cm-on .ed-bar,.cm-on:not(.cm-pausa) .ed-card,.cm-on:not(.cm-pausa) .ed-hint{display:none!important}
+    .cm-layer.cm-pause{pointer-events:none;cursor:default}
+    .cm-layer.cm-pause .cm-acts,.cm-layer.cm-pause .cm-stick,.cm-layer.cm-pause .cm-aim,.cm-layer.cm-pause .cm-help{display:none}
+    .cm-layer.cm-pause .cm-cross{opacity:.35}
     .cm-layer{position:absolute;inset:0;z-index:30;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
     .cm-layer:active{cursor:grabbing}
     .cm-layer:focus{outline:none}
@@ -241,8 +317,14 @@
     .cm-knob{position:absolute;left:39px;top:39px;width:46px;height:46px;border-radius:50%;background:#fffffff0;box-shadow:0 2px 8px #0005;pointer-events:none}
     .cm-acts{position:absolute;right:20px;bottom:20px;display:flex;flex-direction:column;gap:10px}
     .cm-acts .cm-btn{min-width:88px;min-height:52px}
-    .cm-dot{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:#fff;box-shadow:0 0 0 1.5px #0007;pointer-events:none}
-    @media (pointer:fine){.cm-stick{opacity:.55}}`;
+    .cm-cross{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;pointer-events:none}
+    .cm-cross::before,.cm-cross::after{content:'';position:absolute;background:#fff;box-shadow:0 0 0 1px #000a}
+    .cm-cross::before{left:10px;top:0;width:2px;height:22px}
+    .cm-cross::after{left:0;top:10px;width:22px;height:2px}
+    .cm-tools{display:flex;gap:8px;pointer-events:none}
+    .cm-layer:not(.cm-touch) .cm-stick,.cm-layer:not(.cm-touch) .cm-acts{display:none}
+    .cm-speed{position:absolute;left:50%;top:38%;transform:translateX(-50%);padding:10px 18px;border-radius:12px;background:#211d1dd9;color:#fff;font:700 20px/1.2 Arial,Helvetica,sans-serif;opacity:0;transition:opacity .25s;pointer-events:none}
+    .cm-speed.cm-show{opacity:1}`;
     document.head.appendChild(s);
   }
   function buildUi() {
@@ -251,21 +333,25 @@
     ui.walk = el('button', 'ed-btn', '🚶 Cammina'); ui.walk.type = 'button'; ui.walk.title = 'Passeggiata in prima persona';
     ui.walk.addEventListener('click', enter);
     ui.layer = el('div', 'cm-layer'); ui.layer.hidden = true; ui.layer.tabIndex = -1; ui.layer.setAttribute('role', 'application'); ui.layer.setAttribute('aria-label', 'Passeggiata in prima persona');
-    const top = el('div', 'cm-top'), help = el('div', 'cm-help');
-    help.textContent = matchMedia('(pointer: fine)').matches
-      ? 'W A S D o frecce per camminare · trascina per guardarti intorno · Maiuscolo corre · Spazio salta · Esc esce'
-      : 'Levetta: cammina (fino in fondo corre) · trascina sullo schermo per guardarti intorno';
+    const top = el('div', 'cm-top'), help = el('div', 'cm-help'); ui.help = help;
+    ui.speed = el('div', 'cm-speed'); ui.speed.setAttribute('role', 'status'); ui.speed.setAttribute('aria-live', 'polite');
+    try { const n = Number(localStorage.getItem('cammina-velocita')); if (n >= 1 && n <= 9) st.speed = n; } catch (_) { /* senza memoria del browser */ }
     ui.exit = el('button', 'cm-btn', '✕ Esci'); ui.exit.type = 'button'; ui.exit.setAttribute('aria-label', 'Esci dalla passeggiata'); ui.exit.addEventListener('click', exit);
-    top.append(help, ui.exit);
+    const tools = el('div', 'cm-tools');
+    const edit = el('button', 'cm-btn cm-aim', '✎ Modifica'); edit.type = 'button'; edit.title = 'Modifica quello che sta nel mirino (E)'; edit.addEventListener('click', () => aim('modifica'));
+    const note = el('button', 'cm-btn cm-aim', '💬 Commenta'); note.type = 'button'; note.title = 'Commenta quello che sta nel mirino (C)'; note.addEventListener('click', () => aim('commenta'));
+    ui.resume = el('button', 'cm-btn', '▶ Riprendi a camminare'); ui.resume.type = 'button'; ui.resume.hidden = true; ui.resume.addEventListener('click', () => resume(true));
+    tools.append(edit, note, ui.resume, ui.exit);
+    top.append(help, tools);
     ui.stick = el('div', 'cm-stick'); ui.knob = el('div', 'cm-knob'); ui.stick.append(ui.knob); ui.stick.setAttribute('aria-hidden', 'true');
     const acts = el('div', 'cm-acts');
     ui.run = el('button', 'cm-btn', '🏃 Corri'); ui.run.type = 'button'; ui.run.setAttribute('aria-pressed', 'false');
     ui.run.addEventListener('click', () => { st.run = !st.run; ui.run.setAttribute('aria-pressed', String(st.run)); });
     const jump = el('button', 'cm-btn', '⤒ Salta'); jump.type = 'button'; jump.addEventListener('pointerdown', (e) => { e.stopPropagation(); st.jump = true; });
     acts.append(ui.run, jump);
-    ui.layer.append(el('div', 'cm-dot'), top, ui.stick, acts);
+    ui.layer.append(el('div', 'cm-cross'), top, ui.speed, ui.stick, acts);
     host.append(ui.layer);
-    for (const b of [ui.exit, ui.run, jump]) b.addEventListener('pointerdown', (e) => e.stopPropagation());
+    for (const b of [ui.exit, ui.run, jump, edit, note, ui.resume]) b.addEventListener('pointerdown', (e) => e.stopPropagation());
     // levetta
     const R = 46;
     const stickMove = (e) => {
@@ -277,7 +363,17 @@
     ui.stick.addEventListener('pointermove', (e) => { if (e.pointerId === st.stick.id) stickMove(e); });
     for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) ui.stick.addEventListener(t, (e) => { if (e.pointerId === st.stick.id) resetStick(); });
     // sguardo: trascinamento sul resto dello schermo
-    ui.layer.addEventListener('pointerdown', (e) => { if (st.look) return; st.look = { id: e.pointerId, x: e.clientX, y: e.clientY }; try { ui.layer.setPointerCapture(e.pointerId); } catch (_) { /* nessuna cattura */ } });
+    ui.layer.addEventListener('pointerdown', (e) => {
+      if (paused) return;
+      if (e.pointerType === 'mouse' && !isTouch()) { if (!locked()) lockMouse(); if (locked()) return; }
+      if (st.look) return; st.look = { id: e.pointerId, x: e.clientX, y: e.clientY }; try { ui.layer.setPointerCapture(e.pointerId); } catch (_) { /* nessuna cattura */ }
+    });
+    document.addEventListener('mousemove', (e) => {
+      if (!on || paused || !locked()) return;
+      st.yaw -= e.movementX * LOOK * 0.6; st.pitch = Math.max(-1.45, Math.min(1.45, st.pitch - e.movementY * LOOK * 0.6));
+    });
+    document.addEventListener('pointerlockchange', onLockChange);
+    document.addEventListener('pointerlockerror', () => { if (on) flash('Il browser non cattura il mouse: trascina per guardarti intorno'); });
     ui.layer.addEventListener('pointermove', (e) => {
       if (!st.look || e.pointerId !== st.look.id) return;
       st.yaw -= (e.clientX - st.look.x) * LOOK; st.pitch = Math.max(-1.45, Math.min(1.45, st.pitch - (e.clientY - st.look.y) * LOOK));
@@ -286,8 +382,7 @@
     for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) ui.layer.addEventListener(t, (e) => { if (st.look && e.pointerId === st.look.id) st.look = null; });
     window.addEventListener('keydown', onKey, { capture: true });
     window.addEventListener('keyup', onKey, { capture: true });
-    window.addEventListener('blur', () => { st.keys.clear(); resetStick(); });
-    // il tasto sta nella barra dell'editor quando c'è, altrimenti in una barra sua
+    window.addEventListener('blur', () => { st.keys.clear(); resetStick(); });    // il tasto sta nella barra dell'editor quando c'è, altrimenti in una barra sua
     let tries = 0;
     const place = setInterval(() => {
       const bar = host.querySelector('.ed-bar');
@@ -304,7 +399,7 @@
       clearInterval(wait); C = c; T = window.THREE; css(); buildUi();
       // per le prove: prova(secondi, tasti) fa avanzare la passeggiata a passi fissi di 1/60 s
       const prova = (sec, keys = []) => { st.keys = new Set(keys); let t = last; for (let i = 0; i < sec * 60; i += 1) { t += 1000 / 60; step(t); } st.keys = new Set(); last = performance.now(); };
-      window.campus3dCammina = { entra: enter, esci: exit, prova, salta: () => { st.jump = true; }, get attivo() { return on; }, get stato() { return { x: st.x, piedi: st.feet, z: st.z, yaw: st.yaw, aTerra: st.grounded }; } };
+      window.campus3dCammina = { entra: enter, esci: exit, prova, salta: () => { st.jump = true; }, get attivo() { return on; }, velocita: (n) => setSpeed(n), mira: (k) => aim(k), riprendi: () => resume(false), get pausa() { return paused; }, get stato() { return { x: st.x, piedi: st.feet, z: st.z, yaw: st.yaw, aTerra: st.grounded, velocita: st.speed }; } };
     }
   }, 400);
 })();

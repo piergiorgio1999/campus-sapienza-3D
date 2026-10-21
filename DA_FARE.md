@@ -50,19 +50,14 @@
 
 ## Rimasto da fare
 
-### Navigazione in prima persona: richieste del 21/10 (dopo la v32)
-Nella v32 (`cammina.js`) ci sono già:
-- W A S D e frecce (sinistra e destra girano);
-- Spazio per saltare;
-- levetta in basso a sinistra e tasti «Corri» e «Salta».
-
-Da cambiare:
-- **Velocità regolabile con i tasti 1–9:** 1 lentissimo … 9 velocissimo, al posto o in aggiunta a Maiuscolo che corre;
-  mostrare la velocità scelta per un attimo a schermo.
-- **Comandi a schermo solo da telefono e iPad:** joypad (levetta) e tasto «Salta» solo quando il dispositivo è
-  touch, cioè `matchMedia('(pointer: coarse)')` o `navigator.maxTouchPoints > 0` senza puntatore fine. Da computer
-  niente levetta né tasti, solo tastiera e trascinamento del mouse. Oggi la levetta resta visibile anche da computer,
-  semitrasparente.
+### Navigazione in prima persona (21/10) — fatta nella v34
+- Tasti 1–9 per la velocità (0,6 … 20 m/s, 4 = 3,2 m/s come prima), mostrata per un attimo a schermo e ricordata dal
+  browser; Maiuscolo corre a 2,5× la velocità scelta.
+- Levetta, «Corri» e «Salta» solo su schermi touch (`pointer: coarse`, o touch senza puntatore fine).
+- Da computer lo sguardo segue il mouse senza trascinare (Pointer Lock); se il browser lo nega resta il trascinamento.
+- Mirino a croce: E / «Modifica» e C / «Commenta» agiscono su ciò che sta al centro (`campus3dEditor.mira`); la
+  passeggiata va in pausa finché la scheda è aperta.
+- Da verificare sull'artifact pubblicato: che l'iframe di claude.ai permetta la cattura del mouse.
 
 ### Editor: effetto magnetico (allineamenti e proporzioni, come nell'impaginazione)
 Quando si sposta o si ridimensiona un solido con la scatola:

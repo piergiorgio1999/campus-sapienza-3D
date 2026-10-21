@@ -22,8 +22,11 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
   Claude le legge, le riporta nei file (`cortile/*.json`, `trees.json`, `cortile/facciate.json`) e segna la modifica
   `stato: "applicata"` (la pagina ignora quelle applicate). Gli oggetti eliminati restano nei JSON con `rimosso: true`.
 
-- `cammina.js`: passeggiata in prima persona (tasto **Cammina**): W A S D o frecce, Maiuscolo corre, Spazio salta,
-  Esc esce; sull'iPad levetta e trascinamento. Collisioni con edifici, esterni, cortile e tronchi; si salgono gradini e cordoli fino a 45 cm.
+- `cammina.js`: passeggiata in prima persona (tasto **Cammina**): W A S D o frecce, tasti 1–9 per la velocità (4 = passo
+  normale), Maiuscolo corre, Spazio salta. Da computer il mouse è catturato e si guarda muovendolo (Esc lo libera, un
+  secondo Esc esce); levetta, «Corri» e «Salta» solo su telefono e iPad. Mirino al centro: E (o «Modifica») apre la scheda
+  dell'editor e C (o «Commenta») un commento su quello che si mira; la passeggiata va in pausa e riparte chiusa la scheda.
+  Collisioni con edifici, esterni, cortile e tronchi; si salgono gradini e cordoli fino a 45 cm.
 
 Anteprima locale: `python3 -m http.server 8765` e apri `index.html?standalone`.
 Artifact pubblicato: https://claude.ai/code/artifact/b6b40dff-1e58-4b65-a386-6d4bab8d31ed

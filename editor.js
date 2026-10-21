@@ -688,7 +688,7 @@
   }
   function endDrag() {
     const h = drag.h, changed = h.role === 'vertex' ? !!drag.vNew && JSON.stringify(drag.vNew) !== JSON.stringify(drag.verts) : KEYS.some((k) => sel.box[k] !== drag.box0[k]);
-    const box0 = drag.box0, vNew = drag.vNew; drag = null; controls.enabled = true;
+    const box0 = drag.box0, vNew = drag.vNew; drag = null; freeView();
     if (!changed) {
       if (h.role === 'vertex' && sel.type === 'item' && sel.it.primitiva) { sel.corner = sel.corner === h.k ? null : h.k; sel.cardHidden = false; sel.box = selBox(); drawSel(); } // la scheda torna col raggio di quell'angolo
       infoCard(); return;
@@ -1050,6 +1050,8 @@
   }
 
   /* ---------- puntatore ---------- */
+  // dopo un trascinamento la vista dall'alto torna libera, ma non durante la passeggiata in prima persona (cammina.js)
+  const freeView = () => { controls.enabled = !(window.campus3dCammina && window.campus3dCammina.attivo); };
   function onDown(e) {
     if (!mode || drag || (e.button !== undefined && e.button !== 0)) return; // un secondo dito durante un trascinamento non conta
     down = { x: e.clientX, y: e.clientY };
@@ -1072,7 +1074,7 @@
     down = null;
     if (!drag || (e && e.pointerId !== drag.pointerId)) return;
     sel.box = drag.box0; if (sel.type === 'prim') primApply(sel.p, sel.orig, sel.box);
-    drag = null; controls.enabled = true; drawSel(); infoCard();
+    drag = null; freeView(); drawSel(); infoCard();
   }
   function onUp(e) {
     if (drag && e.pointerId !== drag.pointerId) return;
@@ -1083,6 +1085,10 @@
     if (!mode || !down) return;
     const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y); down = null;
     if (moved > 6) return; // era una rotazione della vista
+    tap(e);
+  }
+  // un tocco nella scena in (e.clientX, e.clientY) col modo attuale
+  function tap(e) {
     if (mode === 'commenta') {
       const rc = rayFrom(e), ph = rc.intersectObjects(pins.children, false)[0];
       if (ph) { showComment(ph.object.userData.comment, e); return; }
@@ -1135,7 +1141,18 @@
     canvas.addEventListener('lostpointercapture', (e) => { if (drag && e.pointerId === drag.pointerId) setTimeout(() => { if (drag && drag.pointerId === e.pointerId) onCancel(e); }, 0); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (ui.card.hidden) setMode(null); else closeCard(); } });
     loop(); connect();
-    window.campus3dEditor = { facciate: () => clone(Object.fromEntries(facadeState)) }; // sola lettura, per riportare le facciate nei file
+    window.campus3dEditor = {
+      facciate: () => clone(Object.fromEntries(facadeState)), // sola lettura, per riportare le facciate nei file
+      // mirino della passeggiata: commenta o modifica quello che sta al centro dello schermo; true se si è aperto qualcosa
+      mira(kind) {
+        const r = canvas.getBoundingClientRect(), e = { clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 };
+        if (mode !== kind) setMode(kind);
+        tap(e);
+        return !ui.card.hidden;
+      },
+      chiudi: () => setMode(null),
+      get scheda() { return ui.card; },
+    };
   }
   // aspetta la scena, le due configurazioni (esterni di Chimica e cortile) e gli alberi
   let tries = 0;

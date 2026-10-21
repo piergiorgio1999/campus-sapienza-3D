@@ -19,7 +19,9 @@
   let db = null, myId = null, saving = false;
   let mode = null; // 'commenta' | 'modifica' | null
   const base = { esterni: null, cortile: null, alberi: null, facciate: {} };
-  const FORME = { box: 'Parallelepipedo', cilindro: 'Cilindro', sfera: 'Sfera', albero: 'Albero', pino: 'Pino' };
+  const FORME = { box: 'Parallelepipedo', cilindro: 'Cilindro', sfera: 'Sfera', marciapiede: 'Marciapiede', aiuola: 'Aiuola', albero: 'Albero', pino: 'Pino' };
+  const TIPI_AIUOLA = { squadrata: 'squadrata', rotonda: 'rotonda', spezzata: 'con angoli spezzati' };
+  const TERRENI = { prato: 'prato', foglie: 'terra con foglie', terra: 'terra senza foglie' };
   const TEXTURE = { cortina: 'mattoni rossi', giallo: 'mattoni gialli', travertino: 'travertino', ocra: 'intonaco ocra', arancione: 'intonaco arancione', intonaco: 'intonaco chiaro' };
   const facadeState = new Map(); // codice edificio → { facciata, finestre: [riquadri] }
   let placing = null, removed = null, patchGroup = null;
@@ -276,8 +278,15 @@
         } });
     });
     // primitive aggiunte: scatola nelle coordinate del lato 0
-    if (E) (E.primitive || []).forEach((pr) => add({ sorgente: 'aggiunta', frameKey: 'lato0', obj: pr, percorso: pr.id, nome: pr.id, label: `${FORME[pr.forma] || FORME.box} in ${pr.materiale || 'travertino'}`, fields: ['id', 'forma', 'materiale', 'box'], primitiva: true,
-      box: () => pr.box, apply: (o, n) => { pr.box = roundBox(n); } }));
+    if (E) (E.primitive || []).forEach((pr) => {
+      const poly = pr.forma === 'marciapiede' || (pr.forma === 'aiuola' && pr.tipo !== 'rotonda');
+      const label = pr.forma === 'marciapiede' ? 'Marciapiede' : pr.forma === 'aiuola' ? `Aiuola ${TIPI_AIUOLA[pr.tipo] || ''} (${TERRENI[pr.terreno] || 'prato'})` : `${FORME[pr.forma] || FORME.box} in ${pr.materiale || 'travertino'}`;
+      add({ sorgente: 'aggiunta', frameKey: 'lato0', obj: pr, percorso: pr.id, nome: pr.id, label, fields: ['id', 'forma', 'materiale', 'box', 'poligono', 'base', 'altezza', 'tipo', 'terreno', 'discese', 'raggio'], primitiva: true,
+        lock: pr.forma === 'marciapiede' || pr.forma === 'aiuola' ? { h0: true } : {},
+        box: poly ? () => ({ ...bboxPts(pr.poligono), h0: Number(pr.base) || 0, h1: (Number(pr.base) || 0) + (Number(pr.altezza) || 0.15) }) : () => pr.box,
+        apply: poly ? (o, n) => { pr.poligono = scalePts(pr.poligono, o, n); pr.altezza = round(Math.max(0.05, n.h1 - n.h0)); } : (o, n) => { pr.box = roundBox(n); },
+        verts: poly ? { get: () => pr.poligono, set: (q) => { pr.poligono = q; } } : undefined });
+    });
     return out;
   }
   const liveItems = () => items(C.esterni.cfg, C.cortile.M, C.alberi.list);
@@ -442,13 +451,63 @@
     if (sel.type === 'item' && sel.it.primitiva) {
       const pr = sel.it.obj, pick = (lbl, opts, val, fn) => { const l = el('label', '', lbl), sl = el('select'); for (const [k, t] of opts) { const o = el('option', '', t); o.value = k; o.selected = k === val; sl.append(o); } sl.addEventListener('change', () => fn(sl.value)); return [l, sl]; };
       const change = (k, v) => { pr[k] = v; saveItem(sel.it); rebuild('aggiunta'); };
-      nodes.push(...pick('Forma', [['box', FORME.box], ['cilindro', FORME.cilindro], ['sfera', FORME.sfera]], pr.forma || 'box', (v) => change('forma', v)));
-      nodes.push(...pick('Materiale', C.esterni.materiali.map((m) => [m, m]), pr.materiale || 'travertino', (v) => change('materiale', v)));
+      const tool = (k, label) => { const b = button(label, () => { sel.tool = sel.tool === k ? null : k; infoCard(); hint(sel.tool ? TOOL_HINT[k] : ''); }); b.setAttribute('aria-pressed', String(sel.tool === k)); return b; };
+      if (pr.forma === 'aiuola') {
+        nodes.push(...pick('Forma dell’aiuola', Object.entries(TIPI_AIUOLA), pr.tipo || 'squadrata', (v) => { reshapeBed(pr, v); saveItem(sel.it); rebuild('aggiunta'); }));
+        nodes.push(...pick('Terreno', Object.entries(TERRENI), pr.terreno || 'prato', (v) => change('terreno', v)));
+      } else if (pr.forma !== 'marciapiede') {
+        nodes.push(...pick('Forma', [['box', FORME.box], ['cilindro', FORME.cilindro], ['sfera', FORME.sfera]], pr.forma || 'box', (v) => change('forma', v)));
+        nodes.push(...pick('Materiale', C.esterni.materiali.map((m) => [m, m]), pr.materiale || 'travertino', (v) => change('materiale', v)));
+      }
+      if (sel.it.verts) {
+        const tr = el('div', 'ed-row');
+        if (pr.forma === 'marciapiede') tr.append(tool('discesa', 'Discese'));
+        tr.append(tool('angolo+', 'Aggiungi angolo'), tool('angolo-', 'Togli angolo'));
+        nodes.push(tr);
+      }
     }
     if (overrideOf()) row.append(button(sel.type === 'item' && !baseValue(sel.it) ? 'Annulla aggiunta' : 'Ripristina originale', restore));
     if (sel.type === 'item' && sel.it.remove) row.append(button('Elimina', removeSel));
     row.append(button('Fine', () => deselect(), true));
     nodes.push(row); openCard(nodes, 'dock');
+  }
+  const TOOL_HINT = { discesa: 'Tocca un lato del marciapiede dove mettere la discesa verso la strada; tocca una discesa per toglierla.', 'angolo+': 'Tocca un lato: lì nasce un nuovo angolo, poi trascina la sua maniglia gialla.', 'angolo-': 'Tocca un angolo (maniglia gialla) per toglierlo.' };
+  const segParam = (q, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((q.u - a[0]) * dx + (q.v - a[1]) * dy) / L)); return { t, d: Math.hypot(q.u - a[0] - t * dx, q.v - a[1] - t * dy) }; };
+  function nearestEdge(P, q) { let best = null; P.forEach((a, i) => { const r = segParam(q, a, P[(i + 1) % P.length]); if (!best || r.d < best.d) best = { i, t: r.t, d: r.d }; }); return best; }
+  // aiuola: squadrata, rotonda (ellisse nella scatola) o con angoli spezzati (smussi di 1/5 del lato corto)
+  function reshapeBed(pr, tipo) {
+    const b = pr.tipo === 'rotonda' ? pr.box : { ...bboxPts(pr.poligono), h0: Number(pr.base) || 0, h1: (Number(pr.base) || 0) + (Number(pr.altezza) || 0.3) };
+    pr.tipo = tipo;
+    if (tipo === 'rotonda') { pr.box = roundBox(b); delete pr.poligono; return; }
+    const c = round(Math.min(b.u1 - b.u0, b.v1 - b.v0) / 5);
+    pr.poligono = tipo === 'spezzata'
+      ? [[b.u0 + c, b.v0], [b.u1 - c, b.v0], [b.u1, b.v0 + c], [b.u1, b.v1 - c], [b.u1 - c, b.v1], [b.u0 + c, b.v1], [b.u0, b.v1 - c], [b.u0, b.v0 + c]].map(([u, v]) => [round(u), round(v)])
+      : [[b.u0, b.v0], [b.u1, b.v0], [b.u1, b.v1], [b.u0, b.v1]];
+    pr.base = round(b.h0); pr.altezza = round(Math.max(0.05, b.h1 - b.h0)); delete pr.box;
+  }
+  function itemTool(hit) {
+    const pr = sel.it.obj, P = pr.poligono, q = toLocal(frameBy('lato0'), hit.point);
+    if (!Array.isArray(P)) return;
+    if (sel.tool === 'angolo+') {
+      const e = nearestEdge(P, q), a = P[e.i], b = P[(e.i + 1) % P.length];
+      P.splice(e.i + 1, 0, [round(a[0] + (b[0] - a[0]) * e.t), round(a[1] + (b[1] - a[1]) * e.t)]);
+      for (const d of pr.discese || []) { if (d.lato > e.i) d.lato += 1; else if (d.lato === e.i) { if (d.t > e.t) { d.lato += 1; d.t = round((d.t - e.t) / (1 - e.t || 1)); } else d.t = round(d.t / (e.t || 1)); } }
+      hint('Angolo aggiunto: trascina la nuova maniglia gialla.');
+    } else if (sel.tool === 'angolo-') {
+      let k = -1, best = 1.2; P.forEach((p, i) => { const d = Math.hypot(p[0] - q.u, p[1] - q.v); if (d < best) { best = d; k = i; } });
+      if (k < 0) { hint('Tocca più vicino a un angolo.'); return; }
+      if (P.length <= 3) { hint('Servono almeno tre angoli.'); return; }
+      P.splice(k, 1);
+      const n = P.length + 1;
+      pr.discese = (pr.discese || []).filter((d) => d.lato !== k && d.lato !== (k - 1 + n) % n).map((d) => Object.assign(d, { lato: d.lato > k ? d.lato - 1 : d.lato }));
+      hint('Angolo tolto.');
+    } else if (sel.tool === 'discesa') {
+      const e = nearestEdge(P, q), list = pr.discese || (pr.discese = []);
+      const a = P[e.i], b = P[(e.i + 1) % P.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      const k = list.findIndex((d) => d.lato === e.i && Math.abs(d.t - e.t) * L < 1);
+      if (k >= 0) { list.splice(k, 1); hint('Discesa tolta.'); } else { list.push({ lato: e.i, t: round(e.t), larghezza: 1.4, profondita: 0.9 }); hint('Discesa aggiunta verso la strada.'); }
+    }
+    saveItem(sel.it); rebuild('aggiunta');
   }
   // elimina l'oggetto selezionato (resta nel file con rimosso: true) e offre di annullare
   function removeSel() {
@@ -499,17 +558,17 @@
   function addCard() {
     if (mode !== 'modifica') return;
     deselect();
-    const shape = el('select'), mat = el('select'), matLbl = el('label', '', 'Materiale');
-    for (const [k, t] of Object.entries(FORME)) { const o = el('option', '', t); o.value = k; shape.append(o); }
-    for (const m of C.esterni.materiali) { const o = el('option', '', m); o.value = m; mat.append(o); }
-    const sync = () => { const tree = shape.value === 'albero' || shape.value === 'pino'; mat.hidden = matLbl.hidden = tree; };
+    const shape = el('select'), mat = el('select'), matLbl = el('label', '', 'Materiale'), tipo = el('select'), tipoLbl = el('label', '', 'Forma dell’aiuola'), terr = el('select'), terrLbl = el('label', '', 'Terreno');
+    const fill = (sl, entries) => { for (const [k, t] of entries) { const o = el('option', '', t); o.value = k; sl.append(o); } };
+    fill(shape, Object.entries(FORME)); fill(mat, C.esterni.materiali.map((m) => [m, m])); fill(tipo, Object.entries(TIPI_AIUOLA)); fill(terr, Object.entries(TERRENI));
+    const sync = () => { const f = shape.value, solid = ['box', 'cilindro', 'sfera'].includes(f); mat.hidden = matLbl.hidden = !solid; tipo.hidden = tipoLbl.hidden = terr.hidden = terrLbl.hidden = f !== 'aiuola'; };
     shape.addEventListener('change', sync); sync();
     const row = el('div', 'ed-row');
     row.append(button('Annulla', () => { placing = null; closeCard(); setMode('modifica'); }), button('Tocca dove metterlo', () => {
-      placing = { forma: shape.value, materiale: mat.value }; closeCard();
-      hint('Tocca il punto della scena dove mettere: ' + FORME[placing.forma].toLowerCase() + (placing.forma in { albero: 1, pino: 1 } ? '' : ' in ' + placing.materiale) + '.');
+      placing = { forma: shape.value, materiale: mat.value, tipo: tipo.value, terreno: terr.value }; closeCard();
+      hint('Tocca il punto della scena dove mettere: ' + FORME[placing.forma].toLowerCase() + (['box', 'cilindro', 'sfera'].includes(placing.forma) ? ' in ' + placing.materiale : '') + '.');
     }, true));
-    openCard([el('h3', '', 'Aggiungi'), el('label', '', 'Forma'), shape, matLbl, mat, row], 'dock');
+    openCard([el('h3', '', 'Aggiungi'), el('label', '', 'Oggetto'), shape, matLbl, mat, tipoLbl, tipo, terrLbl, terr, row], 'dock');
   }
   const newId = (p) => p + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
   function placeAt(hit) {
@@ -522,7 +581,9 @@
       return;
     }
     const q = toLocal(frameBy('lato0'), hit.point), u = snap(q.u), v = snap(q.v), h = round(q.h);
-    const pr = { id: newId('p'), forma: what.forma, materiale: what.materiale, box: { u0: round(u - 0.5), u1: round(u + 0.5), v0: round(v - 0.5), v1: round(v + 0.5), h0: h, h1: round(h + 1) } };
+    let pr = { id: newId('p'), forma: what.forma, materiale: what.materiale, box: { u0: round(u - 0.5), u1: round(u + 0.5), v0: round(v - 0.5), v1: round(v + 0.5), h0: h, h1: round(h + 1) } };
+    if (what.forma === 'marciapiede') pr = { id: pr.id, forma: 'marciapiede', poligono: [[u - 3, v - 0.9], [u + 3, v - 0.9], [u + 3, v + 0.9], [u - 3, v + 0.9]].map(([a, b]) => [round(a), round(b)]), base: h, altezza: 0.15, raggio: 0.3, discese: [] };
+    if (what.forma === 'aiuola') { pr = { id: pr.id, forma: 'aiuola', terreno: what.terreno || 'prato', cordolo: 0.15, poligono: [[u - 1.5, v - 1], [u + 1.5, v - 1], [u + 1.5, v + 1], [u - 1.5, v + 1]].map(([a, b]) => [round(a), round(b)]), base: h, altezza: 0.3 }; reshapeBed(pr, what.tipo || 'squadrata'); }
     const E = C.esterni.cfg; (E.primitive = E.primitive || []).push(pr); C.esterni.rebuild();
     const it = findItem('aggiunta:' + pr.id); if (it) { saveItem(it); select({ type: 'item', it }); }
   }
@@ -756,7 +817,7 @@
   function onDown(e) {
     if (!mode || drag || (e.button !== undefined && e.button !== 0)) return; // un secondo dito durante un trascinamento non conta
     down = { x: e.clientX, y: e.clientY };
-    if (mode === 'modifica' && sel) {
+    if (mode === 'modifica' && sel && !sel.tool) { // con un comando attivo (discese, angoli, finestre) il tocco va al comando
       const m = handleAt(e);
       if (m && startDrag(m, e)) {
         controls.enabled = false;
@@ -796,6 +857,7 @@
       if (!hit) { deselect(); return; }
       const root = rootOf(hit.object);
       if (sel && sel.type === 'edificio' && sel.tool && root && root.name === 'edifici') { togglePatch(hit); return; }
+      if (sel && sel.type === 'item' && sel.tool) { itemTool(hit); return; }
       if (root && root.name === 'edifici') { selectBuilding(hit); return; }
       if (root && root.name === 'alberi') { const t = treeItemFromHit(hit); if (t) select({ type: 'item', it: t }); return; }
       const prim = primFromHit(hit), it = itemAt(hit.point);

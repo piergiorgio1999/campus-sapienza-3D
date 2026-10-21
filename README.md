@@ -13,7 +13,7 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
     documento `prim:<percorso nella scena>`, `sorgente: "primitiva"`, con la scatola `originale` e quella nuova (`valore`)
     in coordinate u/v/h della `cornice` (`esterni:<elemento>`, `cortile` o `lato0`).
     Altri documenti: `albero:<id>` (posizione `p`, raggio `r`, `rimosso`, `nuovo`), `aggiunta:<id>` (primitive con
-    `forma`, `materiale`, `box`), `edificio:<codice>` (texture `facciata` e celle `finestre` tolte o aggiunte).
+    `forma`, `materiale`, `box`; marciapiedi e aiuole con `poligono`, `base`, `altezza`, `discese`, `tipo`, `terreno`), `edificio:<codice>` (texture `facciata` e celle `finestre` tolte o aggiunte).
   Claude le legge, le riporta nei file (`cortile/*.json`, `trees.json`, `cortile/facciate.json`) e segna la modifica
   `stato: "applicata"` (la pagina ignora quelle applicate). Gli oggetti eliminati restano nei JSON con `rimosso: true`.
 

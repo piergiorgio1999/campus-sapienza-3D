@@ -2406,7 +2406,7 @@
     }
     // primitive aggiunte dall'editor (scatola nelle coordinate del lato 0)
     const g0 = sideFrame(ring, 0); g0.userData.elemento = 'lato0'; holder.add(g0);
-    for (const pr of cfg.primitive || []) if (!pr.rimosso && pr.box) g0.add(buildPrimitive(pr));
+    for (const pr of cfg.primitive || []) if (!pr.rimosso && (pr.box || pr.poligono)) g0.add(buildPrimitive(pr));
     scene.add(holder);
   }
   /* ---------- primitive aggiunte dall'editor: forma e materiale a scelta ---------- */
@@ -2425,7 +2425,103 @@
     primMats.set(name, mat);
     return mat;
   }
+  /* marciapiedi e aiuole aggiunti dall'editor: poligono nelle coordinate del lato 0 (u, v), base e altezza */
+  const signedArea = (P) => { let a = 0; for (let i = 0; i < P.length; i += 1) { const p = P[i], q = P[(i + 1) % P.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; };
+  const ccw = (P) => (signedArea(P) < 0 ? P.slice().reverse() : P);
+  // contorno spostato verso l'interno di d (spigoli a mitra, limitati per gli angoli molto acuti)
+  function insetPolygon(P, d) {
+    const Q = ccw(P), n = Q.length, lines = [];
+    for (let i = 0; i < n; i += 1) {
+      const a = Q[i], b = Q[(i + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, nu = -(b[1] - a[1]) / L, nv = (b[0] - a[0]) / L;
+      lines.push([[a[0] + nu * d, a[1] + nv * d], [(b[0] - a[0]) / L, (b[1] - a[1]) / L]]);
+    }
+    return Q.map((q, i) => {
+      const [p1, d1] = lines[(i - 1 + n) % n], [p2, d2] = lines[i], den = d1[0] * d2[1] - d1[1] * d2[0];
+      if (Math.abs(den) < 1e-6) return [p2[0], p2[1]];
+      const t = ((p2[0] - p1[0]) * d2[1] - (p2[1] - p1[1]) * d2[0]) / den, x = p1[0] + d1[0] * t, y = p1[1] + d1[1] * t;
+      const dx = x - q[0], dy = y - q[1], m = Math.hypot(dx, dy), lim = 3 * d;
+      return m > lim ? [q[0] + (dx / m) * lim, q[1] + (dy / m) * lim] : [x, y];
+    });
+  }
+  const ellipsePts = (b, n = 48) => { const cu = (b.u0 + b.u1) / 2, cv = (b.v0 + b.v1) / 2, ru = (b.u1 - b.u0) / 2, rv = (b.v1 - b.v0) / 2; return Array.from({ length: n }, (_, i) => [cu + ru * Math.cos((i / n) * Math.PI * 2), cv + rv * Math.sin((i / n) * Math.PI * 2)]); };
+  // contorno con gli angoli raccordati in pianta (raggio r, ridotto sui lati corti)
+  function roundedShape(P, r) {
+    const Q = ccw(P), n = Q.length, sh = new THREE.Shape();
+    Q.forEach((p1, i) => {
+      const p0 = Q[(i - 1 + n) % n], p2 = Q[(i + 1) % n];
+      const l0 = Math.hypot(p0[0] - p1[0], p0[1] - p1[1]) || 1, l2 = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) || 1, k = Math.min(r, l0 / 2.1, l2 / 2.1);
+      const a = [p1[0] + ((p0[0] - p1[0]) / l0) * k, p1[1] + ((p0[1] - p1[1]) / l0) * k], b = [p1[0] + ((p2[0] - p1[0]) / l2) * k, p1[1] + ((p2[1] - p1[1]) / l2) * k];
+      if (i === 0) sh.moveTo(a[0], a[1]); else sh.lineTo(a[0], a[1]);
+      sh.quadraticCurveTo(p1[0], p1[1], b[0], b[1]);
+    });
+    sh.closePath();
+    return sh;
+  }
+  function shapeSlab(shape, h0, h1, material, bevel) {
+    const opts = bevel ? { depth: Math.max(0.01, h1 - h0 + 0.02 - 2 * bevel), bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 4, curveSegments: 10 } : { depth: h1 - h0, bevelEnabled: false, curveSegments: 10 };
+    const g = new THREE.ExtrudeGeometry(shape, opts);
+    g.rotateX(-Math.PI / 2); g.translate(0, bevel ? h0 - 0.02 + bevel : h0, 0); // il bordo arrotondato in basso resta sotto il piano stradale
+    g.computeVertexNormals(); planarUVs(g, 1);
+    const m = new THREE.Mesh(g, material); m.castShadow = true; m.receiveShadow = true;
+    return m;
+  }
+  const shapeOf = (P) => new THREE.Shape(P.map(([u, v]) => new THREE.Vector2(u, v)));
+  function sidewalkMaterial(side) {
+    const key = side ? 'marciapiede|2' : 'marciapiede';
+    if (primMats.has(key)) return primMats.get(key);
+    const t = canvasTex(256, 256, (ctx, w) => { // asfalto da marciapiede: grigio chiaro granuloso, con rappezzi
+      noiseFill(ctx, w, w, '#8d8c88', '#7b7a76', 7000);
+      for (let i = 0; i < 900; i += 1) { ctx.fillStyle = hash01(i, 61) > 0.5 ? 'rgba(235,232,225,.35)' : 'rgba(40,40,38,.35)'; ctx.fillRect(hash01(i, 62) * w, hash01(i, 63) * w, 1.5, 1.5); }
+      for (let i = 0; i < 5; i += 1) { ctx.fillStyle = 'rgba(60,60,58,.12)'; ctx.fillRect(hash01(i, 64) * w, hash01(i, 65) * w, 30 + 50 * hash01(i, 66), 20 + 40 * hash01(i, 67)); }
+    }, 1 / 1.6, 1 / 1.6);
+    const m = new THREE.MeshStandardMaterial({ map: t, roughness: 0.95, side: side ? THREE.DoubleSide : THREE.FrontSide });
+    primMats.set(key, m);
+    return m;
+  }
+  function buildSidewalk(pr) {
+    const grp = new THREE.Group(), P = pr.poligono, base = Number(pr.base) || 0, h = Number(pr.altezza) || 0.15;
+    if (!Array.isArray(P) || P.length < 3) return grp;
+    grp.add(shapeSlab(roundedShape(P, Number(pr.raggio) || 0.3), base, base + h, sidewalkMaterial(false), 0.04)); // bordo arrotondato da marciapiede
+    // discese verso la strada: scivolo a cuneo sul lato esterno, dalla quota del marciapiede alla strada
+    const Q = ccw(P), n = Q.length, flip = signedArea(P) < 0;
+    for (const d of pr.discese || []) {
+      const i = flip ? (n - 2 - d.lato + n) % n : d.lato; // il poligono è stato girato: stesso lato, indice diverso
+      const a = Q[i], b = Q[(i + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 0.5) continue;
+      const eu = (b[0] - a[0]) / L, ev = (b[1] - a[1]) / L, W = Math.min(L - 0.2, Number(d.larghezza) || 1.4), D = Number(d.profondita) || 0.9;
+      const t = flip ? 1 - Number(d.t) : Number(d.t), sc = Math.min(L - W / 2 - 0.1, Math.max(W / 2 + 0.1, t * L));
+      const prof = new THREE.Shape([new THREE.Vector2(-0.08, h + 0.002), new THREE.Vector2(D, 0.004), new THREE.Vector2(-0.08, 0.004)]);
+      const geo = new THREE.ExtrudeGeometry(prof, { depth: W, bevelEnabled: false }); geo.computeVertexNormals(); planarUVs(geo, 1);
+      const m = new THREE.Mesh(geo, sidewalkMaterial(true)); m.castShadow = true; m.receiveShadow = true;
+      const o = [a[0] + eu * (sc + W / 2), a[1] + ev * (sc + W / 2)]; // asse X verso l'esterno, Z lungo il lato all'indietro: terna destrorsa
+      m.matrixAutoUpdate = false;
+      m.matrix.makeBasis(new THREE.Vector3(ev, 0, eu), new THREE.Vector3(0, 1, 0), new THREE.Vector3(-eu, 0, ev)).setPosition(o[0], base, -o[1]);
+      grp.add(m);
+    }
+    return grp;
+  }
+  function bedMaterial(terreno) {
+    const key = 'aiuola|' + terreno;
+    if (primMats.has(key)) return primMats.get(key);
+    let m;
+    if (terreno === 'prato') m = primitiveMaterial('erba');
+    else if (terreno === 'foglie') m = primitiveMaterial('terra');
+    else { const t = canvasTex(256, 256, (ctx, w) => { noiseFill(ctx, w, w, '#5e4a39', '#433428', 3000); for (let i = 0; i < 60; i += 1) { ctx.fillStyle = 'rgba(150,135,115,.5)'; ctx.beginPath(); ctx.arc(hash01(i, 71) * w, hash01(i, 72) * w, 1 + 2 * hash01(i, 73), 0, Math.PI * 2); ctx.fill(); } }, 0.5, 0.5); m = new THREE.MeshStandardMaterial({ map: t, roughness: 1 }); }
+    primMats.set(key, m);
+    return m;
+  }
+  function buildBed(pr) {
+    const grp = new THREE.Group(), round = pr.tipo === 'rotonda';
+    const outer = round ? (pr.box ? ellipsePts(pr.box) : null) : pr.poligono;
+    if (!Array.isArray(outer) || outer.length < 3) return grp;
+    const base = round ? Number(pr.box.h0) || 0 : Number(pr.base) || 0, h = round ? Math.max(0.05, pr.box.h1 - pr.box.h0) : Number(pr.altezza) || 0.3, k = Number(pr.cordolo) || 0.15;
+    const inner = insetPolygon(outer, k), kerb = shapeOf(ccw(outer));
+    kerb.holes.push(new THREE.Path(inner.slice().reverse().map(([u, v]) => new THREE.Vector2(u, v))));
+    grp.add(shapeSlab(kerb, base, base + h, primitiveMaterial('travertino'))); // cordolo in travertino
+    const fill = shapeSlab(shapeOf(inner), base, base + h - 0.06, bedMaterial(pr.terreno || 'prato')); fill.castShadow = false; grp.add(fill);
+    return grp;
+  }
   function buildPrimitive(pr) {
+    if (pr.forma === 'marciapiede' || pr.forma === 'aiuola') { const g = pr.forma === 'marciapiede' ? buildSidewalk(pr) : buildBed(pr); g.userData.primitiva = pr.id; return g; }
     const b = pr.box, du = Math.max(0.02, b.u1 - b.u0), dv = Math.max(0.02, b.v1 - b.v0), dh = Math.max(0.02, b.h1 - b.h0);
     let geo;
     if (pr.forma === 'cilindro') { geo = new THREE.CylinderGeometry(0.5, 0.5, 1, 32); geo.scale(du, dh, dv); }

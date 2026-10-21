@@ -47,6 +47,24 @@
 
 ## Rimasto da fare
 
+### Pergolato da rifare (foto `riferimenti/pergolato-1.png` … `pergolato-10.png`, Street View 2015)
+L'utente non vuole il pergolato attuale (archi con foglie rosse e arancio). Come nelle foto:
+- **Struttura:** galleria lunga e stretta parallela alla facciata, lungo il viale. Archi a tutto sesto di tondino di
+  ferro scuro, uno ogni ~1,5–2 m, che partono dai cordoli in travertino ai due lati del vialetto.
+- **Vialetto:** al centro, pavimentato a lastre irregolari di pietra grigia (opus incertum).
+- **Copertura:** vite o edera verde fitta che copre tetto e fianchi, così che da fuori sembra una siepe lunga e
+  arrotondata, alta circa 3 m, con l'apertura ad arco alle estremità.
+- **Intorno:**
+  - verso il prato: ringhiera in ferro a montanti con saettoni diagonali;
+  - verso la strada: striscia di prato con aiuole fiorite (begonie rosse, rosa e bianche), pini, lampioni verdi e
+    cordolo in travertino sull'asfalto.
+- **Foto 7–10:** mostrano anche il totem vecchio del 2015 (non più valido: vale quello della foto del 21/10) e le
+  panchine in travertino.
+
+### Facciata dell'ingresso principale
+Il rivestimento attorno al portone (oggi lastre quasi bianche, `rivestimento` in `buildEntrance`) deve essere dello
+stesso travertino del resto dell'edificio.
+
 ### Commento 2 — corpo sopra il portico e cortile interno (`segnalazioni/4koi46r8db3vpkeooc9c`)
 «Un solo rettangolo che collega i due lati dell'edificio; il cortile interno è un rettangolo semplice, senza il
 rettangolino in più, ed è largo quanto quello esterno.»

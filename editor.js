@@ -213,7 +213,7 @@
           box: () => ({ u0: p.u - 0.9, u1: p.u + 0.9, v0: p.v - 0.9, v1: p.v + 0.9, h0: 0, h1: Number(p.altezza) || 4 }),
           apply: (o, n) => { p.u = round((n.u0 + n.u1) / 2); p.v = round((n.v0 + n.v1) / 2); p.altezza = round(n.h1); } }));
         (e.totem || []).forEach((t, k) => add({ ...b, obj: t, percorso: `${P}.totem.${k}`, label: `Totem ${k + 1}`, fields: ['u', 'v', 'altezza'], lock: { h0: true },
-          box: () => ({ u0: t.u - 0.25, u1: t.u + 0.25, v0: t.v - 0.1, v1: t.v + 0.1, h0: 0, h1: Number(t.altezza) || 2.4 }),
+          box: () => { const a = t.orienta === 'v' ? 0.1 : 0.25, b = t.orienta === 'v' ? 0.25 : 0.1; return { u0: t.u - a, u1: t.u + a, v0: t.v - b, v1: t.v + b, h0: 0, h1: Number(t.altezza) || 2.4 }; },
           apply: (o, n) => { t.u = round((n.u0 + n.u1) / 2); t.v = round((n.v0 + n.v1) / 2); t.altezza = round(n.h1); } }));
         const RS = e.rastrelliera;
         if (RS) add({ ...b, obj: RS, percorso: P + '.rastrelliera', label: 'Rastrelliera per bici', fields: ['u', 'v', 'posti'], lock: { h0: true, h1: true },

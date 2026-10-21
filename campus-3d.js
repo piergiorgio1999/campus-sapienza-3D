@@ -2522,23 +2522,17 @@
     railing(g, el.ringhiere || [], 0, el.ringhiera || { altezza: 0.9 });
     for (const p of (el.palme || []).filter((x) => !x.rimosso)) g.add(palmTree(p));
     for (const t of (el.totem || []).filter((x) => !x.rimosso)) { // totem bianco con base e fascia rosse
-      const th = Number(t.altezza) || 2.4, box = rect(t.u - 0.25, t.u + 0.25, t.v - 0.1, t.v + 0.1);
+      // orienta 'v': lato lungo parallelo al vialetto, facce larghe (con la scritta) verso il vialetto e verso il prato
+      const th = Number(t.altezza) || 2.4, alongV = t.orienta === 'v', hw = 0.25, hd = 0.1;
+      const box = alongV ? rect(t.u - hd, t.u + hd, t.v - hw, t.v + hw) : rect(t.u - hw, t.u + hw, t.v - hd, t.v + hd);
       for (const [h0, h1, c] of [[0, 0.9, '#8a1f2d'], [0.9, th - 0.18, '#f4f3ef'], [th - 0.18, th, '#8a1f2d']]) g.add(localSlab(box, h0, h1, std(c, 0.5)));
-      if (t.logo || t.scritta) { // pannello: logo Sapienza in alto e codice dell'edificio sotto, sulle due facce larghe
+      if (t.scritta) { // la scritta sulla fascia bianca, sulle due facce larghe
         const ph = th - 0.18 - 0.9 - 0.06, sign = new THREE.MeshStandardMaterial({ roughness: 0.6, map: canvasTex(256, Math.round(256 * ph / 0.46), (ctx, w, hh) => {
           ctx.fillStyle = '#f4f3ef'; ctx.fillRect(0, 0, w, hh);
-          const red = '#7d1d2b'; ctx.textAlign = 'center'; ctx.fillStyle = red; ctx.strokeStyle = red;
-          if (t.logo) {
-            ctx.lineWidth = 7; ctx.beginPath(); ctx.arc(w / 2, 96, 62, 0, Math.PI * 2); ctx.stroke(); // emblema (segnaposto finché non arriva il logo originale)
-            ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(w / 2, 96, 48, 0, Math.PI * 2); ctx.stroke();
-            ctx.font = 'bold 54px "Times New Roman", Times, serif'; ctx.fillText('S', w / 2, 116);
-            ctx.font = 'bold 40px "Times New Roman", Times, serif'; ctx.fillText('SAPIENZA', w / 2, 212);
-            ctx.font = '19px Arial, Helvetica, sans-serif'; ctx.fillText('UNIVERSITÀ DI ROMA', w / 2, 242);
-            ctx.fillRect(28, 268, w - 56, 3);
-          }
-          if (t.scritta) { ctx.font = 'bold 68px Arial, Helvetica, sans-serif'; ctx.fillStyle = '#2b2725'; ctx.fillText(String(t.scritta), w / 2, t.logo ? 360 : hh / 2); }
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#2b2725'; ctx.font = 'bold 72px Arial, Helvetica, sans-serif'; ctx.fillText(String(t.scritta), w / 2, hh * 0.3);
         }) });
-        for (const [dv, rot] of [[0.101, Math.PI], [-0.101, 0]]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(0.46, ph), sign); m.rotation.y = rot; m.position.set(t.u, 0.9 + 0.03 + ph / 2, -(t.v + dv)); g.add(m); }
+        const faces = alongV ? [[-hd - 0.001, 0, -Math.PI / 2], [hd + 0.001, 0, Math.PI / 2]] : [[0, hd + 0.001, Math.PI], [0, -hd - 0.001, 0]];
+        for (const [du, dv, rot] of faces) { const m = new THREE.Mesh(new THREE.PlaneGeometry(0.46, ph), sign); m.rotation.y = rot; m.position.set(t.u + du, 0.9 + 0.03 + ph / 2, -(t.v + dv)); g.add(m); }
       }
     }
     const RS = el.rastrelliera;

@@ -1,6 +1,33 @@
-# Da fare (lavoro fermato il 21/10/2026 su richiesta)
+# Handoff — lavori terminati il 21/10/2026 su richiesta dell'utente
 
-Stato pubblicato: artifact versione 32, commit `29b21e2` sul branch `claude/new-session-zh34qp`.
+- **Pubblicato:** artifact https://claude.ai/code/artifact/b6b40dff-1e58-4b65-a386-6d4bab8d31ed, versione 32
+  (capacità `db`, `user`, `assets`).
+- **Codice:** branch `claude/new-session-zh34qp`; la v32 corrisponde al commit `29b21e2`.
+- **Da riprendere per primo:** il totem nuovo (sotto). È già scritto ma non applicato né pubblicato: è in
+  `handoff/totem-nuovo.patch`, da applicare con `git apply handoff/totem-nuovo.patch` (tocca `addTotem` in
+  `campus-3d.js` e la scatola del totem in `editor.js`). L'ho provato solo in un render locale: aspetto giusto,
+  cartelli leggibili. Va pubblicato e poi segnata «fatta» la nota del totem.
+- **Prove:** server locale `python3 -m http.server 8765` in questa cartella, pagina `index.html?standalone`, Chromium
+  headless (playwright, swiftshader).
+  - Gli script di prova usati in sessione non sono nel repo; servono tre controlli:
+    - render prima/dopo identici per le viste del cortile, dell'ingresso, della terrazza e della scala;
+    - prove dell'editor con un `window.claude` finto (db, user, assets);
+    - prove di `cammina.js` con `campus3dCammina.prova(secondi, tasti)`.
+
+### Totem CU014 (indicazioni dell'utente, 21/10/2026)
+- **Struttura:** base cubica di travertino che sorregge una lastra spessa rossa con tre cartelli bianchi.
+- **Orientamento:** lato lungo parallelo al vialetto (confermato).
+- **Cartello 1:** «**CU**014», con CU in grassetto.
+- **Cartello 2**, testi e formattazione indicati dall'utente:
+  - «Edificio di Chimica / Stanislao / Cannizzaro»: grassetto, grande, nero;
+  - «Facoltà di Scienze matematiche, fisiche e naturali»: piccolo, grassetto, rosso Sapienza;
+  - «Dipartimento di Chimica»: poco più grande, non grassetto, nero;
+  - «📍 Aula Aldo La Ginestra»: stessa dimensione del dipartimento, rosso e ancora più sottile;
+  - «Polo museale Sapienza»: come la Facoltà;
+  - «Museo di Chimica / Primo Levi»: come il Dipartimento;
+  - logo «m» del museo.
+- **Cartello 3:** mappa della città universitaria con l'edificio evidenziato.
+- **Foto:** `riferimenti/totem-cu014.jpg`.
 
 ## Fatto nella versione 32
 - Catalogo «Oggetto del modello» in ＋ Aggiungi con tutti gli oggetti costruiti nel modello (anche la transenna a

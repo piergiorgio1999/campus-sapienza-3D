@@ -56,6 +56,24 @@ toccato, interno o esterno.
 - La tendina crea le toppe `texture` di `wallPatches` per quella riga.
 - Tenere eventualmente un'opzione separata «tutto l'edificio».
 
+### Totem CU014 vero (foto `riferimenti/totem-cu014.jpg`, 21/10/2026)
+Il totem attuale (base e fascia rosse, corpo bianco) va rifatto come nella foto:
+- **Pannello:** alto e stretto (circa 0,8 m × 2,7 m, spessore circa 12 cm), in lamiera rosso Sapienza scuro, forata
+  a micro-fori, con cornice piena dello stesso rosso.
+- **Targa con il codice:** in alto, bianca, quasi larga quanto il pannello, con «**CU**014» («CU» in grassetto, «014»
+  normale, grigio scuro).
+- **Targa del nome:** sotto, bianca, con:
+  - «Edificio di Chimica Stanislao Cannizzaro»;
+  - «Facoltà di Scienze matematiche, fisiche e naturali · Dipartimento di Chimica · Aula Aldo La Ginestra»;
+  - «Polo museale Sapienza · Museo di Chimica Primo Levi», con i loghi (sigillo Sapienza e «m» del museo).
+  - Senza gli adesivi.
+- **Mappa:** piccola targa bianca «Sei qui» più in basso, spostata a destra.
+- **Base:** in basso il pannello è aperto (telaio rosso con un vano) e davanti c'è un cubo di travertino di circa
+  40 cm con un piccolo riquadro rosso; tutto poggia su una pedana rossa a terra.
+- **Posizione:** sul prato accanto al percorso tattile e al cordolo in travertino.
+- **Da verificare:** l'orientamento. Nella foto le targhe guardano chi arriva lungo il vialetto, mentre il totem
+  attuale ha il lato lungo parallelo al vialetto (indicazione del 21/10).
+
 ### Modifiche nel db non ancora riportate nei file (`modifiche`, stato «da applicare»)
 L'editor le applica dal vivo; vanno riportate nei JSON e segnate «applicata»:
 - `aggiunta:pmvi5eehk4w` (asfalto) e `aggiunta:pmvi77470sy` (marciapiede ovest con discesa);

@@ -1,3 +1,11 @@
+# Passaggio a Codex (21/10/2026 sera)
+- Artifact pubblicato: v50 (https://claude.ai/code/artifact/b6b40dff-1e58-4b65-a386-6d4bab8d31ed), branch `claude/new-session-zh34qp`.
+- Aperto: commento 1 (`segnalazioni/8370inyxicsqy5ulsd2j`, «solido bianco» a lato0 u 43.36, v 8.0, h 3.29): tolto il condizionatore
+  sulla facciata dell'ingresso, ma non è certo che fosse quello (lì vicino c'è una palma a u 42.4, v 7.9).
+- Da confermare con l'utente: posizione dei due pergolati, misure del varco del cancello (commento 3), raccordo ceppo/tronco
+  delle magnolie, chioma B spostata a stima (`chiomaOffset`).
+- Regole dell'utente: niente test o render locali (li fa la pipeline GitHub), pubblicare subito quando lo chiede, non fermarsi a chiedere.
+
 # Handoff — lavori terminati il 21/10/2026 su richiesta dell'utente
 
 - **Pubblicato:** artifact https://claude.ai/code/artifact/b6b40dff-1e58-4b65-a386-6d4bab8d31ed, versione 32

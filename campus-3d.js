@@ -3178,24 +3178,26 @@
     for (const p of live(M.pilastri)) box(p.u[0], p.u[1], 0, p.altezza, p.v[0], p.v[1], travMat(0.6, 1.8));
     const PO = M.portico;
     box(PO.u[0], PO.u[1], PO.soffitto, PO.soffitto + 0.35, PO.v[0], PO.v[1], std({ color: 0x6a4535, roughness: 0.9 }));
-    // fondo del portico (rilievo 132517 e commenti sul posto): cancellata chiusa a barre su tutta la larghezza, alta fin sotto
-    // il soffitto; dietro, il cortile interno illuminato si vede attraverso le grate
-    const FD = M.fondo || {}, fv = Number(FD.v) || PO.v[1] - 0.12, fw = PO.u[1] - PO.u[0], gH = PO.soffitto - 0.02;
+    // fondo del portico (rilievo 132517 e commenti sul posto): parete piena in travertino fino al soffitto, con il cancello a barre
+    // solo nel varco [u0, u1] (alto fin sotto il soffitto); dietro il cancello il cortile interno illuminato si vede attraverso le grate
+    const FD = M.fondo || {}, fv = Number(FD.v) || PO.v[1] - 0.12, gH = PO.soffitto - 0.02, wt = Number(FD.spessore) || 0.24;
+    const [vA, vB] = Array.isArray(FD.varco) && FD.varco.length === 2 ? [Math.max(PO.u[0], Math.min(...FD.varco)), Math.min(PO.u[1], Math.max(...FD.varco))] : PO.u, fw = vB - vA;
+    for (const [w0, w1] of [[PO.u[0], vA], [vB, PO.u[1]]]) if (w1 > w0 + 0.01) box(w0, w1, 0, PO.soffitto, fv - wt / 2, fv + wt / 2, travMat((w1 - w0) / 2.4, PO.soffitto / 2.4)); // pareti ai lati del varco
     add(new THREE.PlaneGeometry(fw, PO.soffitto), new THREE.MeshBasicMaterial({ map: canvasTex(512, 160, (ctx, w, h) => {
       const g = ctx.createLinearGradient(0, 0, 0, h);
       g.addColorStop(0, '#f3ecdc'); g.addColorStop(0.55, '#dccfb6'); g.addColorStop(0.57, '#b9ae9c'); g.addColorStop(1, '#9b9182');
       ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
       ctx.fillStyle = 'rgba(118,94,72,0.32)'; for (let x = 18; x < w; x += 64) ctx.fillRect(x, 16, 24, 42); // finestre lontane del cortile interno
-    }) }), (PO.u[0] + PO.u[1]) / 2, PO.soffitto / 2, -PO.v[1] + 0.02, false);
+    }) }), (vA + vB) / 2, PO.soffitto / 2, -PO.v[1] + 0.02, false);
     const gateU = [];
-    for (let u = PO.u[0] + 0.08; u < PO.u[1] - 0.04; u += Number(FD.passo) || 0.12) gateU.push(u);
+    for (let u = vA + 0.08; u < vB - 0.04; u += Number(FD.passo) || 0.12) gateU.push(u);
     const backBars = new THREE.InstancedMesh(new THREE.BoxGeometry(0.025, 1, 0.025), rust, gateU.length);
     gateU.forEach((u, i) => { mtx.makeScale(1, gH, 1).setPosition(u, gH / 2, -fv); backBars.setMatrixAt(i, mtx); });
     backBars.castShadow = true; court.add(backBars);
-    for (const hh of FD.correnti || [0.12, 1.1, 2.3]) box(PO.u[0], PO.u[1], hh - 0.03, hh + 0.03, fv - 0.03, fv + 0.03, rust);
-    box(PO.u[0], PO.u[1], gH - 0.06, gH, fv - 0.03, fv + 0.03, rust);
+    for (const hh of FD.correnti || [0.12, 1.1, 2.3]) box(vA, vB, hh - 0.03, hh + 0.03, fv - 0.03, fv + 0.03, rust);
+    box(vA, vB, gH - 0.06, gH, fv - 0.03, fv + 0.03, rust);
     const nLeaf = Math.max(1, Math.round(fw / 2.5)); // montanti delle ante
-    for (let i = 0; i <= nLeaf; i += 1) { const u = PO.u[0] + (fw * i) / nLeaf; box(u - 0.04, u + 0.04, 0, gH, fv - 0.04, fv + 0.04, rust); }
+    for (let i = 0; i <= nLeaf; i += 1) { const u = vA + (fw * i) / nLeaf; box(u - 0.04, u + 0.04, 0, gH, fv - 0.04, fv + 0.04, rust); }
     // corpo dell'edificio sopra il portico (le sagome sono svuotate fino al soffitto): stessi pezzi dell'edificio
     // (basamento, corpo, attico) con le stesse quote delle texture, così piani e finestre continuano senza giunte
     const cu = buildings.find((x) => String(x.code).toUpperCase() === 'CU014') || {};

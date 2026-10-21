@@ -284,12 +284,14 @@
   },
   "fondo": {
     "v": 12.88,
+    "varco": [6.4, 10.4],
+    "spessore": 0.24,
     "passo": 0.12,
     "correnti": [
       0.12,
       1.1,
       2.3
     ],
-    "nota": "Cancellata chiusa a barre in fondo all'area coperta, su tutta la larghezza: il cortile interno si vede attraverso le grate (rilievo 132517, commento sul posto del 21/10/2026)."
+    "nota": "Fondo dell'area coperta: parete piena in travertino (spessore, fino al soffitto del portico) con il cancello a barre solo nel varco [u0, u1] (commento 3 dell'utente: il cancello sta dentro una parete, non occupa tutta la larghezza; il cortile interno si vede attraverso le grate, rilievo 132517). STIMA: varco 4 m centrato sul cortile (u 6.4-10.4), da confermare con le foto promesse e da modificare qui."
   }
 }

@@ -94,9 +94,16 @@ dell'azoto), da v 13.0 fino al fondo misurato sull'ortofoto. Il corpo sopra il p
 così diventa un solo blocco fra le due ali. Il buco interno va tolto da `courtyards.json` o messo nei `vuoti`.
 
 ### Commento 3 — cancello fra i due cortili (`segnalazioni/mid7pp1ka9564qvf5h3q`)
-Il cancello in fondo al portico non è largo quanto tutto il portico: sta dentro una parete. In attesa delle foto
-promesse. Piano: `fondo` in `modello.json` con un `varco` [u0, u1] per il cancello a barre e una parete (stessa
-facciata) sul resto della larghezza.
+Il cancello in fondo al portico non è largo quanto tutto il portico: sta dentro una parete. Le foto promesse non sono
+arrivate (in `riferimenti/` nessuna mostra il cancello in fondo al portico), quindi le misure sono stime.
+Fatto: `fondo` in `cortile/modello.json` ha ora `varco` [6.4, 10.4] (cancello a barre largo 4 m, centrato sul cortile
+u 0.2–16.6) e `spessore` 0.24. In `loadCourtyardModel` (`campus-3d.js`) il cancello (barre, correnti, montanti e fondale
+del cortile interno) occupa solo il varco; sul resto della larghezza del portico (u 1.5 → 6.4 e 10.4 → 16.6) c'è una
+parete piena in travertino (lo stesso `travMat` dei muri del cortile), alta fino al soffitto del portico (4.5 m), v
+12.76–13.0. Altezza del cancello invariata (soffitto − 2 cm).
+Da confermare con le foto: larghezza e posizione del varco (basta cambiare `varco`), spessore della parete, se la parete
+ha porte o finestre, se il cancello ha un architrave sopra (ora arriva quasi al soffitto) e il materiale della parete
+(ora travertino, come la fascia bassa dei muri del cortile; la facciata in mattoni sta sopra il soffitto).
 
 ### Commento 4 — rotazione (`segnalazioni/wvncis7t2zxs4pi37fwp`)
 Fatto: transenna a strisce nel catalogo; «Ruota di 90°» per gli oggetti del catalogo.

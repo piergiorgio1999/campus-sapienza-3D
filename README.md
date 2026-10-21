@@ -3,7 +3,7 @@
 Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edifici entro 50 m.
 
 - `index.html` + `campus-3d.js`: pagina e scena
-- `cortile/chimica-esterni.json`: terrazza, aree, scale antincendio, pergolato (u, v, altezza, passo, copertura 0..1 = quanto fogliame, fogliame_da = quota in m sotto cui i fianchi sono quasi spogli, prato, ringhiera, aiuole, lampioni) (coordinate u/v sul lato della sagoma OSM)
+- `cortile/chimica-esterni.json`: terrazza, aree, scale antincendio, due pergolati (elementi `pergolato`: u, v, altezza, passo, copertura 0..1 = quanto fogliame, fogliame_da = quota in m sotto cui i fianchi sono quasi spogli; solo la galleria con la vite), lampioni verdi (elementi `lampione`: u, v, altezza) (coordinate u/v sul lato della sagoma OSM)
 - `cortile/modello.json`: cortile dell'azoto liquido (`portico.piani` = piani del corpo sopra il portico oltre il piano terra, 1 = solo il primo piano, con un solo tetto piano liscio senza attico; `portico.corpoU` = impronta del ponte; `vuoti` = un unico rettangolo u 0.2→16.6 per i due cortili, azoto e interno, nel quale resta solo il ponte; il cortile interno non è più in `courtyards.json`)
 - `tools/`: script di verifica (playwright + Chromium) per render e misure
 - `editor.js`: pulsanti **Commenta** e **Modifica** sulla scena 3D. Il tasto **🌳 Alberi** (sempre visibile, stato ricordato nel browser) nasconde o mostra tutti gli alberi (OSM, magnolie, palme, pini, quelli del catalogo): in `campus-3d.js` sono marcati `userData.albero` e `window.campus3d.alberiVisibili(on)` li gestisce, anche dopo le ricostruzioni. I dati vivono nel db dell'artifact:

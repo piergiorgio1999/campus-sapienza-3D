@@ -2239,15 +2239,6 @@
       ctx.putImageData(img, 0, 0);
     });
   }
-  // aiuola di begonie: fogliame scuro e fiori fitti del colore dato
-  function begoniaMat(kind) {
-    const C = { rosse: ['#d4301f', '#e8512b', '#b8221a'], rosa: ['#e8789c', '#d94f7e', '#f19bb5'], bianche: ['#f4f4ef', '#e6e8e0', '#ffffff'] }[kind] || ['#d4301f', '#e8512b', '#b8221a'];
-    return courtOnce('begonie|' + kind, () => new THREE.MeshStandardMaterial({ roughness: 1, map: canvasTex(128, 128, (ctx, w) => {
-      ctx.fillStyle = '#3a2b20'; ctx.fillRect(0, 0, w, w);
-      for (let i = 0; i < 110; i += 1) { ctx.fillStyle = hash01(i, 71) > 0.5 ? '#2f5a2c' : '#3d6a33'; ctx.beginPath(); ctx.arc(hash01(i, 72) * w, hash01(i, 73) * w, 6 + 5 * hash01(i, 74), 0, Math.PI * 2); ctx.fill(); }
-      for (let i = 0; i < 260; i += 1) { ctx.fillStyle = C[Math.floor(hash01(i, 75) * C.length)]; ctx.beginPath(); ctx.arc(hash01(i, 76) * w, hash01(i, 77) * w, 3 + 4 * hash01(i, 78), 0, Math.PI * 2); ctx.fill(); }
-    }, 0.5, 0.5) }));
-  }
   function addFireStair(group, uc, floors, mat, opts = {}) {
     // scala metallica aperta (rilievo Scaniverse del 16/10/2026, facciata ovest): rampe a forbice parallele al muro,
     // pianerottoli a tutta larghezza alle due estremità con gli angoli arrotondati, ringhiere a bacchette alte 1 m,
@@ -2443,9 +2434,9 @@
   }
   // pergolato come nelle foto Street View del 2015: galleria di archi a tutto sesto in tondino di ferro scuro, uno ogni `passo`,
   // sui cordoli di travertino ai due lati di un vialetto a lastre irregolari; vite fitta su tetto e fianchi (da fuori una siepe
-  // lunga e arrotondata, aperta ad arco alle estremità, l'interno resta percorribile); verso l'edificio una ringhiera in ferro a
-  // montanti con saettoni, verso la strada prato con aiuole di begonie, cordolo di travertino e lampioni verdi.
-  // u, v: arco e vialetto (da asse a asse dei cordoli); altezza: cima dell'arco; prato: [v verso l'edificio, v verso la strada]
+  // lunga e arrotondata, aperta ad arco alle estremità, l'interno resta percorribile). Solo la galleria: prato, aiuole, ringhiera
+  // e lampioni stanno altrove (i lampioni sono elementi `lampione` a sé).
+  // u, v: arco e vialetto (da asse a asse dei cordoli); altezza: cima dell'arco
   function addPergola(g, el) {
     const [u0, u1] = el.u, [v0, v1] = el.v, R = (v1 - v0) / 2, vm = (v0 + v1) / 2, H = Number(el.altezza) || 3.0, imp = Math.max(0.5, H - R);
     const passo = Math.max(0.8, Number(el.passo) || 1.8), trav = travPhoto(1.2);
@@ -2484,36 +2475,14 @@
         tm.castShadow = true; tm.receiveShadow = true; g.add(tm);
       }
     }
-    // ringhiera verso l'edificio: montanti, tre correnti tondi e saettoni diagonali verso la strada
-    const RG = el.ringhiera;
-    if (RG && Number.isFinite(Number(RG.v))) {
-      const rv = Number(RG.v), RH = Number(RG.altezza) || 1.0, step = Number(RG.passo) || 3.0, ra = u0 - 1.5, rb = u1 + 1.5, nr = Math.max(1, Math.round((rb - ra) / step));
-      for (let k = 0; k <= nr; k += 1) {
-        const u = ra + (rb - ra) * k / nr;
-        g.add(rodMesh([u, 0, -rv], [u, RH, -rv], 0.022, iron));
-        g.add(rodMesh([u, RH * 0.8, -rv], [u, 0, -(rv + 0.9)], 0.014, iron)); // saettone
-      }
-      for (const h of [0.3, 0.65, RH]) g.add(rodMesh([ra, h, -rv], [rb, h, -rv], 0.013, iron));
-    }
-    // prato verso la strada (e verso l'edificio), cordolo di travertino sul lato strada, aiuole di begonie
-    if (Array.isArray(el.prato)) {
-      const [pa, pb] = el.prato, lawn = courtOnce('pergolato|prato', () => stdMat({ color: 0x5f8a3e, roughness: 1 }));
-      const l = localSlab(rectPts(u0 - 1.5, u1 + 1.5, pa, pb), 0, 0.035, lawn); l.castShadow = false; g.add(l);
-      g.add(localSlab(rectPts(u0 - 1.5, u1 + 1.5, pb, pb + 0.26), 0, 0.2, trav));
-    }
-    for (const a of el.aiuole || []) {
-      const cu = (a.u[0] + a.u[1]) / 2, cv = (a.v[0] + a.v[1]) / 2, ru = (a.u[1] - a.u[0]) / 2, rv2 = (a.v[1] - a.v[0]) / 2;
-      const pts = Array.from({ length: 28 }, (_, i) => [cu + ru * Math.cos(i / 28 * Math.PI * 2), cv + rv2 * Math.sin(i / 28 * Math.PI * 2)]);
-      const bed = localSlab(pts, 0, 0.24, begoniaMat(a.fiori)); bed.castShadow = false; g.add(bed);
-    }
-    // lampioni verdi: palo, braccio verso la strada e globo
-    const green = courtOnce('pergolato|lampione', () => plainMat('#2f5c3e', 0.5, 0.35)), globe = courtOnce('pergolato|globo', () => new THREE.MeshStandardMaterial({ color: 0xf2f0e6, roughness: 0.4, emissive: 0x2a2a24 }));
-    for (const L of el.lampioni || []) {
-      const LH = Number(L.altezza) || 4.6;
-      g.add(rodMesh([L.u, 0, -L.v], [L.u, LH, -L.v], 0.05, green));
-      g.add(rodMesh([L.u, LH, -L.v], [L.u, LH + 0.1, -(L.v + 0.7)], 0.03, green));
-      const gl = new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 8), globe); gl.position.set(L.u, LH, -(L.v + 0.75)); g.add(gl);
-    }
+  }
+  // lampione verde (elemento `lampione`: u, v, altezza): palo, braccio verso la strada (+v) e globo
+  function addLampione(g, L) {
+    const green = courtOnce('lampione|verde', () => plainMat('#2f5c3e', 0.5, 0.35)), globe = courtOnce('lampione|globo', () => new THREE.MeshStandardMaterial({ color: 0xf2f0e6, roughness: 0.4, emissive: 0x2a2a24 }));
+    const LH = Number(L.altezza) || 4.6, u = Number(L.u), v = Number(L.v);
+    g.add(rodMesh([u, 0, -v], [u, LH, -v], 0.05, green));
+    g.add(rodMesh([u, LH, -v], [u, LH + 0.1, -(v + 0.7)], 0.03, green));
+    const gl = new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 8), globe); gl.position.set(u, LH, -(v + 0.75)); g.add(gl);
   }
   function buildChemistryExteriors() {
     const cfg = exteriorsCfg;
@@ -2557,6 +2526,8 @@
         const a = localSlab(el.poligono, 0, 0.03, trav()); a.castShadow = false; g.add(a);
       } else if (el.tipo === 'pergolato') {
         addPergola(g, el);
+      } else if (el.tipo === 'lampione') {
+        addLampione(g, el);
       } else if (el.tipo === 'pilastro') {
         g.add(localSlab(el.poligono, 0, Number(el.altezza) || 2.5, trav()));
       } else if (el.tipo === 'ingresso') {
@@ -2830,6 +2801,7 @@
       const m = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.55, 0.3), [white, white, white, white, white, grille]); m.position.y = 0.275; m.castShadow = true; g.add(m);
     }) },
     fiori: { nome: 'Cespuglio fiorito', crea: () => group((g) => g.add(localSlab(rectPts(-0.75, 0.75, -0.4, 0.4), 0, 0.4, flowerMaterial()))) },
+    lampione: { nome: 'Lampione verde', crea: () => group((g) => addLampione(g, { u: 0, v: 0 })) },
     pergolato: { nome: 'Pergolato con vite americana', crea: () => group((g) => addPergola(g, { u: [0, 6], v: [0, 2.6], altezza: 3.0 })) },
     transennaStrisce: { nome: 'Transenna a strisce bianche e rosse', crea: () => group((g) => { // barre inclinate di 35° in senso orario
       const metal = courtOnce('transenna strisce|telaio', () => stdMat({ color: 0xc9ccce, roughness: 0.45, metalness: 0.5 }));
@@ -3021,7 +2993,6 @@
       word(w1, uc + W / 2 + 1.75); word(w2, uc - W / 2 - 1.75); // a sinistra e a destra del portone, viste da fuori
       const plaque = canvasTex(64, 48, (ctx, w, hh) => { ctx.fillStyle = '#8a1f2d'; ctx.fillRect(0, 0, w, hh); ctx.fillStyle = 'rgba(255,255,255,.85)'; for (let i = 0; i < 4; i += 1) ctx.fillRect(8, 9 + i * 8, i ? 30 + (i % 2) * 14 : 46, 3); });
       for (const y of [1.75, 2.3]) facePlane(0.42, 0.32, uc - W / 2 - 0.75, y, 0.075, new THREE.MeshStandardMaterial({ map: plaque, roughness: 0.6 }));
-      const ac = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.55, 0.3), std('#e9e9e6', 0.5)); ac.position.set(uc - W / 2 - 3.6, H - 0.75, -0.21); ac.castShadow = true; g.add(ac);
     }
     if (!P.rimosso) {
       facePlane(W, Hd, uc, Hd / 2 + 0.02, 0.066, doorMaterial());

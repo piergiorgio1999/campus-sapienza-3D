@@ -109,17 +109,22 @@
 **Fatto (v110, `addPergola` in `campus-3d.js`, elemento `pergolato` in `cortile/chimica-esterni.json`):** galleria di 15
 archi a tutto sesto in tondino di ferro (passo 1,8 m, alta 3 m) su cordoli di travertino, vialetto a lastre irregolari
 (texture `opusTex`), vite verde fitta in due gusci + fondo scuro (da fuori una siepe arrotondata, aperta alle estremità;
-verificato con la passeggiata: si attraversa da capo a capo), ringhiera a montanti con saettoni verso l'edificio, prato
-con aiuole di begonie rosse/rosa/bianche, cordolo e due lampioni verdi verso la strada; pini già nel modello. Nel modello
+verificato con la passeggiata: si attraversa da capo a capo); pini già nel modello. Nel modello
 non c'era nessun pergolato posato (solo il pezzo del catalogo, ora riscritto): posizione scelta sul lato 0, u 16,5–43,
 v 12,1–14,7, tra la scala antincendio ovest e il vialetto dell'ingresso, evitando i tronchi esistenti. Nell'editor è un
-oggetto selezionabile (u, v, altezza); prato, ringhiera, aiuole e lampioni si spostano con lui. Da confermare con l'utente
+oggetto selezionabile (u, v, altezza). Da confermare con l'utente
 posizione e lunghezza (26,5 m).
 **Aggiornamento (v111):** foglie con la foto di vite (ambientCG LeafSet029, CC0, `tex/vite_LeafSet029_*`, vedi
 `tex/ATTRIBUTION.md`) con `alphaMap` + `alphaTest` e ombre bucate (`customDepthMaterial`); quattro gusci sfalsati con vuoti
 fra le foglie; la densità sale con la quota (quasi nulla sotto `fogliame_da`, 1 m, massima sul tetto; `copertura` la scala), quindi in
 basso si vedono gli archi in ferro. Uno o due fusti contorti per campata (hash fisso, lato e posizione variabili, spesso
 vicini al montante) dal cordolo fino al fogliame. Da verificare nella pipeline: aspetto delle foglie, densità e fusti.
+**Aggiornamento (v49):** il pergolato è solo la galleria (archi, vite, vialetto, cordoli ai lati): tolti ringhiera/staccionata,
+prato aggiunto e aiuole di begonie (codice `begoniaMat` compreso). I lampioni verdi sono ora elementi `lampione` a sé
+(u, v, altezza; selezionabili, spostabili, duplicabili ed eliminabili; voce «Lampione verde» nel catalogo), quattro: u 24 e 40
+nel prato 1, u 55,26 e 71,26 nel prato 2 (specchiati rispetto all'asse del portone u 47,63), v 18,7. Secondo pergolato (elemento
+`pergolato`) nel prato 2 dell'ingresso, specchio del primo rispetto al vialetto: u 52,26–78,76, v 12,1–14,7, stessa lunghezza.
+Tolto anche il condizionatore bianco sulla facciata dell'ingresso (u ≈ 42,9, h ≈ 3,9).
 L'utente non vuole il pergolato attuale (archi con foglie rosse e arancio). Come nelle foto:
 - **Struttura:** galleria lunga e stretta parallela alla facciata, lungo il viale. Archi a tutto sesto di tondino di
   ferro scuro, uno ogni ~1,5–2 m, che partono dai cordoli in travertino ai due lati del vialetto.
@@ -127,9 +132,7 @@ L'utente non vuole il pergolato attuale (archi con foglie rosse e arancio). Come
 - **Copertura:** vite o edera verde fitta che copre tetto e fianchi, così che da fuori sembra una siepe lunga e
   arrotondata, alta circa 3 m, con l'apertura ad arco alle estremità.
 - **Intorno:**
-  - verso il prato: ringhiera in ferro a montanti con saettoni diagonali;
-  - verso la strada: striscia di prato con aiuole fiorite (begonie rosse, rosa e bianche), pini, lampioni verdi e
-    cordolo in travertino sull'asfalto.
+  - (non più nel modello, v49: ringhiera, prato aggiunto e aiuole di begonie; i lampioni verdi sono oggetti separati).
 - **Foto 7–10:** mostrano anche il totem vecchio del 2015 (non più valido: vale quello della foto del 21/10) e le
   panchine in travertino.
 

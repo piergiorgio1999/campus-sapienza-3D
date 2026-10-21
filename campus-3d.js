@@ -2389,9 +2389,14 @@
     // aiuole: cordolo in travertino e terra con foglie
     const curb = travMat(1, 0.2), soil = std({ map: soilTex(), roughness: 1 });
     for (const a of M.aiuole) {
-      const t = 0.16, h = a.altezza;
-      box(a.u[0], a.u[1], 0, h, a.v[0], a.v[0] + t, curb); box(a.u[0], a.u[1], 0, h, a.v[1] - t, a.v[1], curb);
-      box(a.u[0], a.u[0] + t, 0, h, a.v[0], a.v[1], curb); box(a.u[1] - t, a.u[1], 0, h, a.v[0], a.v[1], curb);
+      const t = 0.16, h = a.altezza, cut = a.varco || null; // varco: tratto di cordolo abbassato (soglia della porticina)
+      const side = (lato, u0, u1, v0, v1) => {
+        if (!cut || cut.lato !== lato) { box(u0, u1, 0, h, v0, v1, curb); return; }
+        const alongU = lato[0] === 'v', [s0, s1] = alongU ? [u0, u1] : [v0, v1], q = Number(cut.quota) || 0.12;
+        for (const [p0, p1, top] of [[s0, cut.da, h], [cut.da, cut.a, q], [cut.a, s1, h]]) if (p1 > p0 + 0.01) { if (alongU) box(p0, p1, 0, top, v0, v1, curb); else box(u0, u1, 0, top, p0, p1, curb); }
+      };
+      side('v-', a.u[0], a.u[1], a.v[0], a.v[0] + t); side('v+', a.u[0], a.u[1], a.v[1] - t, a.v[1]);
+      side('u-', a.u[0], a.u[0] + t, a.v[0], a.v[1]); side('u+', a.u[1] - t, a.u[1], a.v[0], a.v[1]);
       const s = add(new THREE.PlaneGeometry(a.u[1] - a.u[0] - 2 * t, a.v[1] - a.v[0] - 2 * t), soil, (a.u[0] + a.u[1]) / 2, h - 0.06, -(a.v[0] + a.v[1]) / 2, false);
       s.rotation.x = -Math.PI / 2;
     }
@@ -2434,27 +2439,59 @@
     const band = add(new THREE.CylinderGeometry(R * 1.004, R * 1.004, 0.75, 48, 1, true), std({ map: bandTex, roughness: 0.45, metalness: 0.15 }), S.u, yt - 0.55, -S.v);
     band.rotation.y = Math.PI * 0.9;
 
+    // tubo di scarico del serbatoio (foto del 19/10/2026): coibentato bianco, esce sotto il serbatoio, corre orizzontale
+    // verso il lato della porticina, scavalca il cordolo, scende a terra con un gomito e poggia su una canaletta bianca
+    const TS = M.tuboScarico;
+    if (TS && Array.isArray(TS.percorso) && TS.percorso.length > 1) {
+      const pipeMat = std({ color: 0xe6e5e0, roughness: 0.9 }), pr = Number(TS.raggio) || 0.08, yAxis = new THREE.Vector3(0, 1, 0);
+      const pts = TS.percorso.map(([u, v, h]) => new THREE.Vector3(u, h, -v));
+      for (let i = 0; i < pts.length - 1; i += 1) {
+        const a = pts[i], b = pts[i + 1], seg = add(new THREE.CylinderGeometry(pr, pr, a.distanceTo(b), 18), pipeMat, (a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
+        seg.quaternion.setFromUnitVectors(yAxis, b.clone().sub(a).normalize());
+      }
+      for (const q of pts.slice(1, -1)) add(new THREE.SphereGeometry(pr, 18, 12), pipeMat, q.x, q.y, q.z); // gomiti
+      const CT = TS.canaletta;
+      if (CT) { const w = Number(CT.larghezza) || 0.18; box(CT.u - w / 2, CT.u + w / 2, 0, 0.04, CT.v[0], CT.v[1], std({ color: 0xf0efea, roughness: 0.8 })); }
+    }
+
     // gabbia verde: montanti, rete e porticina; cartello di sicurezza sul lato verso l'albero
     const G = M.gabbia, green = std({ color: 0x2f5a3c, roughness: 0.6, metalness: 0.3 });
     const meshMat = new THREE.MeshStandardMaterial({ map: wireMeshTex(), alphaTest: 0.5, transparent: false, side: THREE.DoubleSide, roughness: 0.6, metalness: 0.3 });
-    const g0 = 0.42, gh = G.altezza;
-    for (const u of [G.u[0], (G.u[0] + G.u[1]) / 2, G.u[1]]) for (const v of [G.v[0], G.v[1]]) box(u - 0.03, u + 0.03, g0, g0 + gh, v - 0.03, v + 0.03, green);
-    for (const v of [G.v[0], (G.v[0] + G.v[1]) / 2]) for (const u of [G.u[0], G.u[1]]) box(u - 0.03, u + 0.03, g0, g0 + gh, v - 0.03, v + 0.03, green);
+    const g0 = 0.42, gh = G.altezza, PD = G.porta && typeof G.porta === 'object' ? G.porta : null;
+    // montanti tondi verde acqua agli angoli e a metà dei lati; nessun montante dentro il vano della porticina
+    const postMat = std({ color: 0x5f9f88, roughness: 0.5, metalness: 0.3 });
+    const um = (G.u[0] + G.u[1]) / 2, vm = (G.v[0] + G.v[1]) / 2;
+    for (const [u, v] of [[G.u[0], G.v[0]], [um, G.v[0]], [G.u[1], G.v[0]], [G.u[1], vm], [G.u[1], G.v[1]], [um, G.v[1]], [G.u[0], G.v[1]], [G.u[0], vm]]) {
+      if (PD && u === G.u[0] && v > PD.v[0] - 0.05 && v < PD.v[1] + 0.05) continue;
+      add(new THREE.CylinderGeometry(0.024, 0.024, gh, 10), postMat, u, g0 + gh / 2, -v);
+    }
     const panel = (w, h, x, z, rotY) => { const p = add(new THREE.PlaneGeometry(w, h), meshMat, x, g0 + h / 2, z, false); p.rotation.y = rotY; p.material.map.repeat.set(w / 0.4, h / 0.4); return p; };
     const wu = G.u[1] - G.u[0], wv = G.v[1] - G.v[0];
     panel(wu, gh, (G.u[0] + G.u[1]) / 2, -G.v[0], 0); panel(wu, gh, (G.u[0] + G.u[1]) / 2, -G.v[1], 0);
     panel(wv, gh, G.u[0], -(G.v[0] + G.v[1]) / 2, Math.PI / 2); panel(wv, gh, G.u[1], -(G.v[0] + G.v[1]) / 2, Math.PI / 2);
-    const dz = -(G.v[0] + G.v[1]) / 2; // telaio della porticina sul lato u−
-    box(G.u[0] - 0.04, G.u[0] + 0.02, g0, g0 + 1.95, -dz - 0.45, -dz - 0.4, green); box(G.u[0] - 0.04, G.u[0] + 0.02, g0, g0 + 1.95, -dz + 0.4, -dz + 0.45, green);
-    for (const hh of [0.02, 0.98, 1.93]) box(G.u[0] - 0.04, G.u[0] + 0.02, g0 + hh, g0 + hh + 0.05, -dz - 0.45, -dz + 0.45, green);
-    const sign = add(new THREE.PlaneGeometry(0.9, 1.4), std({ map: canvasTex(180, 280, (ctx, w, h) => {
+    // porticina sul lato u− (foto del 19/10/2026): telaio fisso verde scuro dalla soglia nel cordolo alla sommità della gabbia;
+    // anta con griglia di piatti (maglie fitte sotto il traverso largo, solo montanti e due correnti sopra)
+    const pv0 = PD ? PD.v[0] : vm - 0.6, pv1 = PD ? PD.v[1] : vm + 0.6, pb = PD ? Number(PD.soglia) || 0.12 : g0, pt = PD ? Number(PD.sommita) || g0 + gh : g0 + gh;
+    const doorMat = std({ color: 0x235b42, roughness: 0.55, metalness: 0.35 }), du0 = G.u[0] - 0.07, du1 = G.u[0] - 0.01;
+    box(du0, du1, pb, pt, pv0, pv0 + 0.06, doorMat); box(du0, du1, pb, pt, pv1 - 0.06, pv1, doorMat); box(du0, du1, pt - 0.06, pt, pv0, pv1, doorMat);
+    const a0 = pv0 + 0.08, a1 = pv1 - 0.08, b0 = pb + 0.04, b1 = pt - 0.08, mid = b0 + (b1 - b0) * 0.48, f0 = du0 + 0.01, f1 = du0 + 0.04;
+    box(du0, du1, b0, b0 + 0.05, a0, a1, doorMat); box(du0, du1, b1 - 0.05, b1, a0, a1, doorMat);
+    box(du0, du1, b0, b1, a0, a0 + 0.05, doorMat); box(du0, du1, b0, b1, a1 - 0.05, a1, doorMat);
+    box(du0, du1, mid - 0.05, mid + 0.05, a0, a1, doorMat); // traverso largo
+    const nV = Math.max(2, Math.round((a1 - a0) / 0.18)), nL = Math.max(2, Math.round((mid - b0) / 0.15)), nU = 3;
+    for (let i = 1; i < nV; i += 1) { const v = a0 + ((a1 - a0) * i) / nV; box(f0, f1, b0, b1, v - 0.012, v + 0.012, doorMat); }
+    for (let i = 1; i < nL; i += 1) { const hh = b0 + ((mid - b0) * i) / nL; box(f0, f1, hh - 0.012, hh + 0.012, a0, a1, doorMat); }
+    for (let i = 1; i < nU; i += 1) { const hh = mid + ((b1 - mid) * i) / nU; box(f0, f1, hh - 0.012, hh + 0.012, a0, a1, doorMat); }
+    box(du0 - 0.04, du0, mid - 0.2, mid - 0.06, a0 + 0.06, a0 + 0.12, doorMat); // serratura
+    // cartello in alto sulla rete, come nelle foto: sotto passa il tubo di scarico
+    const sign = add(new THREE.PlaneGeometry(0.62, 0.92), std({ map: canvasTex(180, 280, (ctx, w, h) => {
       ctx.fillStyle = '#f4f4f2'; ctx.fillRect(0, 0, w, h);
       ctx.fillStyle = '#2b78c2'; ctx.fillRect(8, 28, w - 16, 8); ctx.fillRect(8, 112, w - 16, 8); ctx.fillRect(8, 180, w - 16, 8);
       for (let i = 0; i < 6; i += 1) { ctx.fillStyle = '#d43a3a'; ctx.beginPath(); ctx.arc(22 + i * 27, 62, 10, 0, Math.PI * 2); ctx.fill(); }
       for (let i = 0; i < 5; i += 1) { ctx.fillStyle = '#f2c84b'; ctx.beginPath(); ctx.moveTo(22 + i * 32, 158); ctx.lineTo(36 + i * 32, 132); ctx.lineTo(50 + i * 32, 158); ctx.fill(); }
       for (let i = 0; i < 6; i += 1) { ctx.fillStyle = '#2b78c2'; ctx.beginPath(); ctx.arc(22 + i * 27, 206, 10, 0, Math.PI * 2); ctx.fill(); }
       ctx.fillStyle = '#d9dde2'; ctx.fillRect(10, 228, w - 20, 42);
-    }), roughness: 0.6 }), G.u[0] + 0.7, g0 + 1.1, -G.v[0] + 0.02, false);
+    }), roughness: 0.6 }), G.u[0] + 0.5, g0 + gh - 0.52, -G.v[0] + 0.02, false);
 
     // cancellata su strada: muretto, ringhiera a barre e due ante aperte verso l'interno
     const C = M.cancellata, rust = std({ color: 0x7a4b30, roughness: 0.55, metalness: 0.35 }), wallMat = travMat(2, 0.4);

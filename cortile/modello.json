@@ -52,7 +52,13 @@
         1.1,
         7.9
       ],
-      "altezza": 0.42
+      "altezza": 0.42,
+      "varco": {
+        "lato": "u-",
+        "da": 6.07,
+        "a": 7.27,
+        "quota": 0.12
+      }
     }
   ],
   "magnolie": [
@@ -83,13 +89,21 @@
       15.2
     ],
     "v": [
-      5.2,
+      5.5,
       7.82
     ],
-    "altezza": 2.1,
-    "porta": "u-",
+    "altezza": 1.63,
+    "porta": {
+      "lato": "u-",
+      "v": [
+        6.07,
+        7.27
+      ],
+      "soglia": 0.12,
+      "sommita": 2.05
+    },
     "cartello": "v-",
-    "nota": "Rete montata sul cordolo dell'aiuola sul lato della porta (u-) e sul fondo (v+)."
+    "nota": "Rete montata sul cordolo dell'aiuola sul lato della porticina (u-) e sul fondo (v+). Misure dal rilievo 115418 e dalle foto del 19/10/2026: angolo lato cartello a v 5.5, sommità a 2.05 m da terra, porticina larga 1.2 m su una soglia ribassata nel cordolo."
   },
   "cancellata": {
     "v": 0,
@@ -209,5 +223,39 @@
       "v": 2.4,
       "lato": 0.6
     }
-  ]
+  ],
+  "tuboScarico": {
+    "raggio": 0.08,
+    "percorso": [
+      [
+        13.35,
+        6.15,
+        0.68
+      ],
+      [
+        13.35,
+        5.75,
+        0.68
+      ],
+      [
+        11.78,
+        5.75,
+        0.68
+      ],
+      [
+        11.78,
+        5.75,
+        0.06
+      ]
+    ],
+    "canaletta": {
+      "u": 11.8,
+      "v": [
+        4.3,
+        5.85
+      ],
+      "larghezza": 0.18
+    },
+    "nota": "Tubo di scarico del serbatoio, coibentato bianco (foto del 19/10/2026): dal basamento del serbatoio corre a 0.68 m lungo il lato del cartello, scavalca il cordolo vicino alla porticina, scende a terra e poggia su una canaletta bianca lungo la base del cordolo."
+  }
 }

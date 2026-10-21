@@ -79,16 +79,17 @@
   },
   "gabbia": {
     "u": [
-      12.4,
+      11.98,
       15.2
     ],
     "v": [
       5.2,
-      7.7
+      7.82
     ],
     "altezza": 2.1,
     "porta": "u-",
-    "cartello": "v-"
+    "cartello": "v-",
+    "nota": "Rete montata sul cordolo dell'aiuola sul lato della porta (u-) e sul fondo (v+)."
   },
   "cancellata": {
     "v": 0,

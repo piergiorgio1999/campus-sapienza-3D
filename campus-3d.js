@@ -2295,6 +2295,27 @@
             g.add(localSlab(pts, 0, top - rise, trav()));
           }
         }
+        // ringhiere in metallo rosso scuro: montanti, corrimano e corrente intermedio
+        const lines = el.ringhiere || [], RG = el.ringhiera || {};
+        if (lines.length) {
+          const H = Number(RG.altezza) || 1.0, step = Number(RG.passo) || 1.3, mid = Number(RG.intermedio) || 0.5;
+          const red = new THREE.MeshStandardMaterial({ color: new THREE.Color(RG.colore || '#6b1d29').convertSRGBToLinear(), roughness: 0.55, metalness: 0.4 });
+          const posts = [], bars = [];
+          for (const line of lines) for (let i = 0; i < line.length - 1; i += 1) {
+            const [ua, va] = line[i], [ub, vb] = line[i + 1], n = Math.max(1, Math.round(Math.hypot(ub - ua, vb - va) / step));
+            for (let k = i ? 1 : 0; k <= n; k += 1) posts.push([ua + (ub - ua) * k / n, va + (vb - va) * k / n]);
+            for (const y of [H, mid]) bars.push([ua, va, ub, vb, y]);
+          }
+          const unit = new THREE.BoxGeometry(1, 1, 1), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), yAxis = new THREE.Vector3(0, 1, 0);
+          const pm = new THREE.InstancedMesh(unit, red, posts.length), bm = new THREE.InstancedMesh(unit, red, bars.length);
+          posts.forEach(([u, v], i) => { m4.compose(new THREE.Vector3(u, h + H / 2, -v), q.identity(), new THREE.Vector3(0.05, H, 0.05)); pm.setMatrixAt(i, m4); });
+          bars.forEach(([ua, va, ub, vb, y], i) => {
+            q.setFromAxisAngle(yAxis, Math.atan2(vb - va, ub - ua));
+            m4.compose(new THREE.Vector3((ua + ub) / 2, h + y, -(va + vb) / 2), q, new THREE.Vector3(Math.hypot(ub - ua, vb - va) + 0.05, y === H ? 0.05 : 0.035, y === H ? 0.07 : 0.035));
+            bm.setMatrixAt(i, m4);
+          });
+          for (const mesh of [pm, bm]) { mesh.castShadow = true; mesh.receiveShadow = true; g.add(mesh); }
+        }
       } else if (el.tipo === 'area') {
         const a = localSlab(el.poligono, 0, 0.03, trav()); a.castShadow = false; g.add(a);
       } else if (el.tipo === 'pergolato') {
@@ -2378,11 +2399,18 @@
     const capT = add(new THREE.SphereGeometry(R, 40, 12, 0, Math.PI * 2, 0, Math.PI / 2), white, S.u, yt, -S.v); capT.scale.y = 0.45;
     const capB = add(new THREE.SphereGeometry(R, 40, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), white, S.u, yb, -S.v); capB.scale.y = 0.45;
     add(new THREE.CylinderGeometry(R * 0.32, R * 0.42, yb - 0.4, 20), white, S.u, 0.4 + (yb - 0.4) / 2 - 0.15, -S.v);
-    const band = add(new THREE.CylinderGeometry(R * 1.004, R * 1.004, 0.75, 40, 1, true), std({ map: canvasTex(1024, 128, (ctx, w, h) => {
+    // logo come nel rilievo: emblema sferico blu e verde con una linea chiara, scritta su due righe NIPPON / GASES
+    const band = add(new THREE.CylinderGeometry(R * 1.004, R * 1.004, 0.75, 40, 1, true), std({ map: canvasTex(1024, 152, (ctx, w, h) => {
       ctx.fillStyle = '#ece9e2'; ctx.fillRect(0, 0, w, h);
-      ctx.fillStyle = '#2b6fa8'; ctx.beginPath(); ctx.arc(330, 64, 44, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#3a9a62'; ctx.beginPath(); ctx.arc(345, 74, 30, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#3b3f44'; ctx.font = 'bold 52px Arial, sans-serif'; ctx.fillText('NIPPON GASES', 390, 82);
+      const cx = 330, cy = 76, r = 60;
+      const sphere = ctx.createRadialGradient(cx + r * 0.35, cy - r * 0.4, r * 0.1, cx, cy, r);
+      sphere.addColorStop(0, '#6cc46e'); sphere.addColorStop(0.4, '#2f9a5a'); sphere.addColorStop(0.72, '#1f75ba'); sphere.addColorStop(1, '#16508f');
+      ctx.fillStyle = sphere; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+      ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 5; ctx.beginPath(); ctx.ellipse(cx - r * 0.2, cy + r * 1.05, r * 1.25, r * 0.95, -0.35, Math.PI * 1.08, Math.PI * 1.72); ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = '#1f2326'; ctx.font = 'bold 58px Arial, Helvetica, sans-serif';
+      ctx.fillText('NIPPON', cx + r + 18, cy - 6); ctx.fillText('GASES', cx + r + 18, cy + 54);
     }), roughness: 0.5, transparent: false }), S.u, yt - 0.55, -S.v);
     band.rotation.y = Math.PI * 0.9;
 

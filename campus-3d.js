@@ -2079,12 +2079,24 @@
       return { geo, M, toLocal, toMap };
     } catch (_) { return null; }
   }
-  // Le sagome OSM attorno al cortile sono più strette della scansione: sottrai il vuoto del cortile (dalla strada alla fronte del portico).
+  // Le sagome OSM attorno al cortile non coincidono con la scansione: aggiungi i pieni (facciate portate a filo del cortile)
+  // e sottrai il vuoto del cortile (dalla strada alla fronte del portico).
   function carveCourtyard(rings) {
     const f = courtyardFrame;
     if (!f || !Array.isArray(f.M.vuoti)) return [rings];
-    const local = closeRing(rings[0]).slice(0, -1).map((p) => { const w = project(p); return f.toLocal([w.x, w.n]); });
-    let pieces = [local], touched = false;
+    let local = closeRing(rings[0]).slice(0, -1).map((p) => { const w = project(p); return f.toLocal([w.x, w.n]); });
+    let touched = false;
+    const pc = window.polygonClipping;
+    for (const [u0, v0, u1, v1] of (pc && f.M.pieni) || []) {
+      const us = local.map((q) => q[0]), vs = local.map((q) => q[1]);
+      if (Math.max(...us) < u0 || Math.min(...us) > u1 || Math.max(...vs) < v0 || Math.min(...vs) > v1) continue;
+      try {
+        // solo se il pieno tocca la sagoma: l'unione deve restare un unico poligono
+        const merged = pc.union([local.concat([local[0]])], [[[u0, v0], [u1, v0], [u1, v1], [u0, v1], [u0, v0]]]);
+        if (merged.length === 1) { local = merged[0][0].slice(0, -1); touched = true; }
+      } catch (_) { /* sagoma invariata */ }
+    }
+    let pieces = [local];
     for (const [u0, v0, u1, v1] of f.M.vuoti) {
       pieces = pieces.flatMap((poly) => {
         const us = poly.map((q) => q[0]), vs = poly.map((q) => q[1]);
@@ -2433,7 +2445,8 @@
       const leafP = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 3.3), brownMesh); leafP.position.set(dir * 1.1, 1.7, 0); pv.add(leafP);
       for (const hh of [0.05, 1.7, 3.35]) { const r = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.06, 0.05), rust); r.position.set(dir * 1.1, hh, 0); pv.add(r); }
     });
-    // corpo dell'edificio sopra il portico (le sagome sono svuotate fino al soffitto)
+    // corpo dell'edificio sopra il portico (le sagome sono svuotate fino al soffitto): stessi pezzi dell'edificio
+    // (basamento, corpo, attico) con le stesse quote delle texture, così piani e finestre continuano senza giunte
     const topH = heightInfo({}).value, baseH = PO.soffitto + 0.35;
     const ringLL = [[PO.u[0], PO.v[0]], [PO.u[1], PO.v[0]], [PO.u[1], PO.v[1]], [PO.u[0], PO.v[1]], [PO.u[0], PO.v[0]]].map((q) => {
       const [x, n] = courtyardFrame.toMap(q);
@@ -2441,12 +2454,28 @@
     });
     const shp = makeShape([ringLL]);
     if (shp && topH > baseH + 1 && buildingGroup) {
-      const g = new THREE.ExtrudeGeometry(shp, { depth: topH - baseH, bevelEnabled: false, curveSegments: 1 });
-      g.rotateX(-Math.PI / 2); g.translate(0, 0.04 + baseH, 0);
-      applyRoofUVs(g); applyWallUVs(g, 0.04 + baseH, FACADE_BAY, 3.8); g.computeVertexNormals();
-      const mats = [normalRoof, facadeSetFor('CU014').body];
-      const mesh = new THREE.Mesh(g, mats); mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.mats = mats;
-      buildingGroup.add(mesh);
+      const set = facadeSetFor('CU014'), pieces = buildingPieces(topH, NaN);
+      pieces.forEach((piece, k) => {
+        const y0 = Math.max(piece.y0, baseH), y1 = piece.y0 + piece.h;
+        if (y1 <= y0 + 0.01) return;
+        const g = new THREE.ExtrudeGeometry(shp, { depth: y1 - y0, bevelEnabled: false, curveSegments: 1 });
+        g.rotateX(-Math.PI / 2); g.translate(0, 0.04 + y0, 0);
+        applyRoofUVs(g);
+        if (piece.kind !== 'attic') applyWallUVs(g, 0.04 + piece.y0, FACADE_BAY, piece.floorH);
+        g.computeVertexNormals();
+        const mats = [k === pieces.length - 1 ? normalRoof : hiddenCapMaterial(), set[piece.kind]];
+        const mesh = new THREE.Mesh(g, mats); mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.mats = mats;
+        buildingGroup.add(mesh);
+      });
+    }
+
+    // tombini quadrati in ghisa con telaio, a filo del pavimento
+    const iron = std({ color: 0x3b3a38, roughness: 0.7, metalness: 0.45 }), ironFrame = std({ color: 0x55524d, roughness: 0.6, metalness: 0.4 });
+    for (const t of M.tombini || []) {
+      const L = Number(t.lato) || 0.6, f = 0.05;
+      box(t.u - L / 2 - f, t.u + L / 2 + f, 0, 0.03, t.v - L / 2 - f, t.v + L / 2 + f, ironFrame);
+      box(t.u - L / 2, t.u + L / 2, 0, 0.034, t.v - L / 2, t.v + L / 2, iron);
+      for (let i = 1; i < 6; i += 1) box(t.u - L / 2 + 0.03, t.u + L / 2 - 0.03, 0.034, 0.04, t.v - L / 2 + (L * i) / 6 - 0.01, t.v - L / 2 + (L * i) / 6 + 0.01, ironFrame);
     }
 
     // transenne zincate accanto all'aiuola

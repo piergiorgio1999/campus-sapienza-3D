@@ -192,5 +192,21 @@
       13.0
     ]
   ],
-  "nota_vuoti": "Rettangoli [u0, v0, u1, v1] sottratti alle sagome OSM: il cortile aperto fino alla fronte del portico e il portico al piano terra (il corpo sopra viene ricostruito dal soffitto in su)."
+  "nota_vuoti": "Rettangoli [u0, v0, u1, v1] sottratti alle sagome OSM: il cortile aperto fino alla fronte del portico e il portico al piano terra (il corpo sopra viene ricostruito dal soffitto in su).",
+  "pieni": [
+    [
+      -1.3,
+      -0.4,
+      0.0,
+      9.4
+    ]
+  ],
+  "nota_pieni": "Rettangoli [u0, v0, u1, v1] uniti alle sagome OSM che li toccano: la facciata dell'ala sinistra portata a filo del cortile (u 0), senza il gradino con il fondo.",
+  "tombini": [
+    {
+      "u": 9.2,
+      "v": 2.4,
+      "lato": 0.6
+    }
+  ]
 }

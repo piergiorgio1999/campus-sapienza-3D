@@ -3144,9 +3144,10 @@
       g.add(localSlab(rectPts(uu - 0.02, uu + 0.02, vv - 0.37, vv + 0.37), 0.76, 0.8, dark));
     }
   }
-  /* magnolia vera (3DExport, modello fornito dall'utente): models/magnolia.json + models/magnolia-glb.json (stesso schema
-     della statua), foglie con la texture della stagione (tex/magnolia-foglie-<stagione>.png, bordi con alphaTest).
-     Finché il GLB non è pronto, o se non si carica, resta l'albero procedurale (magnoliaProcedurale). */
+  /* magnolie con chiome ampie (modello 3DExport fornito dall'utente, le stesse dell'artifact della scansione 3D):
+     models/magnolia.json + models/magnolia_<a|b>_<chioma|tronco>.bin (geometrie grezze, origine al piede del tronco, vedi la
+     nota nel JSON). Chioma con la texture foglie della stagione (tex/magnolia-foglie-<stagione>.png, bordi con alphaTest),
+     tronco con la corteccia. Finché i file non sono caricati, o se non si caricano, resta l'albero procedurale. */
   const STAGIONI = ['primavera', 'estate', 'autunno', 'inverno'];
   let magnoliaAsset = null, magnoliaStato = 0; // 0 da caricare, 1 in corso, 2 pronto, -1 non disponibile
   // stagione: ?stagione=autunno (tutte) > magnolie[k].stagione > "stagione" del cortile nel JSON > data di oggi (ora di Roma)
@@ -3161,6 +3162,16 @@
     try { mese = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Rome', month: 'numeric' }).format(new Date())); } catch (_) { mese = new Date().getMonth() + 1; }
     return mese >= 3 && mese <= 5 ? 'primavera' : mese >= 6 && mese <= 8 ? 'estate' : mese >= 9 && mese <= 11 ? 'autunno' : 'inverno';
   }
+  // file .bin: nv posizioni float32 (X = u, Y = h, Z = -v), nv uv float32, nf triangoli uint32 (3 indici ciascuno)
+  function magnoliaGeometria(buf, nv, nf) {
+    if (buf.byteLength !== nv * 20 + nf * 12) throw new Error('geometria magnolia di dimensione inattesa');
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(buf.slice(0, nv * 12)), 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(buf.slice(nv * 12, nv * 20)), 2));
+    g.setIndex(new THREE.BufferAttribute(new Uint32Array(buf.slice(nv * 20)), 1));
+    g.computeVertexNormals();
+    return g;
+  }
   async function loadMagnoliaAsset() {
     if (magnoliaStato !== 0) return;
     magnoliaStato = 1;
@@ -3168,19 +3179,13 @@
       const rc = await fetch('models/magnolia.json', { cache: 'no-cache' });
       if (!rc.ok) throw new Error('magnolia.json assente');
       const cfg = await rc.json();
-      if (!cfg?.file || !/^[\w.-]+\.(glb|gltf|json)$/i.test(cfg.file)) throw new Error('magnolia.json non valido');
-      await loadDependency('vendor/GLTFLoader.js', () => typeof THREE.GLTFLoader === 'function');
-      const scene = await new Promise((resolve, reject) => {
-        const done = (gltf) => resolve(gltf.scene);
-        if (/\.json$/i.test(cfg.file)) {
-          fetch(`models/${cfg.file}`).then((r) => (r.ok ? r.json() : Promise.reject(new Error('GLB assente')))).then((data) => {
-            const bin = Uint8Array.from(atob(data.glb_base64), (c) => c.charCodeAt(0));
-            new THREE.GLTFLoader().parse(bin.buffer, 'models/', done, reject);
-          }).catch(reject);
-        } else new THREE.GLTFLoader().load(`models/${cfg.file}`, done, undefined, reject);
-      });
-      scene.traverse((o) => { if (o.isMesh) o.userData.ruoloMagnolia = /foglie/i.test((o.material && o.material.name) || '') ? 'foglie' : 'corteccia'; });
-      magnoliaAsset = { scene, h: Number(cfg.height) || 10, r: Number(cfg.raggioRif) || 4.3 };
+      const get = (f) => fetch(`models/${f}`).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`${f} assente`))));
+      const alberi = await Promise.all((cfg.alberi || []).map(async (a) => {
+        const [bc, bt] = await Promise.all([get(a.chioma), get(a.tronco)]);
+        return { ...a, gChioma: magnoliaGeometria(bc, a.nvChioma, a.nfChioma), gTronco: magnoliaGeometria(bt, a.nvTronco, a.nfTronco) };
+      }));
+      if (!alberi.length) throw new Error('nessun albero');
+      magnoliaAsset = { alberi, suolo: Number(cfg.suolo) || 0.36 };
       magnoliaStato = 2;
       if (courtyardModel) loadCourtyardModel(); // il cortile era già pronto: ricostruiscilo con gli alberi veri
     } catch (_) { magnoliaStato = -1; }
@@ -3188,16 +3193,24 @@
   function magnoliaTree(t, n) {
     if (magnoliaStato === 0) loadMagnoliaAsset();
     if (magnoliaStato !== 2) return magnoliaProcedurale(t, n);
+    const A = magnoliaAsset.alberi, a = A.find((x) => x.id === t.id) || A[n % A.length];
     const grp = new THREE.Group(); grp.position.set(Number(t.u) || 0, 0, -(Number(t.v) || 0));
-    const texLoad = (url, repeat) => { const tx = new THREE.TextureLoader().load(url); tx.encoding = THREE.sRGBEncoding; tx.anisotropy = 4; if (repeat) tx.wrapS = tx.wrapT = THREE.RepeatWrapping; return tx; };
-    const corteccia = courtOnce('magnolia|corteccia-tex', () => stdMat({ map: texLoad('tex/magnolia-corteccia.jpg', true), roughness: 0.95, side: THREE.DoubleSide }));
+    // le uv escono dall'intervallo 0..1: texture ripetute
+    const texLoad = (url) => { const tx = new THREE.TextureLoader().load(url); tx.encoding = THREE.sRGBEncoding; tx.anisotropy = 4; tx.wrapS = tx.wrapT = THREE.RepeatWrapping; return tx; };
+    const corteccia = courtOnce('magnolia|corteccia-tex', () => stdMat({ map: texLoad('tex/magnolia-corteccia.jpg'), roughness: 0.95, side: THREE.DoubleSide }));
     const stagione = stagioneMagnolia(t);
     const foglie = courtOnce(`magnolia|foglie|${stagione}`, () => stdMat({ map: texLoad(`tex/magnolia-foglie-${stagione}.png`), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.6 }));
-    const base = 0.25, model = magnoliaAsset.scene.clone(true);
-    // altezza → scala Y; raggio → scala orizzontale (chioma al 95° percentile); rotazione diversa per ogni albero
-    const sxz = (Number(t.raggio) || magnoliaAsset.r) / magnoliaAsset.r, sy = Math.max(1, (Number(t.altezza) || magnoliaAsset.h) - base) / magnoliaAsset.h;
-    model.scale.set(sxz, sy, sxz); model.position.y = base; model.rotation.y = hash01(n * 31, 9) * Math.PI * 2;
-    model.traverse((o) => { if (o.isMesh) { o.material = o.userData.ruoloMagnolia === 'foglie' ? foglie : corteccia; o.castShadow = true; o.receiveShadow = true; } });
+    // altezza → scala Y, raggio → scala orizzontale, rispetto ai valori di riferimento: invariati = albero come nell'artifact
+    const model = new THREE.Group();
+    model.scale.set((Number(t.raggio) || a.raggioRif) / a.raggioRif, (Number(t.altezza) || a.altezzaRif) / a.altezzaRif, (Number(t.raggio) || a.raggioRif) / a.raggioRif);
+    const parti = [[a.gTronco, corteccia], [a.gChioma, foglie]];
+    for (const [g, m] of parti) { const mesh = new THREE.Mesh(g, m); mesh.castShadow = true; mesh.receiveShadow = true; model.add(mesh); }
+    // il tronco originale parte a ~0,7-1 m (sotto c'era la base scansionata): ceppo dal terreno all'anello inferiore
+    const suolo = magnoliaAsset.suolo, hp = a.piede.h - suolo + 0.05;
+    if (hp > 0.05) {
+      const ceppo = new THREE.Mesh(new THREE.CylinderGeometry(a.piede.r, a.piede.r * 1.3, hp, 14), corteccia);
+      ceppo.position.y = suolo + hp / 2; ceppo.castShadow = true; ceppo.receiveShadow = true; model.add(ceppo);
+    }
     grp.add(model);
     return grp;
   }

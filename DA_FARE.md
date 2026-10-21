@@ -48,20 +48,28 @@
 - **Asse di simmetria:** u = 8.4, mezzeria dei muri del cortile (sinistro u 0.2, destro u 16.6) e del varco del fondo (6.4–10.4); u' = 16.8 − u.
 
 ## Cortile dell'azoto: magnolie 3D con foglie stagionali (21/10) — fatto
-- **Modello:** 3DExport «magnolia» (https://3dexport.com/3d-model-magnolia-tree-321349, fornito dall'utente: verificare la
-  licenza prima della pubblicazione), solo l'albero `magnolia_003` (~5000 vertici), convertito con Blender in GLB senza
-  texture, alto 10 m con i piedi a quota 0, centrato sul tronco.
-- **File:** `models/magnolia.json` (config: altezza e raggio di riferimento del modello), `models/magnolia-glb.json` (GLB
-  in base64, come la statua), `tex/magnolia-corteccia.jpg`, `tex/magnolia-foglie-{primavera,estate,autunno,inverno}.png`
-  (256 px). Codice: `magnoliaTree` in `campus-3d.js`; l'albero di prima resta come ripiego (`magnoliaProcedurale`) finché
-  il GLB non è pronto o se non si carica.
-- **Posizione e misure:** `u`, `v` posizionano; `altezza` → scala Y; `raggio` → scala orizzontale (raggio della chioma al
-  95° percentile); l'editor che sposta o ridimensiona le magnolie funziona come prima. Ombre attive.
+- **Modello (rifatto dopo la v39):** la prima versione (GLB con un solo materiale) dava alle foglie la texture del tronco.
+  Ora si usano le due magnolie «con chiome ampie» dell'artifact della scansione 3D (3DExport 321349, fornito dall'utente:
+  verificare la licenza), albero 1 → magnolia A, albero 2 → magnolia B (i piedi dei tronchi cadono a meno di 0,1 m da
+  `u`/`v` di A e B). Chioma da 1,65 m in su, tronco separato con la sua texture.
+- **Formato dei `.bin`:** i `.wasm` dell'artifact erano geometrie grezze, non WebAssembly: `nv` posizioni float32 xyz
+  (Z in alto, nel riferimento della scansione), `nv` uv float32, `nf` triangoli uint32. Convertite nel riferimento del
+  cortile (X = u, Y = h, Z = −v, origine al piede del tronco) con `angoloDeg` −47,7°, origine (3,66; −6,06) e
+  `scanFloorZ` di `scan/scan-georef.json`.
+- **File:** `models/magnolia.json` (misure di riferimento, ceppo), `models/magnolia_{a,b}_{chioma,tronco}.bin` (331 kB in
+  tutto), `tex/magnolia-corteccia.jpg`, `tex/magnolia-foglie-{primavera,estate,autunno,inverno}.png` (identiche all'artifact,
+  256 px). Codice: `magnoliaTree` in `campus-3d.js`; l'albero procedurale resta come ripiego (`magnoliaProcedurale`) finché
+  i file non sono caricati o se non si caricano. Le uv escono da 0..1, quindi texture in `RepeatWrapping`.
+- **Ceppo:** il tronco originale parte a 0,74 m (A) e 0,96 m (B), sotto c'era la base scansionata che qui non c'è:
+  un cilindro di corteccia lo porta dal terreno (0,36 m) all'anello inferiore.
+- **Posizione e misure:** `u`, `v` posizionano; `altezza` e `raggio` scalano rispetto ai valori di riferimento di
+  `models/magnolia.json` (A: 11,23 / 3,8; B: 10,63 / 4,2): invariati, l'albero è come nell'artifact. `raggio` è nominale
+  (la chioma vera è molto più larga). L'editor che sposta o ridimensiona le magnolie funziona come prima. Ombre attive.
 - **Stagione:** automatica dalla data, ora di Roma (primavera mar–mag, estate giu–ago, autunno set–nov, inverno dic–feb).
   Si forza con `?stagione=primavera|estate|autunno|inverno` nell'URL (vale per tutte), oppure nel JSON con
   `magnolie[k].stagione` (per un albero) o `stagione` nell'oggetto del cortile (per tutti); `"auto"` = dalla data.
   Ordine: URL, albero, cortile, data. La foglia usa `alphaTest` per i bordi.
-- **Da controllare dopo il rendering:** proporzioni della chioma rispetto alle misure precedenti e verso delle normali.
+- **Da controllare dopo il rendering:** raccordo del ceppo con il tronco, chiome rispetto alla facciata, ombre.
 
 ## Fatto nella versione 32
 - Catalogo «Oggetto del modello» in ＋ Aggiungi con tutti gli oggetti costruiti nel modello (anche la transenna a

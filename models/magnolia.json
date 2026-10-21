@@ -1,7 +1,8 @@
 {
- "file": "magnolia-glb.json",
- "height": 10,
- "raggioRif": 4.3,
- "chiomaDa": 2.1,
- "nota": "3DExport magnolia_003 (modello fornito dall utente); height = altezza del modello in m, raggioRif = raggio della chioma (95 percentile) in m; texture in tex/magnolia-*.png"
+ "nota": "Magnolie con chiome ampie dell'artifact «Cortile Chimica 3D» (alberi 1 e 2 = magnolie A e B del cortile). I .bin sono geometrie grezze nel riferimento del cortile, con l'origine al piede del tronco: nv posizioni float32 xyz (X = u, Y = h, Z = -v), poi nv uv float32, poi nf triangoli uint32 x3. altezzaRif e raggioRif sono i valori di cortile/modello.json a cui l'albero compare in scala 1; piede = quota e raggio dell'anello inferiore del tronco, sotto il quale si aggiunge un ceppo fino al terreno (suolo). Modello 3DExport fornito dall'utente.",
+ "suolo": 0.36,
+ "alberi": [
+  { "id": "A", "chioma": "magnolia_a_chioma.bin", "tronco": "magnolia_a_tronco.bin", "nvChioma": 3168, "nfChioma": 2112, "nvTronco": 2318, "nfTronco": 2476, "altezzaRif": 11.23, "raggioRif": 3.8, "piede": { "h": 0.741, "r": 0.333 } },
+  { "id": "B", "chioma": "magnolia_b_chioma.bin", "tronco": "magnolia_b_tronco.bin", "nvChioma": 3210, "nfChioma": 2154, "nvTronco": 2318, "nfTronco": 2476, "altezzaRif": 10.63, "raggioRif": 4.2, "piede": { "h": 0.958, "r": 0.524 } }
+ ]
 }

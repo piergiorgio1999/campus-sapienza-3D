@@ -1,8 +1,14 @@
 (() => {
   'use strict';
-  // Editor sul posto della scena 3D: commenti con coordinate (Commenta) e maniglie di ridimensionamento (Modifica).
-  // Commenti e modifiche vivono nel db dell'artifact: collezioni "segnalazioni" e "modifiche", lette da Claude.
-  const SNAP = 0.05;
+  // Editor sul posto della scena 3D.
+  // · Commenta: tocchi un punto e scrivi; il commento si salva con le coordinate (collezione "segnalazioni").
+  // · Modifica: ogni solido ha una scatola di ridimensionamento a parallelepipedo, con una maniglia su ognuna delle sei
+  //   facce, sugli angoli e una (rossa, in alto) per spostarlo. Gli oggetti descritti nei JSON (terrazza, panchine, scale,
+  //   cortile…) cambiano i loro dati; ogni altro pezzo ("primitiva": una barra, un tubo, un edificio…) viene deformato
+  //   con una trasformazione. Tutto finisce nella collezione "modifiche" del db dell'artifact, che Claude riporta nei file.
+  const SNAP = 0.05, MIN = 0.05, HANDLE_PX = 28;
+  const ROOTS = ['chimica-esterni', 'cortile-modello', 'alberi', 'edifici', 'minerva', 'planimetria'];
+  const KEYS = ['u0', 'u1', 'v0', 'v1', 'h0', 'h1'];
   const round = (x) => Math.round(x * 100) / 100;
   const snap = (x) => Math.round(x / SNAP) * SNAP;
   const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -66,228 +72,378 @@
     ui.edit.setAttribute('aria-pressed', String(mode === 'modifica'));
     const offline = db ? '' : ' (senza accesso a claude.ai non si salva)';
     if (mode === 'commenta') hint('Tocca un punto della scena per lasciare un commento. Tocca una puntina per leggerla.' + offline);
-    else if (mode === 'modifica') hint('Tocca un oggetto (terrazza, aiuola, panchina, scala…) e trascina le maniglie.' + offline);
+    else if (mode === 'modifica') hint('Tocca un oggetto: compare la sua scatola. Facce: un lato · angoli: due lati · rossa in alto: sposta.' + offline);
     else hint('');
     if (pins) pins.visible = true;
   }
 
-  /* ---------- coordinate ---------- */
-  function pointerNdc(e) { const r = canvas.getBoundingClientRect(); return new T.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); }
-  function rayFrom(e) { const rc = new T.Raycaster(); rc.setFromCamera(pointerNdc(e), camera); return rc; }
-  function sceneHit(e) {
-    const rc = rayFrom(e), targets = scene.children.filter((o) => o !== fx && o !== pins && o.visible);
-    return rc.intersectObjects(targets, true).find((h) => h.object.visible && !(h.object.material && h.object.material.visible === false));
-  }
-  const toLocal = (frame, w) => { frame.updateWorldMatrix(true, false); const p = frame.worldToLocal(w.clone()); return { u: p.x, v: -p.z, h: p.y }; };
-  const toWorld = (frame, u, v, h) => { frame.updateWorldMatrix(true, false); return frame.localToWorld(new T.Vector3(u, h, -v)); };
+  /* ---------- cornici e coordinate ---------- */
+  // cornice = gruppo con X = u, Y = h, Z = −v: un lato della sagoma di Chimica (esterni) o il cortile dell'azoto;
+  // tutto il resto usa il lato 0 di Chimica, allineato con gli edifici vicini
   function frameEsterni(i) { const h = scene.getObjectByName('chimica-esterni'); return h ? h.children.find((g) => g.userData.elemento === i) || null : null; }
   function frameCortile() { const h = scene.getObjectByName('cortile-modello'); return h ? h.children[0] : null; }
+  function frameBy(key) { if (key === 'cortile') return frameCortile(); const m = /^esterni:(\d+)$/.exec(key || ''); return frameEsterni(m ? Number(m[1]) : 0); }
+  function frameKeyOf(obj) {
+    for (let o = obj; o; o = o.parent) {
+      if (o.parent && o.parent.name === 'chimica-esterni' && o.userData.elemento !== undefined) return 'esterni:' + o.userData.elemento;
+      if (o.name === 'cortile-modello') return 'cortile';
+    }
+    return 'lato0';
+  }
+  const toLocal = (f, w) => { f.updateWorldMatrix(true, false); const p = f.worldToLocal(w.clone()); return { u: p.x, v: -p.z, h: p.y }; };
+  const toWorld = (f, u, v, h) => { f.updateWorldMatrix(true, false); return f.localToWorld(new T.Vector3(u, h, -v)); };
+  function pointerNdc(e) { const r = canvas.getBoundingClientRect(); return new T.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); }
+  function rayFrom(e) { const rc = new T.Raycaster(); rc.setFromCamera(pointerNdc(e), camera); return rc; }
+  const shown = (o) => { for (let x = o; x; x = x.parent) if (!x.visible) return false; return true; };
+  function hits(e) {
+    const rc = rayFrom(e), targets = scene.children.filter((o) => o !== fx && o !== pins && o.visible);
+    return rc.intersectObjects(targets, true).filter((h) => {
+      const o = h.object, mat = Array.isArray(o.material) ? o.material[(h.face && h.face.materialIndex) || 0] : o.material;
+      return shown(o) && !(mat && mat.visible === false) && !o.isSprite;
+    });
+  }
   function describe(obj) {
     for (let o = obj; o; o = o.parent) {
-      if (o.name === 'chimica-esterni') { const g = obj; let f = g; while (f && f.userData.elemento === undefined) f = f.parent; const e = f && C.esterni.cfg.elementi[f.userData.elemento]; return 'esterni di Chimica' + (e ? ': ' + (e.nome || e.tipo) : ''); }
+      if (o.name === 'chimica-esterni') { let f = obj; while (f && f.userData.elemento === undefined) f = f.parent; const e = f && C.esterni.cfg.elementi[f.userData.elemento]; return 'esterni di Chimica' + (e ? ': ' + (e.nome || e.tipo) : ''); }
       if (o.name === 'cortile-modello') return "cortile dell'azoto";
       if (o.name === 'alberi') return 'albero';
+      if (o.name === 'minerva') return 'piazzale della Minerva';
       if (o.userData && o.userData.code) return 'edificio ' + o.userData.code;
+      if (o.name === 'edifici') return 'edificio';
     }
     return 'terreno o contesto';
   }
 
-  /* ---------- oggetti modificabili ---------- */
-  // forma interna: rect {u0,v0,u1,v1} · poly [[u,v],…] · line [[u,v],…] · point {u,v}
-  function items() {
-    const out = [], E = C.esterni.cfg, M = C.cortile.M;
-    if (E) E.elementi.forEach((e, i) => {
-      const frame = () => frameEsterni(i), P = `elementi.${i}`, nome = e.nome || e.tipo;
-      const add = (o) => out.push(Object.assign({ sorgente: 'esterni', frame, nome }, o, { key: `esterni:${P}${o.campo ? '.' + o.campo : ''}`, percorso: `${P}${o.campo ? '.' + o.campo : ''}` }));
-      const H = Number(e.altezza) || 0;
+  /* ---------- scatole ---------- */
+  const bboxPts = (pts) => { const us = pts.map((p) => p[0]), vs = pts.map((p) => p[1]); return { u0: Math.min(...us), u1: Math.max(...us), v0: Math.min(...vs), v1: Math.max(...vs) }; };
+  // una coordinata dentro la vecchia scatola finisce nello stesso punto relativo della nuova; su un asse piatto segue la faccia mossa
+  function sc(c, o0, o1, n0, n1) { if (o1 - o0 > 1e-3) return n0 + ((c - o0) * (n1 - n0)) / (o1 - o0); return c + (Math.abs(n0 - o0) > 1e-9 ? n0 - o0 : n1 - o1); }
+  const scalePts = (pts, o, n) => pts.map((p) => { const q = [round(sc(p[0], o.u0, o.u1, n.u0, n.u1)), round(sc(p[1], o.v0, o.v1, n.v0, n.v1))]; if (p.length > 2) q.push(round(sc(p[2], o.h0, o.h1, n.h0, n.h1))); return q; });
+  const vol = (b) => Math.max(b.u1 - b.u0, 0.05) * Math.max(b.v1 - b.v0, 0.05) * Math.max(b.h1 - b.h0, 0.05);
+  const inBox = (b, q, pad) => q.u >= b.u0 - pad && q.u <= b.u1 + pad && q.v >= b.v0 - pad && q.v <= b.v1 + pad && q.h >= b.h0 - pad && q.h <= b.h1 + pad;
+  const roundBox = (b) => { const o = {}; for (const k of KEYS) o[k] = round(b[k]); return o; };
+  function defQuote(piani) { const out = []; for (let k = 1, prev = 0; k <= piani; k += 1) { const f = 5.25 + 3.95 * (k - 1); out.push(round((prev + f) / 2), round(f)); prev = f; } return out; }
+
+  /* ---------- oggetti descritti nei file (cambiano i loro dati) ---------- */
+  function items(E, M) {
+    const out = [];
+    const add = (it) => {
+      const { fields, obj } = it;
+      out.push(Object.assign(it, {
+        key: `${it.sorgente}:${it.percorso}`, lock: it.lock || {},
+        get: () => { const r = {}; for (const k of fields) if (obj[k] !== undefined) r[k] = clone(obj[k]); return r; },
+        set: (val) => { for (const k of fields) if (val && val[k] !== undefined) obj[k] = clone(val[k]); },
+      }));
+    };
+    if (E) (E.elementi || []).forEach((e, i) => {
+      const b = { sorgente: 'esterni', frameKey: 'esterni:' + i, nome: e.nome || e.tipo, obj: e }, P = `elementi.${i}`;
       if (e.tipo === 'terrazza') {
-        add({ campo: 'poligono', label: 'Terrazza (sagoma)', kind: 'poly', h: H + 0.05, get: () => e.poligono, set: (p) => { e.poligono = p; } });
-        if (e.prato) add({ campo: 'prato', label: 'Aiuola della terrazza', kind: 'rect', h: H + 0.1, get: () => ({ u0: e.prato[0], v0: e.prato[1], u1: e.prato[2], v1: e.prato[3] }), set: (r) => { e.prato = [r.u0, r.v0, r.u1, r.v1]; } });
-        (e.panchine || []).forEach((p, k) => add({ campo: `panchine.${k}`, label: `Panchina ${k + 1}`, kind: 'point', h: H + 0.5, get: () => ({ u: p.u, v: p.v }), set: (q) => { p.u = q.u; p.v = q.v; } }));
-        (e.ringhiere || []).forEach((l, k) => add({ campo: `ringhiere.${k}`, label: `Ringhiera ${k + 1}`, kind: 'line', h: H + 1.0, get: () => l, set: (q) => { e.ringhiere[k] = q; } }));
+        const th = () => Number(e.altezza) || 0.8;
+        add({ ...b, percorso: P, label: 'Terrazza', fields: ['poligono', 'altezza'], lock: { h0: true },
+          box: () => ({ ...bboxPts(e.poligono), h0: 0, h1: th() }),
+          apply: (o, n) => { e.poligono = scalePts(e.poligono, o, n); e.altezza = round(n.h1); },
+          verts: { get: () => e.poligono, set: (q) => { e.poligono = q; } } });
+        if (e.prato) add({ ...b, percorso: P + '.prato', label: 'Aiuola della terrazza', fields: ['prato'], lock: { h0: true, h1: true },
+          box: () => ({ u0: e.prato[0], v0: e.prato[1], u1: e.prato[2], v1: e.prato[3], h0: th(), h1: th() + 0.18 }),
+          apply: (o, n) => { e.prato = [n.u0, n.v0, n.u1, n.v1].map(round); } });
+        (e.panchine || []).forEach((p, k) => add({ ...b, obj: p, percorso: `${P}.panchine.${k}`, label: `Panchina ${k + 1}`, fields: ['u', 'v', 'lunghezza', 'profondita', 'altezza'], lock: { h0: true },
+          box: () => { const L = Number(p.lunghezza) || 2.2, D = Number(p.profondita) || 0.45, av = p.orienta === 'v', du = av ? D : L, dv = av ? L : D; return { u0: p.u - du / 2, u1: p.u + du / 2, v0: p.v - dv / 2, v1: p.v + dv / 2, h0: th(), h1: th() + (Number(p.altezza) || 0.42) }; },
+          apply: (o, n) => { const av = p.orienta === 'v'; p.u = round((n.u0 + n.u1) / 2); p.v = round((n.v0 + n.v1) / 2); p.lunghezza = round(av ? n.v1 - n.v0 : n.u1 - n.u0); p.profondita = round(av ? n.u1 - n.u0 : n.v1 - n.v0); p.altezza = round(n.h1 - th()); } }));
+        (e.ringhiere || []).forEach((l, k) => add({ ...b, percorso: `${P}.ringhiere.${k}`, label: `Ringhiera ${k + 1}`, fields: ['ringhiere', 'ringhiera'], lock: { h0: true },
+          box: () => ({ ...bboxPts(e.ringhiere[k]), h0: th(), h1: th() + (Number((e.ringhiera || {}).altezza) || 1) }),
+          apply: (o, n) => { e.ringhiere[k] = scalePts(e.ringhiere[k], o, n); e.ringhiera = Object.assign({}, e.ringhiera, { altezza: round(n.h1 - th()) }); },
+          verts: { get: () => e.ringhiere[k], set: (q) => { e.ringhiere[k] = q; } } }));
       } else if (e.tipo === 'area' || e.tipo === 'pilastro') {
-        add({ campo: 'poligono', label: nome, kind: 'poly', h: e.tipo === 'pilastro' ? (Number(e.altezza) || 2.5) : 0.06, get: () => e.poligono, set: (p) => { e.poligono = p; } });
+        const pil = e.tipo === 'pilastro';
+        add({ ...b, percorso: P, label: b.nome, fields: pil ? ['poligono', 'altezza'] : ['poligono'], lock: pil ? { h0: true } : { h0: true, h1: true },
+          box: () => ({ ...bboxPts(e.poligono), h0: 0, h1: pil ? Number(e.altezza) || 2.5 : 0.04 }),
+          apply: (o, n) => { e.poligono = scalePts(e.poligono, o, n); if (pil) e.altezza = round(n.h1); },
+          verts: { get: () => e.poligono, set: (q) => { e.poligono = q; } } });
       } else if (e.tipo === 'scala') {
-        add({ campo: '', label: nome, kind: 'pointU', h: 0.2, get: () => ({ u: e.u, v: (Number(e.distacco) || 0.5) + (Number(e.larghezza) || 4.3) / 2 }), set: (q) => { e.u = q.u; } });
+        const quote = () => (Array.isArray(e.quote) ? e.quote.map(Number) : defQuote(Math.max(1, Number(e.piani) || 2)));
+        add({ ...b, percorso: P, label: b.nome, fields: ['u', 'lunghezza', 'larghezza', 'distacco', 'quote'], lock: { h0: true },
+          box: () => { const L = Number(e.lunghezza) || 8.4, W = Number(e.larghezza) || 4.3, d = Number(e.distacco) || 0.5, q = quote(); return { u0: e.u - L / 2, u1: e.u + L / 2, v0: d, v1: d + W, h0: 0, h1: q[q.length - 1] + 1 }; },
+          apply: (o, n) => { const k = (n.h1 - 1) / Math.max(0.5, o.h1 - 1); e.quote = quote().map((x) => round(x * k)); e.u = round((n.u0 + n.u1) / 2); e.lunghezza = round(n.u1 - n.u0); e.distacco = round(Math.max(0.05, n.v0)); e.larghezza = round(n.v1 - n.v0); } });
       } else if (e.tipo === 'palo') {
-        add({ campo: '', label: nome, kind: 'point', h: 0.4, get: () => ({ u: e.u, v: e.v }), set: (q) => { e.u = q.u; e.v = q.v; } });
+        add({ ...b, percorso: P, label: b.nome, fields: ['u', 'v', 'altezza'], lock: { h0: true },
+          box: () => ({ u0: e.u - 0.2, u1: e.u + 0.2, v0: e.v - 0.2, v1: e.v + 0.2, h0: 0, h1: Number(e.altezza) || 11 }),
+          apply: (o, n) => { e.u = round((n.u0 + n.u1) / 2); e.v = round((n.v0 + n.v1) / 2); e.altezza = round(n.h1); } });
       }
     });
     if (M) {
-      const frame = frameCortile;
-      const add = (o) => out.push(Object.assign({ sorgente: 'cortile', frame, nome: o.label }, o, { key: `cortile:${o.percorso}` }));
-      const rect2 = (obj) => ({ get: () => ({ u0: obj.u[0], u1: obj.u[1], v0: obj.v[0], v1: obj.v[1] }), set: (r) => { obj.u = [r.u0, r.u1]; obj.v = [r.v0, r.v1]; } });
-      const pt = (obj) => ({ get: () => ({ u: obj.u, v: obj.v }), set: (q) => { obj.u = q.u; obj.v = q.v; } });
-      if (M.pavimento) add(Object.assign({ percorso: 'pavimento', label: 'Pavimento del cortile', kind: 'rect', h: 0.04 }, rect2(M.pavimento)));
-      (M.aiuole || []).forEach((a, k) => add(Object.assign({ percorso: `aiuole.${k}`, label: `Aiuola ${a.id || k + 1} del cortile`, kind: 'rect', h: Number(a.altezza) || 0.42 }, rect2(a))));
-      if (M.gabbia) add(Object.assign({ percorso: 'gabbia', label: 'Gabbia del serbatoio', kind: 'rect', h: 0.5 }, rect2(M.gabbia)));
-      (M.pilastri || []).forEach((p, k) => add(Object.assign({ percorso: `pilastri.${k}`, label: `Pilastro ${k + 1} del portico`, kind: 'rect', h: Number(p.altezza) || 4.5 }, rect2(p))));
-      if (M.portico) add(Object.assign({ percorso: 'portico', label: 'Portico', kind: 'rect', h: Number(M.portico.soffitto) || 4.5 }, rect2(M.portico)));
-      (M.magnolie || []).forEach((m, k) => add(Object.assign({ percorso: `magnolie.${k}`, label: `Magnolia ${m.id || k + 1}`, kind: 'point', h: 0.6 }, pt(m))));
-      if (M.serbatoio) add(Object.assign({ percorso: 'serbatoio', label: "Serbatoio dell'azoto", kind: 'point', h: 0.6 }, pt(M.serbatoio)));
-      (M.tombini || []).forEach((t, k) => add(Object.assign({ percorso: `tombini.${k}`, label: `Tombino ${k + 1}`, kind: 'point', h: 0.06 }, pt(t))));
-      (M.transenne || []).forEach((t, k) => add(Object.assign({ percorso: `transenne.${k}`, label: `Transenna ${k + 1}`, kind: 'point', h: 0.6 }, pt(t))));
+      const b = { sorgente: 'cortile', frameKey: 'cortile' };
+      const rect = (o, h0, h1) => ({ u0: o.u[0], u1: o.u[1], v0: o.v[0], v1: o.v[1], h0, h1 });
+      const setRect = (o, n) => { o.u = [round(n.u0), round(n.u1)]; o.v = [round(n.v0), round(n.v1)]; };
+      const circ = (o, r) => ({ u0: o.u - r, u1: o.u + r, v0: o.v - r, v1: o.v + r });
+      const mid = (n) => [round((n.u0 + n.u1) / 2), round((n.v0 + n.v1) / 2)];
+      const side = (n) => round(Math.max(n.u1 - n.u0, n.v1 - n.v0));
+      if (M.pavimento) add({ ...b, obj: M.pavimento, percorso: 'pavimento', label: 'Pavimento del cortile', fields: ['u', 'v'], lock: { h0: true, h1: true }, box: () => rect(M.pavimento, 0, 0.03), apply: (o, n) => setRect(M.pavimento, n) });
+      (M.aiuole || []).forEach((a, k) => add({ ...b, obj: a, percorso: `aiuole.${k}`, label: `Aiuola ${a.id || k + 1} del cortile`, fields: ['u', 'v', 'altezza'], lock: { h0: true }, box: () => rect(a, 0, Number(a.altezza) || 0.42), apply: (o, n) => { setRect(a, n); a.altezza = round(n.h1); } }));
+      const G = M.gabbia;
+      if (G) {
+        add({ ...b, obj: G, percorso: 'gabbia', label: 'Gabbia del silos', fields: ['u', 'v', 'altezza'], lock: { h0: true }, box: () => rect(G, 0.42, 0.42 + (Number(G.altezza) || 2)), apply: (o, n) => { setRect(G, n); G.altezza = round(n.h1 - 0.42); } });
+        if (G.porta && typeof G.porta === 'object') add({ ...b, obj: G, percorso: 'gabbia.porta', label: 'Porticina della gabbia', fields: ['porta'],
+          box: () => ({ u0: G.u[0] - 0.07, u1: G.u[0] - 0.01, v0: G.porta.v[0], v1: G.porta.v[1], h0: Number(G.porta.soglia) || 0.12, h1: Number(G.porta.sommita) || 2.05 }),
+          apply: (o, n) => { G.porta = Object.assign({}, G.porta, { v: [round(n.v0), round(n.v1)], soglia: round(n.h0), sommita: round(n.h1) }); } });
+      }
+      (M.pilastri || []).forEach((p, k) => add({ ...b, obj: p, percorso: `pilastri.${k}`, label: `Pilastro ${k + 1} del portico`, fields: ['u', 'v', 'altezza'], lock: { h0: true }, box: () => rect(p, 0, Number(p.altezza) || 4.5), apply: (o, n) => { setRect(p, n); p.altezza = round(n.h1); } }));
+      if (M.portico) add({ ...b, obj: M.portico, percorso: 'portico', label: 'Portico', fields: ['u', 'v', 'soffitto'], lock: { h0: true }, box: () => rect(M.portico, 0, Number(M.portico.soffitto) || 4.5), apply: (o, n) => { setRect(M.portico, n); M.portico.soffitto = round(n.h1); } });
+      (M.magnolie || []).forEach((m, k) => add({ ...b, obj: m, percorso: `magnolie.${k}`, label: `Magnolia ${m.id || k + 1}`, fields: ['u', 'v', 'raggio', 'altezza'], lock: { h0: true }, box: () => ({ ...circ(m, Number(m.raggio) || 3), h0: 0, h1: Number(m.altezza) || 12 }), apply: (o, n) => { [m.u, m.v] = mid(n); m.raggio = round(side(n) / 2); m.altezza = round(n.h1); } }));
+      const S = M.serbatoio;
+      if (S) add({ ...b, obj: S, percorso: 'serbatoio', label: "Silos dell'azoto", fields: ['u', 'v', 'raggio', 'altezza'], lock: { h0: true }, box: () => ({ ...circ(S, Number(S.raggio) || 0.8), h0: 0, h1: Number(S.altezza) || 4.2 }), apply: (o, n) => { [S.u, S.v] = mid(n); S.raggio = round(side(n) / 2); S.altezza = round(n.h1); } });
+      (M.tombini || []).forEach((t, k) => add({ ...b, obj: t, percorso: `tombini.${k}`, label: `Tombino ${k + 1}`, fields: ['u', 'v', 'lato'], lock: { h0: true, h1: true }, box: () => ({ ...circ(t, (Number(t.lato) || 0.6) / 2), h0: 0, h1: 0.04 }), apply: (o, n) => { [t.u, t.v] = mid(n); t.lato = side(n); } }));
+      (M.transenne || []).forEach((t, k) => add({ ...b, obj: t, percorso: `transenne.${k}`, label: `Transenna ${k + 1}`, fields: ['u', 'v', 'lunghezza'], lock: { h0: true, h1: true }, box: () => ({ u0: t.u, u1: t.u + (Number(t.lunghezza) || 2), v0: t.v - 0.05, v1: t.v + 0.05, h0: 0, h1: 1.1 }), apply: (o, n) => { t.u = round(n.u0); t.lunghezza = round(n.u1 - n.u0); t.v = round((n.v0 + n.v1) / 2); } }));
+      const TS = M.tuboScarico;
+      if (TS && Array.isArray(TS.percorso)) {
+        const r = Number(TS.raggio) || 0.08, inner = (x) => ({ u0: x.u0 + r, u1: x.u1 - r, v0: x.v0 + r, v1: x.v1 - r, h0: x.h0 + r, h1: x.h1 - r });
+        add({ ...b, obj: TS, percorso: 'tuboScarico', label: 'Tubo di scarico del silos', fields: ['percorso', 'canaletta'],
+          box: () => { const bb = bboxPts(TS.percorso), hs = TS.percorso.map((p) => p[2]); return { u0: bb.u0 - r, u1: bb.u1 + r, v0: bb.v0 - r, v1: bb.v1 + r, h0: Math.min(...hs) - r, h1: Math.max(...hs) + r }; },
+          apply: (o, n) => {
+            const f0 = TS.percorso[TS.percorso.length - 1]; TS.percorso = scalePts(TS.percorso, inner(o), inner(n)); const f1 = TS.percorso[TS.percorso.length - 1];
+            if (TS.canaletta) TS.canaletta = Object.assign({}, TS.canaletta, { u: round(TS.canaletta.u + f1[0] - f0[0]), v: TS.canaletta.v.map((x) => round(x + f1[1] - f0[1])) });
+          } });
+      }
     }
     return out;
   }
-  const shapeArea = (it, s) => it.kind === 'rect' ? Math.abs((s.u1 - s.u0) * (s.v1 - s.v0)) : it.kind === 'poly' ? Math.abs(s.reduce((a, p, i) => { const q = s[(i + 1) % s.length]; return a + p[0] * q[1] - q[0] * p[1]; }, 0) / 2) : 0;
-  function inside(it, s, u, v) {
-    if (it.kind === 'rect') return u >= Math.min(s.u0, s.u1) && u <= Math.max(s.u0, s.u1) && v >= Math.min(s.v0, s.v1) && v <= Math.max(s.v0, s.v1);
-    if (it.kind === 'poly') { let c = false; for (let i = 0, j = s.length - 1; i < s.length; j = i++) { const [xi, yi] = s[i], [xj, yj] = s[j]; if ((yi > v) !== (yj > v) && u < ((xj - xi) * (v - yi)) / (yj - yi) + xi) c = !c; } return c; }
-    return false;
-  }
-  function pick(world) {
+  const liveItems = () => items(C.esterni.cfg, C.cortile.M);
+  const findItem = (key) => liveItems().find((it) => it.key === key) || null;
+  function baseValue(it) { const twin = items(base.esterni, base.cortile).find((x) => x.key === it.key); return twin ? clone(twin.get()) : null; }
+  // l'oggetto descritto più piccolo la cui scatola contiene il punto toccato
+  function itemAt(world) {
     let best = null;
-    for (const it of items()) {
-      const f = it.frame(); if (!f) continue;
-      const { u, v } = toLocal(f, world), s = it.get();
-      let score = null;
-      if (it.kind === 'point' || it.kind === 'pointU') { const d = Math.hypot(u - s.u, v - s.v); if (d < (it.kind === 'pointU' ? 4.6 : 1.3)) score = d; }
-      else if (it.kind === 'line') { for (let i = 0; i < s.length - 1; i += 1) { const d = segDist(u, v, s[i], s[i + 1]); if (d < 0.6) score = Math.min(score ?? 9, 0.5 + d); } }
-      else if (inside(it, s, u, v)) score = 2 + shapeArea(it, s) / 1000;
-      if (score != null && (!best || score < best.score)) best = { it, score };
+    for (const it of liveItems()) {
+      const f = frameBy(it.frameKey); if (!f) continue;
+      const b = it.box();
+      if (inBox(b, toLocal(f, world), 0.25) && (!best || vol(b) < best.v)) best = { it, v: vol(b) };
     }
     return best ? best.it : null;
   }
-  function segDist(u, v, a, b) { const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((u - a[0]) * dx + (v - a[1]) * dy) / L)); return Math.hypot(u - a[0] - t * dx, v - a[1] - t * dy); }
-  function findItem(sorgente, percorso, nome) {
-    const all = items();
-    return all.find((it) => it.sorgente === sorgente && it.percorso === percorso && (!nome || it.nome === nome))
-      || all.find((it) => it.sorgente === sorgente && nome && it.nome === nome && it.percorso.split('.').slice(2).join('.') === percorso.split('.').slice(2).join('.')) || null;
+
+  /* ---------- primitive (ogni altro solido: deformato con una trasformazione) ---------- */
+  const rootOf = (o) => { for (let x = o; x; x = x.parent) if (ROOTS.includes(x.name)) return x; return null; };
+  function pathOf(mesh) { const parts = []; let o = mesh; while (o.parent && !ROOTS.includes(o.name)) { parts.unshift(o.parent.children.indexOf(o)); o = o.parent; } return ROOTS.includes(o.name) ? [o.name].concat(parts).join('/') : null; }
+  function byPath(path) { const [root, ...idx] = String(path).split('/'); let o = scene.getObjectByName(root); for (const i of idx) { if (!o) return null; o = o.children[Number(i)]; } return o || null; }
+  const primId = (p) => ('prim:' + p.path.replace(/\//g, '.') + (p.inst != null ? '@' + p.inst : '')).replace(/[^A-Za-z0-9_\-.~:@+]/g, '_');
+  function primWorld(p, original) {
+    const m = p.mesh; m.updateWorldMatrix(true, false);
+    const W = original && m.userData.edL0 ? new T.Matrix4().multiplyMatrices(m.parent.matrixWorld, m.userData.edL0) : m.matrixWorld.clone();
+    if (p.inst != null) {
+      const I = new T.Matrix4(), s = m.userData.edI0 && m.userData.edI0[p.inst];
+      if (original && s) I.copy(s); else m.getMatrixAt(p.inst, I);
+      W.multiply(I);
+    }
+    return W;
+  }
+  function primBox(p, original) {
+    const f = frameBy(p.frameKey); f.updateWorldMatrix(true, false);
+    const g = p.mesh.geometry; if (!g.boundingBox) g.computeBoundingBox();
+    const bb = g.boundingBox, M = new T.Matrix4().copy(f.matrixWorld).invert().multiply(primWorld(p, original));
+    const o = { u0: Infinity, u1: -Infinity, v0: Infinity, v1: -Infinity, h0: Infinity, h1: -Infinity };
+    for (const x of [bb.min.x, bb.max.x]) for (const y of [bb.min.y, bb.max.y]) for (const z of [bb.min.z, bb.max.z]) {
+      const q = new T.Vector3(x, y, z).applyMatrix4(M);
+      o.u0 = Math.min(o.u0, q.x); o.u1 = Math.max(o.u1, q.x); o.h0 = Math.min(o.h0, q.y); o.h1 = Math.max(o.h1, q.y); o.v0 = Math.min(o.v0, -q.z); o.v1 = Math.max(o.v1, -q.z);
+    }
+    return roundBox(o);
+  }
+  function primFromHit(h) {
+    const o = h.object;
+    if (!o || !o.isMesh || !rootOf(o)) return null;
+    const p = { mesh: o, inst: h.instanceId != null ? h.instanceId : null, path: pathOf(o), frameKey: frameKeyOf(o) };
+    if (!p.path || !frameBy(p.frameKey)) return null;
+    const b = primBox(p);
+    return Math.hypot(b.u1 - b.u0, b.v1 - b.v0, b.h1 - b.h0) > 250 ? null : p; // niente terreno o quartiere unito
+  }
+  function axisMap(o0, o1, n0, n1) { if (o1 - o0 > 1e-4) { const s = (n1 - n0) / (o1 - o0); return [s, n0 - o0 * s]; } return [1, (n0 + n1) / 2 - (o0 + o1) / 2]; }
+  function boxMatrix(o, n) { // nella cornice: x = u, y = h, z = −v
+    const [sx, tx] = axisMap(o.u0, o.u1, n.u0, n.u1), [sy, ty] = axisMap(o.h0, o.h1, n.h0, n.h1), [sz, tz] = axisMap(-o.v1, -o.v0, -n.v1, -n.v0);
+    return new T.Matrix4().makeScale(sx, sy, sz).setPosition(tx, ty, tz);
+  }
+  // porta la scatola originale "o" nella scatola "n", partendo sempre dalla trasformazione originale del pezzo
+  function primApply(p, o, n) {
+    const m = p.mesh, f = frameBy(p.frameKey); if (!f) return;
+    f.updateWorldMatrix(true, false); m.updateWorldMatrix(true, false);
+    const F = f.matrixWorld, G = new T.Matrix4().multiplyMatrices(F, boxMatrix(o, n)).multiply(new T.Matrix4().copy(F).invert());
+    if (p.inst != null) {
+      m.userData.edI0 = m.userData.edI0 || {};
+      if (!m.userData.edI0[p.inst]) { const I = new T.Matrix4(); m.getMatrixAt(p.inst, I); m.userData.edI0[p.inst] = I; }
+      const Wm = m.matrixWorld, I = new T.Matrix4().copy(Wm).invert().multiply(G).multiply(Wm).multiply(m.userData.edI0[p.inst]);
+      m.setMatrixAt(p.inst, I); m.instanceMatrix.needsUpdate = true;
+    } else {
+      if (!m.userData.edL0) m.userData.edL0 = m.matrix.clone();
+      const W0 = new T.Matrix4().multiplyMatrices(m.parent.matrixWorld, m.userData.edL0);
+      m.matrixAutoUpdate = false; m.matrix.copy(new T.Matrix4().copy(m.parent.matrixWorld).invert().multiply(G).multiply(W0)); m.matrixWorldNeedsUpdate = true;
+    }
+  }
+  function primRestore(p) {
+    const m = p.mesh;
+    if (p.inst != null) { const s = m.userData.edI0 && m.userData.edI0[p.inst]; if (s) { m.setMatrixAt(p.inst, s); m.instanceMatrix.needsUpdate = true; delete m.userData.edI0[p.inst]; } }
+    else if (m.userData.edL0) { m.matrix.copy(m.userData.edL0); m.matrix.decompose(m.position, m.quaternion, m.scale); m.matrixAutoUpdate = true; delete m.userData.edL0; m.matrixWorldNeedsUpdate = true; }
+  }
+  function reapplyPrims() {
+    for (const o of overrides) {
+      if (o.sorgente !== 'primitiva' || o.stato === 'applicata' || !o.valore || !o.originale) continue;
+      const mesh = byPath(o.percorso); if (!mesh || !mesh.isMesh) continue;
+      const p = { mesh, inst: o.istanza != null ? o.istanza : null, path: o.percorso, frameKey: o.cornice || frameKeyOf(mesh) };
+      if (!frameBy(p.frameKey)) continue;
+      const b0 = primBox(p, true); // il pezzo deve essere ancora quello misurato (i dati possono essere cambiati)
+      if (KEYS.every((k) => Math.abs(b0[k] - o.originale[k]) < 0.06)) primApply(p, o.originale, o.valore);
+    }
   }
 
-  /* ---------- maniglie ---------- */
-  const handleMat = () => new T.MeshBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true });
-  const handleGeo = () => new T.BoxGeometry(1, 1, 1);
-  function handlesFor(it, s) {
-    // [{id, u, v, role}] — angoli e lati come in un riquadro di Office, più "sposta" al centro
-    const hs = [];
-    if (it.kind === 'rect') {
-      const um = (s.u0 + s.u1) / 2, vm = (s.v0 + s.v1) / 2;
-      for (const [cu, cv] of [[0, 0], [1, 0], [1, 1], [0, 1]]) hs.push({ role: 'corner', cu, cv, u: cu ? s.u1 : s.u0, v: cv ? s.v1 : s.v0 });
-      hs.push({ role: 'side', side: 'v0', u: um, v: s.v0 }, { role: 'side', side: 'u1', u: s.u1, v: vm }, { role: 'side', side: 'v1', u: um, v: s.v1 }, { role: 'side', side: 'u0', u: s.u0, v: vm });
-      hs.push({ role: 'move', u: um, v: vm });
-    } else if (it.kind === 'poly' || it.kind === 'line') {
-      const n = s.length, closed = it.kind === 'poly';
-      s.forEach((p, k) => hs.push({ role: 'vertex', k, u: p[0], v: p[1] }));
-      for (let k = 0; k < (closed ? n : n - 1); k += 1) { const a = s[k], b = s[(k + 1) % n]; hs.push({ role: 'edge', k, u: (a[0] + b[0]) / 2, v: (a[1] + b[1]) / 2 }); }
-      const c = s.reduce((acc, p) => [acc[0] + p[0] / n, acc[1] + p[1] / n], [0, 0]); hs.push({ role: 'move', u: c[0], v: c[1] });
-    } else hs.push({ role: 'move', u: s.u, v: s.v });
-    return hs;
-  }
+  /* ---------- selezione e maniglie ---------- */
+  function selBox() { return sel.type === 'item' ? roundBox(sel.it.box()) : primBox(sel.p); }
   function deselect() {
     if (!sel) return;
     fx.remove(sel.vis); sel.vis.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
     sel = null; closeCard();
   }
-  function select(it) {
+  function select(t) {
     deselect();
-    sel = { it, shape: clone(it.get()), vis: new T.Group(), handles: [] };
+    sel = Object.assign({ vis: new T.Group(), handles: [] }, t);
+    sel.frameKey = t.type === 'item' ? t.it.frameKey : t.p.frameKey;
+    sel.box = selBox();
+    if (t.type === 'prim') sel.orig = primBox(t.p, true);
     fx.add(sel.vis); drawSel(); infoCard();
   }
+  const disp = (b) => { const o = clone(b); for (const a of ['u', 'v', 'h']) if (o[a + '1'] - o[a + '0'] < 0.08) { const c = (o[a + '0'] + o[a + '1']) / 2; o[a + '0'] = c - 0.04; o[a + '1'] = c + 0.04; } return o; };
   function drawSel() {
-    const { it, shape, vis } = sel, f = it.frame(); if (!f) return;
-    vis.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); vis.clear(); sel.handles = [];
-    const pts = it.kind === 'rect' ? [[shape.u0, shape.v0], [shape.u1, shape.v0], [shape.u1, shape.v1], [shape.u0, shape.v1]] : (it.kind === 'poly' || it.kind === 'line') ? shape : null;
-    if (pts) {
-      const g = new T.BufferGeometry().setFromPoints(pts.map(([u, v]) => toWorld(f, u, v, it.h)));
-      const line = new (it.kind === 'line' ? T.Line : T.LineLoop)(g, new T.LineBasicMaterial({ color: 0x822433, depthTest: false, transparent: true }));
-      line.renderOrder = 998; vis.add(line);
-    }
-    for (const h of handlesFor(it, shape)) {
-      const m = new T.Mesh(handleGeo(), handleMat());
-      m.material.color.set(h.role === 'move' ? 0x822433 : 0xffffff);
-      const edge = new T.LineSegments(new T.EdgesGeometry(m.geometry), new T.LineBasicMaterial({ color: 0x822433, depthTest: false, transparent: true }));
-      edge.renderOrder = 1000; m.add(edge);
-      m.position.copy(toWorld(f, h.u, h.v, it.h)); m.renderOrder = 999; m.userData.handle = h;
-      vis.add(m); sel.handles.push(m);
+    const f = frameBy(sel.frameKey); if (!f) return;
+    sel.vis.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); sel.vis.clear(); sel.handles = [];
+    const b = disp(sel.box), um = (b.u0 + b.u1) / 2, vm = (b.v0 + b.v1) / 2, hm = (b.h0 + b.h1) / 2, lock = sel.type === 'item' ? sel.it.lock : {};
+    const c = (i, j, k) => toWorld(f, i ? b.u1 : b.u0, j ? b.v1 : b.v0, k ? b.h1 : b.h0);
+    const pts = [];
+    for (const [a, z] of [[[0, 0, 0], [1, 0, 0]], [[0, 1, 0], [1, 1, 0]], [[0, 0, 1], [1, 0, 1]], [[0, 1, 1], [1, 1, 1]], [[0, 0, 0], [0, 1, 0]], [[1, 0, 0], [1, 1, 0]], [[0, 0, 1], [0, 1, 1]], [[1, 0, 1], [1, 1, 1]], [[0, 0, 0], [0, 0, 1]], [[1, 0, 0], [1, 0, 1]], [[0, 1, 0], [0, 1, 1]], [[1, 1, 0], [1, 1, 1]]]) pts.push(c(...a), c(...z));
+    const edges = new T.LineSegments(new T.BufferGeometry().setFromPoints(pts), new T.LineBasicMaterial({ color: 0x822433, depthTest: false, transparent: true }));
+    edges.renderOrder = 998; sel.vis.add(edges);
+    const hs = [];
+    for (const [axis, val] of [['u', [b.u0, b.u1]], ['v', [b.v0, b.v1]], ['h', [b.h0, b.h1]]]) val.forEach((x, i) => {
+      if (axis === 'h' && lock['h' + i]) return;
+      hs.push({ role: 'face', axis, side: String(i), u: axis === 'u' ? x : um, v: axis === 'v' ? x : vm, h: axis === 'h' ? x : hm });
+    });
+    const flat = b.h1 - b.h0 < 0.3;
+    for (const i of [0, 1]) for (const j of [0, 1]) for (const k of flat ? [1] : [0, 1]) hs.push({ role: 'corner', u: String(i), v: String(j), pu: i ? b.u1 : b.u0, pv: j ? b.v1 : b.v0, ph: k ? b.h1 : b.h0 });
+    hs.push({ role: 'move', u: um, v: vm, h: b.h1 + 0.45 });
+    if (sel.type === 'item' && sel.it.verts) sel.it.verts.get().forEach((q, k) => hs.push({ role: 'vertex', k, u: q[0], v: q[1], h: b.h1 }));
+    for (const h of hs) {
+      const geo = h.role === 'vertex' ? new T.SphereGeometry(0.5, 12, 8) : new T.BoxGeometry(1, 1, 1);
+      const m = new T.Mesh(geo, new T.MeshBasicMaterial({ color: h.role === 'move' ? 0x822433 : h.role === 'vertex' ? 0xf2c84b : 0xffffff, depthTest: false, transparent: true }));
+      if (h.role !== 'vertex') { const ed = new T.LineSegments(new T.EdgesGeometry(geo), new T.LineBasicMaterial({ color: 0x822433, depthTest: false, transparent: true })); ed.renderOrder = 1000; m.add(ed); }
+      m.position.copy(h.role === 'corner' ? toWorld(f, h.pu, h.pv, h.ph) : toWorld(f, h.u, h.v, h.h)); m.renderOrder = 999; m.userData.handle = h;
+      sel.vis.add(m); sel.handles.push(m);
     }
     scaleHandles();
   }
   function scaleHandles() {
     if (!sel) return;
-    for (const m of sel.handles) { const d = camera.position.distanceTo(m.position), s = Math.max(0.12, d * 0.018) * (m.userData.handle.role === 'move' ? 1.25 : 1); m.scale.setScalar(s); }
+    for (const m of sel.handles) { const r = m.userData.handle.role, d = camera.position.distanceTo(m.position); m.scale.setScalar(Math.max(0.08, d * 0.016) * (r === 'move' ? 1.3 : r === 'corner' ? 0.75 : r === 'vertex' ? 0.8 : 1)); }
   }
-  function fmt(it, s) {
-    if (it.kind === 'rect') return `u ${round(Math.min(s.u0, s.u1))} → ${round(Math.max(s.u0, s.u1))} · v ${round(Math.min(s.v0, s.v1))} → ${round(Math.max(s.v0, s.v1))} (${round(Math.abs(s.u1 - s.u0))} × ${round(Math.abs(s.v1 - s.v0))} m)`;
-    if (it.kind === 'poly' || it.kind === 'line') return s.map(([u, v]) => `(${round(u)}, ${round(v)})`).join(' ');
-    return it.kind === 'pointU' ? `u ${round(s.u)}` : `u ${round(s.u)} · v ${round(s.v)}`;
+  function handleAt(e) {
+    if (!sel) return null;
+    const r = canvas.getBoundingClientRect(); let best = null;
+    for (const m of sel.handles) {
+      const q = m.position.clone().project(camera); if (q.z > 1) continue;
+      const d = Math.hypot(r.left + ((q.x + 1) / 2) * r.width - e.clientX, r.top + ((1 - q.y) / 2) * r.height - e.clientY);
+      if (d < HANDLE_PX && (!best || d < best.d)) best = { m, d };
+    }
+    return best ? best.m : null;
   }
+  const dims = (b) => `${round(b.u1 - b.u0)} × ${round(b.v1 - b.v0)} × ${round(b.h1 - b.h0)} m · u ${b.u0} → ${b.u1} · v ${b.v0} → ${b.v1} · h ${b.h0} → ${b.h1}`;
+  const overrideOf = () => sel && overrides.find((o) => o.id === (sel.type === 'item' ? docId(sel.it.key) : primId(sel.p)));
   function infoCard() {
     if (!sel) return;
-    const { it } = sel, ov = overrides.find((o) => o.id === docId(it));
-    const nodes = [el('h3', '', it.label), el('p', 'ed-meta', fmt(it, sel.shape))];
-    nodes.push(el('p', 'ed-meta', it.kind === 'point' || it.kind === 'pointU' ? 'Trascina la maniglia rossa per spostarlo.' : 'Angoli: due lati · quadratini sui lati: un lato · rosso al centro: sposta tutto.'));
+    const title = sel.type === 'item' ? sel.it.label : `Pezzo: ${describe(sel.p.mesh)}`;
+    const nodes = [el('h3', '', title), el('p', 'ed-meta', dims(sel.box)),
+      el('p', 'ed-meta', 'Facce: un lato · angoli: due lati · rossa in alto: sposta' + (sel.type === 'item' && sel.it.verts ? ' · gialle: vertici' : '') + (sel.type === 'item' && sel.it.lock.h0 ? ' · la base resta ferma' : '') + '.')];
     const row = el('div', 'ed-row');
-    if (ov) row.append(button('Ripristina originale', () => restore(it)));
+    if (sel.alt) { const alt = sel.alt, back = sel.type === 'item' ? { type: 'item', it: sel.it } : { type: 'prim', p: sel.p }; row.append(button(alt.type === 'prim' ? 'Solo questo pezzo' : 'Oggetto intero', () => select(Object.assign({}, alt, { alt: back })))); }
+    if (overrideOf()) row.append(button('Ripristina originale', restore));
     row.append(button('Fine', () => deselect(), true));
-    nodes.push(row);
-    openCard(nodes, 'dock');
+    nodes.push(row); openCard(nodes, 'dock');
   }
-  function applyDrag(h, u, v) {
-    const s = sel.shape, it = sel.it, min = 0.1;
-    u = snap(u); v = snap(v);
-    if (it.kind === 'rect') {
-      if (h.role === 'corner') { if (h.cu) s.u1 = Math.max(u, s.u0 + min); else s.u0 = Math.min(u, s.u1 - min); if (h.cv) s.v1 = Math.max(v, s.v0 + min); else s.v0 = Math.min(v, s.v1 - min); }
-      else if (h.role === 'side') { if (h.side === 'u1') s.u1 = Math.max(u, s.u0 + min); if (h.side === 'u0') s.u0 = Math.min(u, s.u1 - min); if (h.side === 'v1') s.v1 = Math.max(v, s.v0 + min); if (h.side === 'v0') s.v0 = Math.min(v, s.v1 - min); }
-      else { const du = u - drag.start.u, dv = v - drag.start.v, o = drag.startShape; s.u0 = o.u0 + du; s.u1 = o.u1 + du; s.v0 = o.v0 + dv; s.v1 = o.v1 + dv; }
-    } else if (it.kind === 'poly' || it.kind === 'line') {
-      const o = drag.startShape, n = o.length;
-      if (h.role === 'vertex') s[h.k] = [u, v];
-      else if (h.role === 'edge') {
-        const a = o[h.k], b = o[(h.k + 1) % n], ex = b[0] - a[0], ey = b[1] - a[1], L = Math.hypot(ex, ey) || 1, nx = -ey / L, ny = ex / L;
-        const d = snap((u - drag.start.u) * nx + (v - drag.start.v) * ny);
-        s[h.k] = [round(a[0] + nx * d), round(a[1] + ny * d)]; s[(h.k + 1) % n] = [round(b[0] + nx * d), round(b[1] + ny * d)];
-      } else { const du = u - drag.start.u, dv = v - drag.start.v; o.forEach((p, k) => { s[k] = [round(p[0] + du), round(p[1] + dv)]; }); }
-    } else if (it.kind === 'pointU') s.u = u;
-    else { s.u = u; s.v = v; }
-    for (const k of Object.keys(s)) if (typeof s[k] === 'number') s[k] = round(s[k]);
+
+  /* ---------- trascinamento ---------- */
+  function startDrag(m, e) {
+    const h = m.userData.handle, wp = m.position.clone(), f = frameBy(sel.frameKey);
+    let plane;
+    if (h.role === 'face' && h.axis === 'h') { const dir = new T.Vector3(); camera.getWorldDirection(dir); dir.y = 0; if (dir.lengthSq() < 1e-6) dir.set(0, 0, 1); plane = new T.Plane().setFromNormalAndCoplanarPoint(dir.normalize(), wp); }
+    else plane = new T.Plane(new T.Vector3(0, 1, 0), -wp.y);
+    const p0 = new T.Vector3(); if (!rayFrom(e).ray.intersectPlane(plane, p0)) return false;
+    drag = { h, plane, q0: toLocal(f, p0), box0: clone(sel.box), verts: sel.type === 'item' && sel.it.verts ? clone(sel.it.verts.get()) : null, pointerId: e.pointerId };
+    return true;
+  }
+  function moveDrag(e) {
+    const p = new T.Vector3(); if (!rayFrom(e).ray.intersectPlane(drag.plane, p)) return;
+    const q = toLocal(frameBy(sel.frameKey), p), d = { u: q.u - drag.q0.u, v: q.v - drag.q0.v, h: q.h - drag.q0.h }, h = drag.h, b = clone(drag.box0);
+    const setSide = (ax, s) => { const k = ax + s, val = snap(drag.box0[k] + d[ax]); b[k] = s === '0' ? Math.min(val, b[ax + '1'] - MIN) : Math.max(val, b[ax + '0'] + MIN); };
+    if (h.role === 'face') setSide(h.axis, h.side);
+    else if (h.role === 'corner') { setSide('u', h.u); setSide('v', h.v); }
+    else if (h.role === 'move') { const du = snap(d.u), dv = snap(d.v); b.u0 += du; b.u1 += du; b.v0 += dv; b.v1 += dv; }
+    else if (h.role === 'vertex') { drag.vNew = clone(drag.verts); drag.vNew[h.k] = [round(snap(q.u)), round(snap(q.v))]; }
+    sel.box = roundBox(b);
+    if (sel.type === 'prim') primApply(sel.p, sel.orig, sel.box); // le primitive si deformano subito
+    if (h.role === 'vertex') { const vb = bboxPts(drag.vNew); Object.assign(sel.box, roundBox({ ...vb, h0: b.h0, h1: b.h1 })); }
+    drawSel();
+    hint((sel.type === 'item' ? sel.it.label : 'Pezzo') + ': ' + dims(sel.box));
+  }
+  function endDrag() {
+    const h = drag.h, changed = h.role === 'vertex' ? !!drag.vNew : KEYS.some((k) => sel.box[k] !== drag.box0[k]);
+    const box0 = drag.box0, vNew = drag.vNew; drag = null; controls.enabled = true;
+    if (!changed) { infoCard(); return; }
+    if (sel.type === 'item') {
+      const it = sel.it;
+      if (h.role === 'vertex') it.verts.set(vNew); else it.apply(box0, sel.box);
+      saveItem(it); rebuild(it.sorgente);
+    } else saveSelPrim();
   }
 
   /* ---------- salvataggio ---------- */
-  const docId = (it) => `${it.sorgente}:${it.percorso}`.replace(/[^A-Za-z0-9_\-.~:@+]/g, '_');
-  async function save(it) {
-    const valore = clone(sel.shape), orig = baseValue(it);
-    it.set(clone(valore)); rebuild(it.sorgente); drawSel(); infoCard();
+  const docId = (key) => String(key).replace(/[^A-Za-z0-9_\-.~:@+]/g, '_');
+  async function saveDoc(id, data) {
     if (!db) { hint('Modifica applicata solo su questo schermo: per salvarla apri la pagina da claude.ai.'); return; }
-    try {
-      await db.collection('modifiche').doc(docId(it)).set({ sorgente: it.sorgente, percorso: it.percorso, nome: it.nome, oggetto: it.label, tipo: it.kind, valore, originale: orig, stato: 'da applicare', autore: myId, aggiornato: new Date().toISOString() });
-      hint('Modifica salvata: ' + it.label + '. Claude la vede e la riporta nei file.');
-      setTimeout(() => { if (mode === 'modifica') setMode('modifica'); }, 2500);
-    } catch (e) { hint('Non sono riuscito a salvare (' + (e && e.code || 'errore') + ').'); }
+    try { await db.collection('modifiche').doc(id).set(data); hint('Modifica salvata: ' + data.oggetto + '. Claude la vede e la riporta nei file.'); }
+    catch (e) { hint('Non sono riuscito a salvare (' + ((e && e.code) || 'errore') + ').'); }
   }
-  // lo stesso oggetto letto sulla copia dei file appena caricati (prima di ogni modifica)
-  function baseValue(it) {
-    const root = it.sorgente === 'esterni' ? base.esterni : base.cortile;
-    if (!root) return null;
-    return withConfigs(it.sorgente === 'esterni' ? { esterni: root } : { cortile: root }, () => { const twin = items().find((x) => x.key === it.key); return twin ? clone(twin.get()) : null; });
+  function saveItem(it) {
+    return saveDoc(docId(it.key), { sorgente: it.sorgente, percorso: it.percorso, nome: it.nome || '', oggetto: it.label, tipo: 'oggetto', valore: it.get(), originale: baseValue(it), scatola: roundBox(it.box()), stato: 'da applicare', autore: myId, aggiornato: new Date().toISOString() });
   }
-  function withConfigs(swap, fn) {
-    const real = window.campus3d;
-    const fake = Object.create(real);
-    Object.defineProperty(fake, 'esterni', { value: { cfg: swap.esterni || real.esterni.cfg, rebuild: () => {} } });
-    Object.defineProperty(fake, 'cortile', { value: { M: swap.cortile || real.cortile.M, rebuild: () => {} } });
-    const keep = C; C = fake;
-    try { return fn(); } finally { C = keep; }
+  function saveSelPrim() {
+    const p = sel.p;
+    infoCard();
+    return saveDoc(primId(p), { sorgente: 'primitiva', percorso: p.path, istanza: p.inst, cornice: p.frameKey, oggetto: 'pezzo di ' + describe(p.mesh), tipo: 'primitiva', originale: sel.orig, valore: clone(sel.box), stato: 'da applicare', autore: myId, aggiornato: new Date().toISOString() });
   }
-  async function restore(it) {
-    const orig = baseValue(it); if (!orig) return;
-    it.set(clone(orig)); rebuild(it.sorgente);
-    sel.shape = clone(orig); drawSel();
-    if (db) { try { await db.collection('modifiche').doc(docId(it)).delete(); } catch (_) { /* resta in elenco */ } }
+  async function restore() {
+    if (!sel) return;
+    if (sel.type === 'item') {
+      const it = sel.it, orig = baseValue(it); if (!orig) return;
+      it.set(orig); rebuild(it.sorgente);
+      if (db) { try { await db.collection('modifiche').doc(docId(it.key)).delete(); } catch (_) { /* resta in elenco */ } }
+    } else {
+      primRestore(sel.p); sel.box = primBox(sel.p); drawSel();
+      if (db) { try { await db.collection('modifiche').doc(primId(sel.p)).delete(); } catch (_) { /* resta in elenco */ } }
+    }
     infoCard();
   }
-  function rebuild(sorgente) { if (sorgente === 'esterni') C.esterni.rebuild(); else C.cortile.rebuild(); }
-  function applyOverrides(list) {
+  function refreshSel() {
+    if (!sel) return;
+    if (sel.type === 'item') { const it = findItem(sel.it.key); if (!it) { deselect(); return; } sel.it = it; }
+    else if (!rootOf(sel.p.mesh) || !scene.getObjectById(sel.p.mesh.id)) { deselect(); return; }
+    if (!drag) { sel.box = selBox(); drawSel(); infoCard(); }
+  }
+  function rebuild(sorgente) {
+    const r = sorgente === 'esterni' ? C.esterni.rebuild() : C.cortile.rebuild();
+    Promise.resolve(r).then(() => { reapplyPrims(); refreshSel(); });
+  }
+  function applyOverrides() {
     const touched = new Set();
-    for (const o of list) {
-      if (o.stato === 'applicata' || !o.valore) continue;
-      const it = findItem(o.sorgente, o.percorso, o.nome); if (!it) continue;
+    for (const o of overrides) {
+      if (o.stato === 'applicata' || !o.valore || o.sorgente === 'primitiva') continue;
+      const it = findItem(`${o.sorgente}:${o.percorso}`); if (!it) continue;
       if (JSON.stringify(it.get()) === JSON.stringify(o.valore)) continue;
-      it.set(clone(o.valore)); touched.add(it.sorgente);
+      it.set(o.valore); touched.add(it.sorgente);
     }
-    for (const s of touched) rebuild(s);
-    if (sel) { const it = findItem(sel.it.sorgente, sel.it.percorso, sel.it.nome); if (it && !drag) { sel.it = it; sel.shape = clone(it.get()); drawSel(); } }
+    if (touched.size) for (const s of touched) rebuild(s);
+    else { reapplyPrims(); refreshSel(); }
   }
 
   /* ---------- commenti ---------- */
@@ -324,7 +480,7 @@
     setTimeout(() => ta.focus(), 30);
   }
   function commentDoc(hit, testo) {
-    const w = hit.point, it = pick(w), lonLat = C.toLonLat ? C.toLonLat(w) : null;
+    const w = hit.point, it = itemAt(w), lonLat = C.toLonLat ? C.toLonLat(w) : null;
     const f0 = frameEsterni(0), fc = frameCortile();
     const loc = (f) => { if (!f) return null; const q = toLocal(f, w); return { u: round(q.u), v: round(q.v), h: round(q.h) }; };
     const lc = loc(fc), inCourt = lc && lc.u > -6 && lc.u < 24 && lc.v > -8 && lc.v < 16;
@@ -336,7 +492,7 @@
       lonLat: lonLat ? [Number(lonLat[0].toFixed(7)), Number(lonLat[1].toFixed(7))] : null,
       lato0: loc(f0), cortile: inCourt ? lc : null,
       oggetto: describe(hit.object),
-      elemento: it ? { chiave: docId(it), nome: it.nome, etichetta: it.label, sorgente: it.sorgente, percorso: it.percorso } : null,
+      elemento: it ? { chiave: it.key, nome: it.nome || '', etichetta: it.label, sorgente: it.sorgente, percorso: it.percorso } : null,
       vista: { camera: r3(camera.position), target: r3(tg) },
     };
   }
@@ -353,16 +509,11 @@
 
   /* ---------- puntatore ---------- */
   function onDown(e) {
-    if (!mode || (e.button !== undefined && e.button !== 0)) return;
-    down = { x: e.clientX, y: e.clientY, t: performance.now() };
+    if (!mode || drag || (e.button !== undefined && e.button !== 0)) return; // un secondo dito durante un trascinamento non conta
+    down = { x: e.clientX, y: e.clientY };
     if (mode === 'modifica' && sel) {
-      const rc = rayFrom(e), hit = rc.intersectObjects(sel.handles, false)[0];
-      if (hit) {
-        const m = hit.object, h = m.userData.handle, f = sel.it.frame();
-        const plane = new T.Plane(new T.Vector3(0, 1, 0), -m.position.y), p = new T.Vector3();
-        if (!rc.ray.intersectPlane(plane, p)) return;
-        const q = toLocal(f, p);
-        drag = { handle: h, plane, start: { u: q.u, v: q.v }, startShape: clone(sel.shape), pointerId: e.pointerId };
+      const m = handleAt(e);
+      if (m && startDrag(m, e)) {
         controls.enabled = false;
         try { canvas.setPointerCapture(e.pointerId); } catch (_) { /* nessuna cattura */ }
         e.stopImmediatePropagation(); e.preventDefault();
@@ -370,20 +521,22 @@
     }
   }
   function onMove(e) {
-    if (!drag) return;
-    const rc = rayFrom(e), p = new T.Vector3();
-    if (!rc.ray.intersectPlane(drag.plane, p)) return;
-    const q = toLocal(sel.it.frame(), p);
-    applyDrag(drag.handle, q.u, q.v); drawSel();
-    hint(sel.it.label + ': ' + fmt(sel.it, sel.shape));
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    moveDrag(e);
     e.stopImmediatePropagation(); e.preventDefault();
   }
+  // tocco interrotto dal sistema (gesto di iPadOS, notifica…): annulla il trascinamento e ridà il controllo della vista
+  function onCancel(e) {
+    down = null;
+    if (!drag || (e && e.pointerId !== drag.pointerId)) return;
+    sel.box = drag.box0; if (sel.type === 'prim') primApply(sel.p, sel.orig, sel.box);
+    drag = null; controls.enabled = true; drawSel(); infoCard();
+  }
   function onUp(e) {
+    if (drag && e.pointerId !== drag.pointerId) return;
     if (drag) {
-      const it = sel.it, changed = JSON.stringify(sel.shape) !== JSON.stringify(drag.startShape); drag = null; controls.enabled = true;
       try { canvas.releasePointerCapture(e.pointerId); } catch (_) { /* già rilasciato */ }
-      if (changed) save(it); else infoCard();
-      e.stopImmediatePropagation(); return;
+      endDrag(); e.stopImmediatePropagation(); return;
     }
     if (!mode || !down) return;
     const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y); down = null;
@@ -391,11 +544,13 @@
     if (mode === 'commenta') {
       const rc = rayFrom(e), ph = rc.intersectObjects(pins.children, false)[0];
       if (ph) { showComment(ph.object.userData.comment, e); return; }
-      const hit = sceneHit(e); if (hit) newComment(hit, e);
+      const hit = hits(e)[0]; if (hit) newComment(hit, e);
     } else if (mode === 'modifica') {
-      const hit = sceneHit(e); if (!hit) { deselect(); return; }
-      const it = pick(hit.point);
-      if (it) select(it); else { deselect(); hint('Qui non c’è niente di modificabile: prova sulla terrazza, le aiuole, le panchine, le scale o il cortile.'); }
+      const hit = hits(e)[0]; if (!hit) { deselect(); return; }
+      const prim = primFromHit(hit), it = itemAt(hit.point);
+      if (it) select({ type: 'item', it, alt: prim ? { type: 'prim', p: prim } : null });
+      else if (prim) select({ type: 'prim', p: prim, alt: null });
+      else { deselect(); hint('Qui c’è solo il terreno: tocca un edificio, un muro, un oggetto o un pezzo.'); }
     }
   }
   function loop() { scaleHandles(); requestAnimationFrame(loop); }
@@ -410,7 +565,7 @@
     } catch (_) { db = null; }
     if (!db) return;
     db.collection('segnalazioni').onSnapshot((snap) => { comments = snap.docs.filter((x) => x.exists).map((x) => ({ id: x.id, data: x.data() })).sort((a, b) => String(a.data.creato).localeCompare(String(b.data.creato))); drawPins(); }, () => {});
-    db.collection('modifiche').onSnapshot((snap) => { overrides = snap.docs.filter((x) => x.exists).map((x) => Object.assign({ id: x.id }, x.data())); applyOverrides(overrides); }, () => {});
+    db.collection('modifiche').onSnapshot((snap) => { overrides = snap.docs.filter((x) => x.exists).map((x) => Object.assign({ id: x.id }, x.data())); if (!drag) applyOverrides(); }, () => {});
     if (mode) setMode(mode);
   }
   function start() {
@@ -422,6 +577,8 @@
     canvas.addEventListener('pointerdown', onDown, { capture: true });
     canvas.addEventListener('pointermove', onMove, { capture: true });
     canvas.addEventListener('pointerup', onUp, { capture: true });
+    canvas.addEventListener('pointercancel', onCancel, { capture: true });
+    canvas.addEventListener('lostpointercapture', (e) => { if (drag && e.pointerId === drag.pointerId) setTimeout(() => { if (drag && drag.pointerId === e.pointerId) onCancel(e); }, 0); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (ui.card.hidden) setMode(null); else closeCard(); } });
     loop(); connect();
   }

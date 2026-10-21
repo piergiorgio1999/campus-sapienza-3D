@@ -8,7 +8,10 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
 - `tools/`: script di verifica (playwright + Chromium) per render e misure
 - `editor.js`: pulsanti **Commenta** e **Modifica** sulla scena 3D. I dati vivono nel db dell'artifact:
   - `segnalazioni`: commenti con punto 3D, lon/lat, coordinate u/v sul lato 0 e nel cortile, oggetto toccato e vista della camera;
-  - `modifiche`: forme cambiate con le maniglie (documento `sorgente:percorso`, es. `esterni:elementi.0.prato`), con `valore` e `originale`.
+  - `modifiche`: oggetti cambiati con la scatola di ridimensionamento. Oggetti dei JSON: documento `sorgente:percorso`
+    (es. `esterni:elementi.0.prato`) con `valore` e `originale` nei campi del file. Primitive (ogni altro solido):
+    documento `prim:<percorso nella scena>`, `sorgente: "primitiva"`, con la scatola `originale` e quella nuova (`valore`)
+    in coordinate u/v/h della `cornice` (`esterni:<elemento>`, `cortile` o `lato0`).
   Claude le legge, le riporta in `cortile/*.json` e segna la modifica `stato: "applicata"` (la pagina ignora quelle applicate).
 
 Anteprima locale: `python3 -m http.server 8765` e apri `index.html?standalone`.

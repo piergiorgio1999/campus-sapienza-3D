@@ -451,7 +451,7 @@
     }
     officialPlan = plan;
     officialPlanCodes = new Set(plan.features.map((feature) => String(feature.code || '').toUpperCase()));
-    planLayerGroup = new THREE.Group();
+    planLayerGroup = new THREE.Group(); planLayerGroup.name = 'planimetria';
     planBuildingsGroup = new THREE.Group();
     planLayerGroup.add(planBuildingsGroup);
     scene.add(planLayerGroup);
@@ -1280,7 +1280,7 @@
   }
   function buildMinervaArea() {
     if (extrasGroup) { planLayerGroup?.remove(extrasGroup); extrasGroup.traverse((o) => { o.geometry?.dispose(); }); }
-    extrasGroup = new THREE.Group();
+    extrasGroup = new THREE.Group(); extrasGroup.name = 'minerva';
     queueMicrotask(() => { if (extrasGroup) extrasGroup.visible = viewDim !== '2d'; });
     planLayerGroup.add(extrasGroup);
     const stone = new THREE.MeshStandardMaterial({ color: 0xb9ae9c, roughness: 0.92, metalness: 0 });
@@ -1895,7 +1895,7 @@
     camera.position.set(0, 850, 1050);
     createGround(context);
     createMaterials(roofTexture);
-    buildingGroup = new THREE.Group();
+    buildingGroup = new THREE.Group(); buildingGroup.name = 'edifici';
     scene.add(buildingGroup);
     scene.add(new THREE.HemisphereLight(0xffffff, 0x82776c, 0.72));
     scene.add(new THREE.AmbientLight(0xffffff, 0.18));
@@ -2304,23 +2304,25 @@
             g.add(localSlab(pts, 0, top - rise, trav()));
           }
         }
-        // ringhiere in metallo rosso scuro: montanti, corrimano e corrente intermedio
+        // ringhiere in piatti rettangolari di metallo rosso scuro: corrimano e corrente intermedio larghi in pianta
+        // (faccia larga orizzontale), montanti con la stessa sezione ma con la faccia larga in verticale
         const lines = el.ringhiere || [], RG = el.ringhiera || {};
         if (lines.length) {
           const H = Number(RG.altezza) || 1.0, step = Number(RG.passo) || 1.3, mid = Number(RG.intermedio) || 0.5;
+          const W = Number(RG.larghezza) || 0.1, T = Number(RG.spessore) || 0.04;
           const red = new THREE.MeshStandardMaterial({ color: new THREE.Color(RG.colore || '#6b1d29').convertSRGBToLinear(), roughness: 0.55, metalness: 0.4 });
           const posts = [], bars = [];
           for (const line of lines) for (let i = 0; i < line.length - 1; i += 1) {
-            const [ua, va] = line[i], [ub, vb] = line[i + 1], n = Math.max(1, Math.round(Math.hypot(ub - ua, vb - va) / step));
-            for (let k = i ? 1 : 0; k <= n; k += 1) posts.push([ua + (ub - ua) * k / n, va + (vb - va) * k / n]);
-            for (const y of [H, mid]) bars.push([ua, va, ub, vb, y]);
+            const [ua, va] = line[i], [ub, vb] = line[i + 1], n = Math.max(1, Math.round(Math.hypot(ub - ua, vb - va) / step)), ang = Math.atan2(vb - va, ub - ua);
+            for (let k = i ? 1 : 0; k <= n; k += 1) posts.push([ua + (ub - ua) * k / n, va + (vb - va) * k / n, ang]);
+            for (const y of [H - T / 2, mid]) bars.push([ua, va, ub, vb, y]);
           }
           const unit = new THREE.BoxGeometry(1, 1, 1), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), yAxis = new THREE.Vector3(0, 1, 0);
           const pm = new THREE.InstancedMesh(unit, red, posts.length), bm = new THREE.InstancedMesh(unit, red, bars.length);
-          posts.forEach(([u, v], i) => { m4.compose(new THREE.Vector3(u, h + H / 2, -v), q.identity(), new THREE.Vector3(0.05, H, 0.05)); pm.setMatrixAt(i, m4); });
+          posts.forEach(([u, v, ang], i) => { q.setFromAxisAngle(yAxis, ang); m4.compose(new THREE.Vector3(u, h + (H - T) / 2, -v), q, new THREE.Vector3(T, H - T, W)); pm.setMatrixAt(i, m4); });
           bars.forEach(([ua, va, ub, vb, y], i) => {
             q.setFromAxisAngle(yAxis, Math.atan2(vb - va, ub - ua));
-            m4.compose(new THREE.Vector3((ua + ub) / 2, h + y, -(va + vb) / 2), q, new THREE.Vector3(Math.hypot(ub - ua, vb - va) + 0.05, y === H ? 0.05 : 0.035, y === H ? 0.07 : 0.035));
+            m4.compose(new THREE.Vector3((ua + ub) / 2, h + y, -(va + vb) / 2), q, new THREE.Vector3(Math.hypot(ub - ua, vb - va) + W, T, W));
             bm.setMatrixAt(i, m4);
           });
           for (const mesh of [pm, bm]) { mesh.castShadow = true; mesh.receiveShadow = true; g.add(mesh); }
@@ -2439,11 +2441,11 @@
     const band = add(new THREE.CylinderGeometry(R * 1.004, R * 1.004, 0.75, 48, 1, true), std({ map: bandTex, roughness: 0.45, metalness: 0.15 }), S.u, yt - 0.55, -S.v);
     band.rotation.y = Math.PI * 0.9;
 
-    // tubo di scarico del serbatoio (foto del 19/10/2026): coibentato bianco, esce sotto il serbatoio, corre orizzontale
+    // tubo di scarico del serbatoio (foto del 19/10/2026): metallico, esce sotto il serbatoio, corre orizzontale
     // verso il lato della porticina, scavalca il cordolo, scende a terra con un gomito e poggia su una canaletta bianca
     const TS = M.tuboScarico;
     if (TS && Array.isArray(TS.percorso) && TS.percorso.length > 1) {
-      const pipeMat = std({ color: 0xe6e5e0, roughness: 0.9 }), pr = Number(TS.raggio) || 0.08, yAxis = new THREE.Vector3(0, 1, 0);
+      const pipeMat = std({ color: 0xd3d6d8, roughness: 0.4, metalness: 0.45 }), pr = Number(TS.raggio) || 0.08, yAxis = new THREE.Vector3(0, 1, 0);
       const pts = TS.percorso.map(([u, v, h]) => new THREE.Vector3(u, h, -v));
       for (let i = 0; i < pts.length - 1; i += 1) {
         const a = pts[i], b = pts[i + 1], seg = add(new THREE.CylinderGeometry(pr, pr, a.distanceTo(b), 18), pipeMat, (a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
@@ -2535,17 +2537,24 @@
     for (const p of M.pilastri) box(p.u[0], p.u[1], 0, p.altezza, p.v[0], p.v[1], travMat(0.6, 1.8));
     const PO = M.portico;
     box(PO.u[0], PO.u[1], PO.soffitto, PO.soffitto + 0.35, PO.v[0], PO.v[1], std({ color: 0x6a4535, roughness: 0.9 }));
-    // fondo del portico: muro scuro, varco luminoso verso il cortile interno e due ante a rete aperte
-    add(new THREE.PlaneGeometry(PO.u[1] - PO.u[0], PO.soffitto), std({ color: 0x3d3733, roughness: 0.9 }), (PO.u[0] + PO.u[1]) / 2, PO.soffitto / 2, -PO.v[1] + 0.02, false);
-    const gu0 = (PO.u[0] + PO.u[1]) / 2 - 2.2, gu1 = gu0 + 4.4;
-    add(new THREE.PlaneGeometry(4.4, 3.4), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xcdb79c).convertSRGBToLinear() }), (gu0 + gu1) / 2, 1.7, -PO.v[1] + 0.04, false);
-    const brownMesh = new THREE.MeshStandardMaterial({ map: wireMeshTex('rgba(92,70,52,1)'), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.7, metalness: 0.3 });
-    brownMesh.map.repeat.set(2.2 / 0.25, 3.3 / 0.25);
-    [[gu0, 1], [gu1, -1]].forEach(([hinge, dir]) => {
-      const pv = new THREE.Group(); pv.position.set(hinge, 0, -PO.v[1] + 0.06); pv.rotation.y = -dir * 1.1; court.add(pv);
-      const leafP = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 3.3), brownMesh); leafP.position.set(dir * 1.1, 1.7, 0); pv.add(leafP);
-      for (const hh of [0.05, 1.7, 3.35]) { const r = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.06, 0.05), rust); r.position.set(dir * 1.1, hh, 0); pv.add(r); }
-    });
+    // fondo del portico (rilievo 132517 e commenti sul posto): cancellata chiusa a barre su tutta la larghezza, alta fin sotto
+    // il soffitto; dietro, il cortile interno illuminato si vede attraverso le grate
+    const FD = M.fondo || {}, fv = Number(FD.v) || PO.v[1] - 0.12, fw = PO.u[1] - PO.u[0], gH = PO.soffitto - 0.02;
+    add(new THREE.PlaneGeometry(fw, PO.soffitto), new THREE.MeshBasicMaterial({ map: canvasTex(512, 160, (ctx, w, h) => {
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, '#f3ecdc'); g.addColorStop(0.55, '#dccfb6'); g.addColorStop(0.57, '#b9ae9c'); g.addColorStop(1, '#9b9182');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = 'rgba(118,94,72,0.32)'; for (let x = 18; x < w; x += 64) ctx.fillRect(x, 16, 24, 42); // finestre lontane del cortile interno
+    }) }), (PO.u[0] + PO.u[1]) / 2, PO.soffitto / 2, -PO.v[1] + 0.02, false);
+    const gateU = [];
+    for (let u = PO.u[0] + 0.08; u < PO.u[1] - 0.04; u += Number(FD.passo) || 0.12) gateU.push(u);
+    const backBars = new THREE.InstancedMesh(new THREE.BoxGeometry(0.025, 1, 0.025), rust, gateU.length);
+    gateU.forEach((u, i) => { mtx.makeScale(1, gH, 1).setPosition(u, gH / 2, -fv); backBars.setMatrixAt(i, mtx); });
+    backBars.castShadow = true; court.add(backBars);
+    for (const hh of FD.correnti || [0.12, 1.1, 2.3]) box(PO.u[0], PO.u[1], hh - 0.03, hh + 0.03, fv - 0.03, fv + 0.03, rust);
+    box(PO.u[0], PO.u[1], gH - 0.06, gH, fv - 0.03, fv + 0.03, rust);
+    const nLeaf = Math.max(1, Math.round(fw / 2.5)); // montanti delle ante
+    for (let i = 0; i <= nLeaf; i += 1) { const u = PO.u[0] + (fw * i) / nLeaf; box(u - 0.04, u + 0.04, 0, gH, fv - 0.04, fv + 0.04, rust); }
     // corpo dell'edificio sopra il portico (le sagome sono svuotate fino al soffitto): stessi pezzi dell'edificio
     // (basamento, corpo, attico) con le stesse quote delle texture, così piani e finestre continuano senza giunte
     const topH = heightInfo({}).value, baseH = PO.soffitto + 0.35;

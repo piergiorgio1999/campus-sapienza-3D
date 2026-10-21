@@ -2628,26 +2628,72 @@
     primMats.set(key, m);
     return m;
   }
+  // travertino bianco dei cordoli dei marciapiedi: più chiaro delle lastre delle aiuole, senza fughe disegnate (i giunti sono listelli a parte)
+  function whiteTravertineMaterial() {
+    return courtOnce('cordolo marciapiede', () => stdMat({ roughness: 0.85, map: canvasTex(512, 512, (ctx, w) => {
+      noiseFill(ctx, w, w, '#f1ecdf', '#e3dcc9', 3500);
+      for (let i = 0; i < 70; i += 1) { ctx.fillStyle = `rgba(190,172,140,${0.06 + 0.1 * hash01(i, 81)})`; ctx.fillRect(0, hash01(i, 82) * w, w, 1 + 2 * hash01(i, 83)); } // venature orizzontali
+      for (let i = 0; i < 160; i += 1) { ctx.fillStyle = 'rgba(150,132,104,.35)'; ctx.fillRect(hash01(i, 84) * w, hash01(i, 85) * w, 1.5 + 2 * hash01(i, 86), 1); } // piccole cavità
+      stains(ctx, w, w, 91);
+    }, 1 / 2.4, 1 / 2.4) }));
+  }
+  function jointMaterial() { return courtOnce('giunti cordolo', () => stdMat({ color: 0x3e382f, roughness: 1 })); }
   function buildSidewalk(pr) {
     const grp = new THREE.Group(), P = pr.poligono, base = Number(pr.base) || 0, h = Number(pr.altezza) || 0.15;
     if (!Array.isArray(P) || P.length < 3) return grp;
-    grp.add(shapeSlab(shapeOf(filletOutline(...ccwRadii(P, cornerRadii(pr, P, 0.3)))), base, base + h, sidewalkMaterial(false), 0.04)); // bordo arrotondato da marciapiede
-    // discese verso la strada: scivolo a cuneo sul lato esterno, dalla quota del marciapiede alla strada
-    const Q = ccw(P), n = Q.length, flip = signedArea(P) < 0;
+    const k = pr.cordolo != null && pr.cordolo !== '' ? Math.max(0, Number(pr.cordolo) || 0) : 0.2; // spessore del cordolo in travertino bianco; 0 = marciapiede senza cordolo
+    const [Q, R] = ccwRadii(P, cornerRadii(pr, P, 0.3)), n = Q.length, outer = filletOutline(Q, R);
+    // il contorno interno segue gli archi come per le aiuole: raggio ridotto dello spessore negli angoli sporgenti, aumentato in quelli rientranti
+    const convex = (i) => { const a = Q[(i - 1 + n) % n], b = Q[i], c = Q[(i + 1) % n]; return (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]) >= 0; };
+    const inner = k >= 0.02 ? filletOutline(insetPolygon(Q, k), R.map((r, i) => (r > 0 ? (convex(i) ? Math.max(0, r - k) : r + k) : 0))) : null;
+    const ring = !!inner && signedArea(inner) > 0.05 && signedArea(inner) < signedArea(outer); // cordolo possibile solo se l'interno resta un poligono sensato
+    if (!ring) grp.add(shapeSlab(shapeOf(outer), base, base + h, sidewalkMaterial(false), 0.04)); // senza cordolo: bordo arrotondato da marciapiede
+    else {
+      // asfalto (o il materiale del piano) solo dentro l'anello; cordolo a filo con il piano, in travertino bianco
+      grp.add(shapeSlab(shapeOf(inner), base, base + h, sidewalkMaterial(false)));
+      const kerb = shapeOf(outer);
+      kerb.holes.push(new THREE.Path(inner.slice().reverse().map(([u, v]) => new THREE.Vector2(u, v))));
+      grp.add(shapeSlab(kerb, base, base + h, whiteTravertineMaterial()));
+    }
+    // discese verso la strada: scivolo a cuneo sul lato esterno, dalla quota del marciapiede alla strada; sta sopra il cordolo, che lì si interrompe
+    const flip = signedArea(P) < 0, ramps = [];
     for (const d of pr.discese || []) {
       const i = flip ? (n - 2 - d.lato + n) % n : d.lato; // il poligono è stato girato: stesso lato, indice diverso
       const a = Q[i], b = Q[(i + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 0.5) continue;
       const eu = (b[0] - a[0]) / L, ev = (b[1] - a[1]) / L, W = Math.min(L - 0.2, Number(d.larghezza) || 1.4), D = Number(d.profondita) || 0.9;
       const t = flip ? 1 - Number(d.t) : Number(d.t), sc = Math.min(L - W / 2 - 0.1, Math.max(W / 2 + 0.1, t * L));
-      const prof = new THREE.Shape([new THREE.Vector2(-0.08, h + 0.002), new THREE.Vector2(D, 0.004), new THREE.Vector2(-0.08, 0.004)]);
+      const x0 = ring ? -k - 0.02 : -0.08; // lo scivolo copre tutto lo spessore del cordolo: nessun gradino che spunta
+      const prof = new THREE.Shape(ring ? [new THREE.Vector2(x0, h + 0.004), new THREE.Vector2(0, h + 0.004), new THREE.Vector2(D, 0.004), new THREE.Vector2(x0, 0.004)] : [new THREE.Vector2(-0.08, h + 0.002), new THREE.Vector2(D, 0.004), new THREE.Vector2(-0.08, 0.004)]);
       const geo = new THREE.ExtrudeGeometry(prof, { depth: W, bevelEnabled: false }); geo.computeVertexNormals(); planarUVs(geo, 1);
       const m = new THREE.Mesh(geo, sidewalkMaterial(true)); m.castShadow = true; m.receiveShadow = true;
       const o = [a[0] + eu * (sc + W / 2), a[1] + ev * (sc + W / 2)]; // asse X verso l'esterno, Z lungo il lato all'indietro: terna destrorsa
       m.matrixAutoUpdate = false;
       m.matrix.makeBasis(new THREE.Vector3(ev, 0, eu), new THREE.Vector3(0, 1, 0), new THREE.Vector3(-eu, 0, ev)).setPosition(o[0], base, -o[1]);
       grp.add(m);
+      ramps.push({ a, eu, ev, s0: sc - W / 2 - 0.02, s1: sc + W / 2 + 0.02 });
     }
+    if (ring) addKerbJoints(grp, outer, k, base, h, ramps);
     return grp;
+  }
+  // giunti scuri fra i blocchi del cordolo, ogni ~0,9 m lungo il contorno: un listello sul piano e uno sulla faccia esterna (due InstancedMesh)
+  function addKerbJoints(grp, outer, k, base, h, ramps) {
+    const m = outer.length, seg = outer.map((p, i) => { const q = outer[(i + 1) % m]; return Math.hypot(q[0] - p[0], q[1] - p[1]); }), total = seg.reduce((x, y) => x + y, 0);
+    const nb = Math.max(2, Math.round(total / 0.9)), pts = [];
+    for (let j = 0, i = 0, acc = 0; j < nb; j += 1) {
+      const s = ((j + 0.5) * total) / nb; // mezzo blocco dopo la partenza: nessun giunto sul vertice iniziale
+      while (i < m - 1 && acc + seg[i] < s) { acc += seg[i]; i += 1; }
+      const p = outer[i], q = outer[(i + 1) % m], l = seg[i] || 1, f = (s - acc) / l;
+      pts.push({ u: p[0] + (q[0] - p[0]) * f, v: p[1] + (q[1] - p[1]) * f, tu: (q[0] - p[0]) / l, tv: (q[1] - p[1]) / l });
+    }
+    const joints = pts.filter((j) => !ramps.some((r) => { const du = j.u - r.a[0], dv = j.v - r.a[1], along = du * r.eu + dv * r.ev, perp = du * r.ev - dv * r.eu; return along > r.s0 && along < r.s1 && Math.abs(perp) < k + 0.1; })); // sotto gli scivoli non si vedono
+    if (!joints.length) return;
+    const top = new THREE.InstancedMesh(new THREE.BoxGeometry(0.014, 0.004, k), jointMaterial(), joints.length), face = new THREE.InstancedMesh(new THREE.BoxGeometry(0.014, h, 0.004), jointMaterial(), joints.length), M = new THREE.Matrix4();
+    joints.forEach((j, i) => { // asse X lungo il contorno, Z verso l'esterno (antiorario: normale esterna = (tv, −tu))
+      const bx = new THREE.Vector3(j.tu, 0, -j.tv), by = new THREE.Vector3(0, 1, 0), bz = new THREE.Vector3(j.tv, 0, j.tu);
+      M.makeBasis(bx, by, bz).setPosition(j.u - j.tv * (k / 2), base + h + 0.002, -(j.v + j.tu * (k / 2))); top.setMatrixAt(i, M);
+      M.makeBasis(bx, by, bz).setPosition(j.u, base + h / 2, -j.v); face.setMatrixAt(i, M);
+    });
+    for (const x of [top, face]) { x.frustumCulled = false; x.instanceMatrix.needsUpdate = true; grp.add(x); }
   }
   function bedMaterial(terreno) {
     const key = 'aiuola|' + terreno;

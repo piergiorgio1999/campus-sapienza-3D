@@ -146,6 +146,12 @@ Bordo a cornice in blocchi di travertino bianco.
 - Giunti scuri ogni ~0,9 m lungo il contorno (InstancedMesh di listelli sul piano e sulla faccia esterna).
 - Le discese restano a filo.
 
+**Fatto** (`campus-3d.js`, `buildSidewalk`, `whiteTravertineMaterial`, `jointMaterial`, `addKerbJoints`): anello del cordolo in
+travertino bianco (campo `cordolo` del marciapiede, default 0,2 m, 0 = nessun cordolo; interno con raggi ridotti come le aiuole),
+piano nel materiale di prima solo dentro l'anello, giunti scuri ogni ~0,9 m (due InstancedMesh: piano e faccia esterna), materiali
+in cache con `courtOnce`. Discese: lo scivolo a cuneo ricopre tutto lo spessore del cordolo (nessun gradino) e i giunti
+che cadono sotto lo scivolo sono omessi. Documentato in README (`aggiunta:<id>`).
+
 ### Texture di facciata per singolo lato (richiesta in chat) — fatta
 La tendina «Texture della facciata» della scheda edificio cambia tutto l'edificio; deve cambiare solo il lato
 toccato, interno o esterno.

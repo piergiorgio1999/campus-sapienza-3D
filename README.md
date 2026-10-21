@@ -16,7 +16,7 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
     Altri documenti: `albero:<id>` (posizione `p`, raggio `r`, `rimosso`, `nuovo`), `aggiunta:<id>` (primitive con
     `forma`, `materiale`, `box`, `angolo` in gradi (positivo = antiorario visto dall'alto, ruota il solido o l'oggetto attorno
     al centro della `box`, che nel file resta dritta); marciapiedi e aiuole con `poligono`, `base`, `altezza`, `discese`, `tipo`, `terreno`,
-    `cordolo`, `raggio` per tutti gli angoli e `raggi` per angolo; `forma: "oggetto"` è una copia di un oggetto del catalogo
+    `cordolo` (aiuole: spessore del cordolo; marciapiedi: spessore del bordo a cornice in travertino bianco, default 0,2 m, 0 = senza bordo), `raggio` per tutti gli angoli e `raggi` per angolo; `forma: "oggetto"` è una copia di un oggetto del catalogo
     di `campus-3d.js` con `modello`, `ruota` (0/90/180/270), `scritta` per totem e scritte, stirata nella `box`;
     `cornice` = `cortile` o `esterni:<elemento>` per i duplicati fatti in quelle coordinate), `edificio:<codice>`
     (texture `facciata` e celle `finestre` tolte o aggiunte; la texture di un solo lato è una toppa `tipo: "texture"` in `finestre`, come «Texture di un muro»).

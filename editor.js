@@ -77,14 +77,22 @@
     ui.edit = el('button', 'ed-btn', '⤡ Modifica'); ui.edit.type = 'button'; ui.edit.setAttribute('aria-pressed', 'false');
     ui.add = el('button', 'ed-btn', '＋ Aggiungi'); ui.add.type = 'button'; ui.add.hidden = true;
     ui.show = el('button', 'ed-btn', '▤ Scheda'); ui.show.type = 'button'; ui.show.hidden = true; ui.show.title = 'Riapri la scheda dell’oggetto selezionato';
-    ui.bar.append(ui.show, ui.add, ui.comment, ui.edit);
+    ui.trees = el('button', 'ed-btn', '🌳 Alberi'); ui.trees.type = 'button'; ui.trees.title = 'Mostra o nascondi tutti gli alberi';
+    ui.bar.append(ui.show, ui.add, ui.trees, ui.comment, ui.edit);
     ui.hint = el('div', 'ed-hint'); ui.hint.hidden = true;
     ui.card = el('div', 'ed-card'); ui.card.hidden = true;
     host.append(ui.bar, ui.hint, ui.card);
     ui.comment.addEventListener('click', () => setMode(mode === 'commenta' ? null : 'commenta'));
     ui.edit.addEventListener('click', () => setMode(mode === 'modifica' ? null : 'modifica'));
     ui.add.addEventListener('click', addCard);
+    ui.trees.addEventListener('click', () => setTrees(ui.trees.getAttribute('aria-pressed') !== 'true'));
     ui.show.addEventListener('click', showCard);
+  }
+  // «Alberi»: acceso = alberi visibili; lo stato resta nel browser e campus-3d.js lo riapplica a ogni ricostruzione
+  function setTrees(on) {
+    if (C && C.alberiVisibili) C.alberiVisibili(on);
+    ui.trees.setAttribute('aria-pressed', on ? 'true' : 'false');
+    try { localStorage.setItem('campus-alberi', on ? '1' : '0'); } catch (e) { /* senza memoria: vale solo per questa visita */ }
   }
   function hint(text) { ui.hint.textContent = text || ''; ui.hint.hidden = !text; }
   function closeCard() { ui.card.hidden = true; ui.card.replaceChildren(); }
@@ -1310,6 +1318,8 @@
       for (const code of Object.keys(base.facciate)) if (!facadeState.has(code)) applyFacade(code);
     }).catch(() => {});
     css(); buildUi();
+    let alberiOn = true; try { alberiOn = localStorage.getItem('campus-alberi') !== '0'; } catch (e) { /* memoria non disponibile */ }
+    setTrees(alberiOn);
     for (const t of ['keydown', 'keyup']) window.addEventListener(t, (e) => { if (e.key === 'Alt') magnetOff = e.type === 'keydown'; });
     window.addEventListener('blur', () => { magnetOff = false; touches.clear(); });
     canvas.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') touches.add(e.pointerId); }, { capture: true });

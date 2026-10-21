@@ -50,6 +50,10 @@
   let photoTexture = null;
   let normalSide = null;
   let treeGroup = null;
+  // interruttore «Alberi» (editor.js): ogni albero costruito qui è marcato userData.albero e nasce già con la visibilità giusta,
+  // così sopravvive a qualsiasi ricostruzione (esterni, cortile, alberi OSM)
+  let alberiOn = true;
+  const albero = (o) => { o.userData.albero = true; o.visible = alberiOn; return o; };
   let courtyardModel = null;
   let normalRoof = null;
   let selectedSide = null;
@@ -2760,8 +2764,8 @@
   const group = (fill) => { const g = new THREE.Group(); fill(g); return g; };
   const CATALOGO = {
     panchina: { nome: 'Panchina in travertino', crea: () => group((g) => addBench(g, { u: 0, v: 0 }, 0)) },
-    palma: { nome: 'Palma', crea: () => palmTree({ u: 0, v: 0, altezza: 4 }) },
-    magnolia: { nome: 'Magnolia', crea: () => magnoliaTree({ u: 0, v: 0, altezza: 12.5, raggio: 3.8 }, 0) },
+    palma: { nome: 'Palma', crea: () => albero(palmTree({ u: 0, v: 0, altezza: 4 })) },
+    magnolia: { nome: 'Magnolia', crea: () => albero(magnoliaTree({ u: 0, v: 0, altezza: 12.5, raggio: 3.8 }, 0)) },
     totem: { nome: 'Totem CU014 (lastra rossa con tre cartelli)', crea: (pr) => group((g) => addTotem(g, { u: 0, v: 0, scritta: pr.scritta != null ? pr.scritta : 'CU014', cartello: pr.cartello, logoMuseo: pr.logoMuseo })) },
     ringhiera: { nome: 'Ringhiera rossa', crea: () => group((g) => addRailing(g, [[[-1.3, 0], [1.3, 0]]], 0, { altezza: 1 })) },
     palo: { nome: 'Palo della bandiera', crea: () => flagPole({ u: 0, v: 0 }) },
@@ -3001,7 +3005,7 @@
     if (F && !F.rimosso) g.add(localSlab(rect(F.u[0], F.u[1], F.v[0], F.v[1]), 0.1, Number(F.altezza) || 0.4, flowerMaterial()));
     for (const p of (el.panchine || []).filter((x) => !x.rimosso)) bench(g, p, 0);
     railing(g, el.ringhiere || [], 0, el.ringhiera || { altezza: 0.9 });
-    for (const p of (el.palme || []).filter((x) => !x.rimosso)) g.add(palmTree(p));
+    for (const p of (el.palme || []).filter((x) => !x.rimosso)) g.add(albero(palmTree(p)));
     for (const t of (el.totem || []).filter((x) => !x.rimosso)) addTotem(g, t);
     const RS = el.rastrelliera;
     if (RS && !RS.rimosso) addBikeRack(g, RS);
@@ -3375,7 +3379,7 @@
       s.rotation.x = -Math.PI / 2;
     }
 
-    live(M.magnolie).forEach((t, n) => court.add(magnoliaTree(t, n)));
+    live(M.magnolie).forEach((t, n) => court.add(albero(magnoliaTree(t, n))));
 
     court.add(nitrogenTank(M.serbatoio));
 
@@ -3576,6 +3580,7 @@
     trunks.userData.treeIds = crowns.userData.treeIds = all.map((t) => t.id); crowns.userData.lumps = LUMPS;
     treeGroup = new THREE.Group();
     treeGroup.name = 'alberi';
+    albero(treeGroup);
     treeGroup.add(trunks, crowns);
     scene.add(treeGroup);
   }
@@ -3789,6 +3794,7 @@
     esterni: { get cfg() { return exteriorsCfg; }, rebuild: () => buildChemistryExteriors(), materiali: PRIM_MATERIALS,
       catalogo: Object.entries(CATALOGO).map(([k, d]) => [k, d.nome]), totemCartello: TOTEM_CARTELLO, misura: (modello, ruota) => catalogSize(modello, ruota) },
     project: (lonLat) => { const p = project(lonLat); return new THREE.Vector3(p.x, 0, -p.n); },
+    alberiVisibili: (on) => { if (on === undefined) return alberiOn; alberiOn = !!on; if (scene) scene.traverse((o) => { if (o.userData.albero) o.visible = alberiOn; }); return alberiOn; },
     alberi: { get list() { return treeData; }, rebuild: () => buildTrees(), misure: (t) => treeSize(t) },
     facciate: { nomi: Object.keys(FACADE_PALETTES), nomeDi: (code) => facadeNameFor(code), set: (code, name) => setFacade(code, name), materiale: (name, kind, tipo) => facadePatchMaterial(name, kind, tipo), campata: FACADE_BAY },
     cortile: { get M() { return courtyardFrame ? courtyardFrame.M : null; }, rebuild: () => loadCourtyardModel() },

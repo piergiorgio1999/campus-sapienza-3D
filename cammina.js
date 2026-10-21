@@ -128,7 +128,7 @@
   function refreshTrunks(now) { // ogni 2 s: l'editor può spostare, togliere o aggiungere alberi
     if (now - trunksAt < 2000) return;
     trunksAt = now;
-    const list = (C.alberi && C.alberi.list) || [];
+    const list = C.alberiVisibili && C.alberiVisibili() === false ? [] : (C.alberi && C.alberi.list) || []; // alberi nascosti: niente tronchi
     trunks = list.filter((t) => !t.rimosso && Array.isArray(t.p)).map((t) => { const p = C.project(t.p); return [p.x, p.z, /pinus|pino|needle/i.test(t.g || '') ? 0.35 : 0.3]; });
   }
 

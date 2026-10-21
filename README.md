@@ -31,8 +31,8 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
   Collisioni con edifici, esterni, cortile e tronchi; si salgono gradini e cordoli fino a 45 cm.
 
 - Magnolie del cortile: modello 3D in `models/magnolia.json` + `models/magnolia_<a|b>_<chioma|tronco>.wasm` (chiome ampie dell'artifact della scansione; `altezza` e `raggio` scalano rispetto ai valori di riferimento del JSON), texture in `tex/magnolia-*`.
-  La stagione delle foglie segue la data (ora di Roma: primavera mar–mag, estate giu–ago, autunno set–nov, inverno
-  dic–feb); si forza con `?stagione=autunno` nell'URL, con `magnolie[k].stagione` o con `stagione` in `cortile/modello.json`
+  La stagione delle foglie segue la data (ora di Roma: primavera mar–mag, estate (foglie verdi) giu–15 nov, autunno
+  (foglie marroni) 16 nov–31 dic, inverno gen–feb); si forza con `?stagione=autunno` nell'URL, con `magnolie[k].stagione` o con `stagione` in `cortile/modello.json`
   (`"auto"` = dalla data).
 
 Anteprima locale: `python3 -m http.server 8765` e apri `index.html?standalone`.

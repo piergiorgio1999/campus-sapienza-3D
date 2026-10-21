@@ -3,6 +3,6 @@
  "suolo": 0.36,
  "alberi": [
   { "id": "A", "chioma": "magnolia_a_chioma.wasm", "tronco": "magnolia_a_tronco.wasm", "nvChioma": 3168, "nfChioma": 2112, "nvTronco": 2318, "nfTronco": 2476, "altezzaRif": 11.23, "raggioRif": 3.8, "piede": { "h": 0.741, "r": 0.333 } },
-  { "id": "B", "chioma": "magnolia_b_chioma.wasm", "tronco": "magnolia_b_tronco.wasm", "nvChioma": 3210, "nfChioma": 2154, "nvTronco": 2318, "nfTronco": 2476, "altezzaRif": 10.63, "raggioRif": 4.2, "piede": { "h": 0.958, "r": 0.524 } }
+  { "id": "B", "chioma": "magnolia_b_chioma.wasm", "tronco": "magnolia_b_tronco.wasm", "nvChioma": 3210, "nfChioma": 2154, "nvTronco": 2318, "nfTronco": 2476, "altezzaRif": 10.63, "raggioRif": 4.2, "chiomaOffset": [3.6, 0, 0.1], "piede": { "h": 0.958, "r": 0.524 } }
  ]
 }

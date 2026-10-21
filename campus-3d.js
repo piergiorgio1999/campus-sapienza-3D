@@ -3158,9 +3158,13 @@
       const k = String(s || '').toLowerCase().trim();
       if (STAGIONI.includes(k)) return k;
     }
-    let mese;
-    try { mese = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Rome', month: 'numeric' }).format(new Date())); } catch (_) { mese = new Date().getMonth() + 1; }
-    return mese >= 3 && mese <= 5 ? 'primavera' : mese >= 6 && mese <= 8 ? 'estate' : mese >= 9 && mese <= 11 ? 'autunno' : 'inverno';
+    // le foglie restano verdi fin verso metà novembre: primavera mar–mag, estate (verde) giu–15 nov, autunno (marrone) 16 nov–31 dic, inverno gen–feb
+    let mese, giorno;
+    try {
+      const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Rome', month: 'numeric', day: 'numeric' }).formatToParts(new Date()).map((x) => [x.type, Number(x.value)]));
+      mese = p.month; giorno = p.day;
+    } catch (_) { const d = new Date(); mese = d.getMonth() + 1; giorno = d.getDate(); }
+    return mese >= 3 && mese <= 5 ? 'primavera' : mese >= 6 && mese <= 10 || (mese === 11 && giorno <= 15) ? 'estate' : mese >= 11 ? 'autunno' : 'inverno';
   }
   // file .wasm (geometria grezza, non WebAssembly: estensione servita dagli artifact): nv posizioni float32 (X = u, Y = h, Z = -v), nv uv float32, nf triangoli uint32 (3 indici ciascuno)
   function magnoliaGeometria(buf, nv, nf) {
@@ -3203,8 +3207,13 @@
     // altezza → scala Y, raggio → scala orizzontale, rispetto ai valori di riferimento: invariati = albero come nell'artifact
     const model = new THREE.Group();
     model.scale.set((Number(t.raggio) || a.raggioRif) / a.raggioRif, (Number(t.altezza) || a.altezzaRif) / a.altezzaRif, (Number(t.raggio) || a.raggioRif) / a.raggioRif);
-    const parti = [[a.gTronco, corteccia], [a.gChioma, foglie]];
-    for (const [g, m] of parti) { const mesh = new THREE.Mesh(g, m); mesh.castShadow = true; mesh.receiveShadow = true; model.add(mesh); }
+    // chiomaOffset: la chioma dell'albero B nell'artifact sta ~4,5 m a lato del suo tronco (finiva sopra l'albero A: B sembrava senza chioma)
+    const parti = [[a.gTronco, corteccia, null], [a.gChioma, foglie, a.chiomaOffset]];
+    for (const [g, m, off] of parti) {
+      const mesh = new THREE.Mesh(g, m); mesh.castShadow = true; mesh.receiveShadow = true;
+      if (Array.isArray(off)) mesh.position.set(Number(off[0]) || 0, Number(off[1]) || 0, Number(off[2]) || 0);
+      model.add(mesh);
+    }
     // il tronco originale parte a ~0,7-1 m (sotto c'era la base scansionata): ceppo dal terreno all'anello inferiore
     const suolo = magnoliaAsset.suolo, hp = a.piede.h - suolo + 0.05;
     if (hp > 0.05) {

@@ -65,10 +65,14 @@
 - **Posizione e misure:** `u`, `v` posizionano; `altezza` e `raggio` scalano rispetto ai valori di riferimento di
   `models/magnolia.json` (A: 11,23 / 3,8; B: 10,63 / 4,2): invariati, l'albero è come nell'artifact. `raggio` è nominale
   (la chioma vera è molto più larga). L'editor che sposta o ridimensiona le magnolie funziona come prima. Ombre attive.
-- **Stagione:** automatica dalla data, ora di Roma (primavera mar–mag, estate giu–ago, autunno set–nov, inverno dic–feb).
+- **Stagione:** automatica dalla data, ora di Roma (primavera mar–mag, estate con foglie verdi giu–15 nov,
+  autunno con foglie marroni 16 nov–31 dic, inverno gen–feb: a ottobre le foglie reali sono ancora verdi).
   Si forza con `?stagione=primavera|estate|autunno|inverno` nell'URL (vale per tutte), oppure nel JSON con
   `magnolie[k].stagione` (per un albero) o `stagione` nell'oggetto del cortile (per tutti); `"auto"` = dalla data.
   Ordine: URL, albero, cortile, data. La foglia usa `alphaTest` per i bordi.
+- **Chioma dell'albero B (v43):** nel file la chioma B sta circa 4,5 m a sinistra (u) del suo tronco, sopra la chioma di A,
+  quindi B sembrava senza chioma (file e dimensioni erano corretti). `chiomaOffset: [3,6; 0; 0,1]` in `models/magnolia.json`
+  la riporta sopra il tronco (stesso scarto chioma-tronco di A).
 - **Da controllare dopo il rendering:** raccordo del ceppo con il tronco, chiome rispetto alla facciata, ombre.
 
 ## Fatto nella versione 32

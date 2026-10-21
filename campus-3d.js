@@ -2417,20 +2417,20 @@
     });
 
     // serbatoio dell'azoto liquido: corpo cilindrico, calotte bombate sopra e sotto, gonna e piedi
-    const S = M.serbatoio, R = S.raggio, white = std({ color: 0xe9e6de, roughness: 0.45, metalness: 0.15 });
+    const S = M.serbatoio, R = S.raggio, white = std({ color: 0xffffff, roughness: 0.45, metalness: 0.15 });
     const yb = 1.45, yt = S.altezza - R * 0.45;
     add(new THREE.CylinderGeometry(R, R, yt - yb, 40), white, S.u, (yb + yt) / 2, -S.v);
     const capT = add(new THREE.SphereGeometry(R, 40, 12, 0, Math.PI * 2, 0, Math.PI / 2), white, S.u, yt, -S.v); capT.scale.y = 0.45;
     const capB = add(new THREE.SphereGeometry(R, 40, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), white, S.u, yb, -S.v); capB.scale.y = 0.45;
     add(new THREE.CylinderGeometry(R * 0.32, R * 0.42, yb - 0.4, 20), white, S.u, 0.4 + (yb - 0.4) / 2 - 0.15, -S.v);
-    // logo originale Nippon Gases (tex/nippon-gases-logo.png, fondo trasparente) sulla fascia del serbatoio
-    const bandTex = canvasTex(2048, 304, (ctx, w, h) => { ctx.fillStyle = '#e9e6de'; ctx.fillRect(0, 0, w, h); });
+    // logo originale Nippon Gases, immagine fornita usata così com'è (tex/nippon-gases-logo.jpg, fondo bianco): fascia bianca
+    const bandTex = canvasTex(2048, 304, (ctx, w, h) => { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h); });
     const logo = new Image();
     logo.onload = () => {
       const ctx = bandTex.image.getContext('2d'), hh = 215, ww = hh * logo.width / logo.height;
       ctx.drawImage(logo, 655 - ww / 2, (bandTex.image.height - hh) / 2, ww, hh); bandTex.needsUpdate = true;
     };
-    logo.src = 'tex/nippon-gases-logo.png';
+    logo.src = 'tex/nippon-gases-logo.jpg';
     const band = add(new THREE.CylinderGeometry(R * 1.004, R * 1.004, 0.75, 48, 1, true), std({ map: bandTex, roughness: 0.45, metalness: 0.15 }), S.u, yt - 0.55, -S.v);
     band.rotation.y = Math.PI * 0.9;
 

@@ -4,6 +4,7 @@
   sulla facciata dell'ingresso, ma non è certo che fosse quello (lì vicino c'è una palma a u 42.4, v 7.9).
 - Da confermare con l'utente: posizione dei due pergolati, misure del varco del cancello (commento 3), raccordo ceppo/tronco
   delle magnolie, chioma B spostata a stima (`chiomaOffset`).
+- Nuovo dall'utente (22/10): `riferimenti/cu014-vettoriale.stl`, modello vettoriale di CU014 ("vec cu14") da usare come riferimento per la sagoma.
 - Regole dell'utente: niente test o render locali (li fa la pipeline GitHub), pubblicare subito quando lo chiede, non fermarsi a chiedere.
 
 # Handoff — lavori terminati il 21/10/2026 su richiesta dell'utente

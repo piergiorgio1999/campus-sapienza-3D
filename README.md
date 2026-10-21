@@ -13,6 +13,7 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
     (es. `esterni:elementi.0.prato`) con `valore` e `originale` nei campi del file. Primitive (ogni altro solido):
     documento `prim:<percorso nella scena>`, `sorgente: "primitiva"`, con la scatola `originale` e quella nuova (`valore`)
     in coordinate u/v/h della `cornice` (`esterni:<elemento>`, `cortile` o `lato0`).
+    Con `rimosso: true` il pezzo è eliminato (mesh invisibile, istanza di un InstancedMesh scalata a zero; fuori da clic e collisioni della passeggiata): `valore` è la scatola al momento dell'eliminazione, `originale` serve a riconoscere il pezzo; «Annulla»/«Ripristina originale» cancellano il documento.
     Altri documenti: `albero:<id>` (posizione `p`, raggio `r`, `rimosso`, `nuovo`), `aggiunta:<id>` (primitive con
     `forma`, `materiale`, `box`, `angolo` in gradi (positivo = antiorario visto dall'alto, ruota il solido o l'oggetto attorno
     al centro della `box`, che nel file resta dritta); marciapiedi e aiuole con `poligono`, `base`, `altezza`, `discese` (marciapiedi: `[{lato, t, larghezza, profondita}]`, rampa interna al marciapiede: `profondita` è la lunghezza della rampa misurata dal bordo esterno verso l'interno, dove il piano scende fino alla quota della strada a filo del bordo; piano e cordolo vi sono ritagliati), `tipo`, `terreno`,

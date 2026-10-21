@@ -455,8 +455,18 @@
       m.matrixAutoUpdate = false; m.matrix.copy(new T.Matrix4().copy(m.parent.matrixWorld).invert().multiply(G).multiply(W0)); m.matrixWorldNeedsUpdate = true;
     }
   }
+  // elimina il pezzo: la mesh diventa invisibile (fuori da clic e collisioni della passeggiata), l'istanza di un InstancedMesh ha la matrice scalata a zero
+  function primRemove(p) {
+    const m = p.mesh;
+    if (p.inst != null) {
+      m.userData.edI0 = m.userData.edI0 || {};
+      if (!m.userData.edI0[p.inst]) { const I = new T.Matrix4(); m.getMatrixAt(p.inst, I); m.userData.edI0[p.inst] = I; }
+      m.setMatrixAt(p.inst, new T.Matrix4().makeScale(0, 0, 0)); m.instanceMatrix.needsUpdate = true;
+    } else { m.userData.edHid = true; m.visible = false; }
+  }
   function primRestore(p) {
     const m = p.mesh;
+    if (m.userData.edHid) { m.visible = true; delete m.userData.edHid; }
     if (p.inst != null) { const s = m.userData.edI0 && m.userData.edI0[p.inst]; if (s) { m.setMatrixAt(p.inst, s); m.instanceMatrix.needsUpdate = true; delete m.userData.edI0[p.inst]; } }
     else if (m.userData.edL0) { m.matrix.copy(m.userData.edL0); m.matrix.decompose(m.position, m.quaternion, m.scale); m.matrixAutoUpdate = true; delete m.userData.edL0; m.matrixWorldNeedsUpdate = true; }
   }
@@ -466,12 +476,12 @@
     for (const [id, p] of primsFromDb) if (!live.has(id) && p.mesh.parent) primRestore(p);
     primsFromDb = new Map();
     for (const o of overrides) {
-      if (o.sorgente !== 'primitiva' || (o.stato && o.stato !== 'da applicare') || !o.valore || !o.originale) continue;
+      if (o.sorgente !== 'primitiva' || (o.stato && o.stato !== 'da applicare') || (!o.valore && !o.rimosso) || !o.originale) continue;
       const mesh = byPath(o.percorso); if (!mesh || !mesh.isMesh) continue;
       const p = { mesh, inst: o.istanza != null ? o.istanza : null, path: o.percorso, frameKey: o.cornice || frameKeyOf(mesh) };
       if (!frameBy(p.frameKey)) continue;
       const b0 = primBox(p, true); // il pezzo deve essere ancora quello misurato (i dati possono essere cambiati)
-      if (KEYS.every((k) => Math.abs(b0[k] - o.originale[k]) < 0.06)) { primApply(p, o.originale, o.valore); primsFromDb.set(o.id, p); }
+      if (KEYS.every((k) => Math.abs(b0[k] - o.originale[k]) < 0.06)) { if (o.rimosso) primRemove(p); else primApply(p, o.originale, o.valore); primsFromDb.set(o.id, p); }
     }
   }
 
@@ -711,6 +721,7 @@
     if (overrideOf()) row.append(button(sel.type === 'item' && !baseValue(sel.it) ? 'Annulla aggiunta' : 'Ripristina originale', restore));
     if (sel.type === 'item' && !['pavimento', 'portico'].includes(sel.it.percorso)) row.append(button('Duplica', duplicateSel));
     if (sel.type === 'item' && sel.it.remove) row.append(button('Elimina', removeSel));
+    if (sel.type === 'prim') row.append(button('Elimina', removePrim));
     row.append(button('Fine', () => deselect(), true));
     nodes.push(row); openCard(nodes, 'dock');
   }
@@ -800,6 +811,15 @@
     removed = { it, prev };
     openCard([el('h3', '', 'Eliminato: ' + it.label), el('p', 'ed-meta', 'Resta nel file come "rimosso": Claude lo toglie anche dai dati.'),
       (() => { const r = el('div', 'ed-row'); r.append(button('Annulla', () => { const x = removed; removed = null; if (!x) return; x.it.set(x.prev); saveItem(x.it); rebuild(x.it.sorgente); closeCard(); }), button('Chiudi', closeCard, true)); return r; })()], 'dock');
+  }
+
+  // elimina il pezzo selezionato (documento prim:… con rimosso: true) e offre di annullare
+  function removePrim() {
+    const p = sel.p, id = primId(p), label = 'Pezzo: ' + describe(p.mesh), orig = sel.orig, box = clone(sel.box);
+    primRemove(p); primsFromDb.set(id, p); deselect();
+    saveDoc(id, { sorgente: 'primitiva', percorso: p.path, istanza: p.inst, cornice: p.frameKey, oggetto: 'pezzo di ' + describe(p.mesh), tipo: 'primitiva', originale: orig, valore: box, rimosso: true, stato: 'da applicare', autore: myId, aggiornato: new Date().toISOString() });
+    openCard([el('h3', '', 'Eliminato: ' + label), el('p', 'ed-meta', 'Resta nel file come "rimosso": Claude lo toglie anche dai dati.'),
+      (() => { const r = el('div', 'ed-row'); r.append(button('Annulla', () => { primRestore(p); primsFromDb.delete(id); dropDoc(id); closeCard(); }), button('Chiudi', closeCard, true)); return r; })()], 'dock');
   }
 
   /* ---------- trascinamento ---------- */

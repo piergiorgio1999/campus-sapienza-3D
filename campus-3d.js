@@ -843,6 +843,7 @@
     cortina: { wall: '#c98a5c', wall2: '#b97a4f', mortar: 'rgba(236,214,186,.55)', frame: '#e2d8c5', base: '#d4c8b2', attic: 0xddd3c0, brick: true },
     travertino: { wall: '#ddd3bf', wall2: '#cfc3ab', mortar: 'rgba(120,105,85,.28)', frame: '#ece5d7', base: '#cfc3ab', attic: 0xe6decd, slabs: true },
     ocra: { wall: '#d8b083', wall2: '#cba172', mortar: 'rgba(0,0,0,0)', frame: '#ece2cf', base: '#d4c7ae', attic: 0xe5d9c3 },
+    giallo: { wall: '#d6a66b', wall2: '#c7955c', mortar: 'rgba(242,226,200,.55)', frame: '#e6dccb', base: '#e2dccf', attic: 0xe2d9c8, brick: true },
     intonaco: { wall: '#e0c9a6', wall2: '#d3ba95', mortar: 'rgba(0,0,0,0)', frame: '#efe7d8', base: '#cdbfa5', attic: 0xe9dfcd },
   };
   const TRAVERTINE_CODES = new Set(['CU001', 'CU002', 'CU003']);
@@ -893,7 +894,7 @@
       ctx.fillStyle = '#9ea3a6'; ctx.beginPath(); ctx.arc(x + w * 0.62, y + h + 17, 5, 0, Math.PI * 2); ctx.fill();
     }
   }
-  function windowCanvas(p, seed) {
+  function windowCanvas(p, seed, windows = true) {
     const c = document.createElement('canvas'); c.width = 256; c.height = 256;
     const ctx = c.getContext('2d');
     noiseFill(ctx, 256, 256, p.wall, p.wall2, 2600);
@@ -914,7 +915,7 @@
       for (let y = 0; y < 256; y += 42) for (let x = (y / 42) % 2 ? 0 : 40; x < 256; x += 80) ctx.fillRect(x, y, 1.5, 42);
     }
     stains(ctx, 256, 256, seed * 31);
-    for (let fy = 0; fy < 2; fy += 1) for (let fx = 0; fx < 2; fx += 1) {
+    if (windows) for (let fy = 0; fy < 2; fy += 1) for (let fx = 0; fx < 2; fx += 1) {
       const k = seed * 7 + fy * 2 + fx;
       const shutter = [0, 0.35, 0.6, 0.15, 0.9][Math.floor(hash01(k, 11) * 5)];
       drawWindow(ctx, p, fx * 128 + 38, fy * 128 + 26, 52, 70, shutter, k);
@@ -924,7 +925,7 @@
   // Piano terra: lastre di travertino (foto in tex/trav_c.jpg, sostituibile) con finestre e inferriate.
   const baseCanvases = [];
   let travImg = null;
-  function drawBaseFacade(c, p, seed) {
+  function drawBaseFacade(c, p, seed, windows = true) {
     const ctx = c.getContext('2d');
     if (travImg && travImg.complete && travImg.naturalWidth) {
       for (let y = 0; y < 256; y += 128) for (let x = 0; x < 256; x += 128) ctx.drawImage(travImg, x, y, 128, 128); // tessera ≈ 1,8 × 2,2 m
@@ -937,25 +938,25 @@
     const dirt = ctx.createLinearGradient(0, 200, 0, 256);
     dirt.addColorStop(0, 'rgba(70,60,45,0)'); dirt.addColorStop(1, 'rgba(70,60,45,.28)');
     ctx.fillStyle = dirt; ctx.fillRect(0, 200, 256, 56);
-    for (let fy = 0; fy < 2; fy += 1) for (let fx = 0; fx < 2; fx += 1) {
-      const x = fx * 128 + 38, y = fy * 128 + 37, w = 52, h = 64; // finestra da 0,9 a 3,1 m sopra il marciapiede
-      ctx.fillStyle = '#ece4d4'; ctx.fillRect(x - 5, y - 5, w + 10, h + 9);
-      const g = ctx.createLinearGradient(0, y, 0, y + h);
-      g.addColorStop(0, '#71859a'); g.addColorStop(0.45, '#2f3a45'); g.addColorStop(1, '#171d23');
-      ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
-      ctx.fillStyle = 'rgba(25,25,25,.75)'; // inferriata
-      for (let gx = x + 4; gx < x + w; gx += 6) ctx.fillRect(gx, y, 1.6, h);
-      ctx.fillRect(x, y + h * 0.33, w, 1.6); ctx.fillRect(x, y + h * 0.66, w, 1.6);
-    }
+    if (windows) for (let fy = 0; fy < 2; fy += 1) for (let fx = 0; fx < 2; fx += 1) drawBaseWindow(ctx, fx * 128 + 38, fy * 128 + 37, 52, 64); // finestra da 0,9 a 3,1 m sopra il marciapiede
   }
-  function baseCanvas2(p, seed) {
+  function drawBaseWindow(ctx, x, y, w, h) {
+    ctx.fillStyle = '#ece4d4'; ctx.fillRect(x - 5, y - 5, w + 10, h + 9);
+    const g = ctx.createLinearGradient(0, y, 0, y + h);
+    g.addColorStop(0, '#71859a'); g.addColorStop(0.45, '#2f3a45'); g.addColorStop(1, '#171d23');
+    ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = 'rgba(25,25,25,.75)'; // inferriata
+    for (let gx = x + 4; gx < x + w; gx += 6) ctx.fillRect(gx, y, 1.6, h);
+    ctx.fillRect(x, y + h * 0.33, w, 1.6); ctx.fillRect(x, y + h * 0.66, w, 1.6);
+  }
+  function baseCanvas2(p, seed, windows = true) {
     const c = document.createElement('canvas'); c.width = 256; c.height = 256;
-    drawBaseFacade(c, p, seed);
+    drawBaseFacade(c, p, seed, windows);
     const tex = facadeTexture(c);
-    baseCanvases.push({ c, p, seed, tex });
+    baseCanvases.push({ c, p, seed, tex, windows });
     if (!travImg) {
       travImg = new Image();
-      travImg.onload = () => { for (const e of baseCanvases) { drawBaseFacade(e.c, e.p, e.seed); e.tex.needsUpdate = true; } };
+      travImg.onload = () => { for (const e of baseCanvases) { drawBaseFacade(e.c, e.p, e.seed, e.windows); e.tex.needsUpdate = true; } };
       travImg.src = 'tex/travertino_COL_1k.jpg'; // TilesTravertine001 fornita dall'utente
     }
     return tex;
@@ -970,16 +971,48 @@
       }));
     }
   }
-  function facadeSetFor(code) {
-    let h = 0;
-    for (const ch of String(code)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  // texture della facciata per edificio: quella scelta nell'editor, altrimenti travertino, ocra o cortina secondo il codice
+  const facadeOverride = new Map();
+  const codeHash = (code) => { let h = 0; for (const ch of String(code)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h; };
+  function facadeNameFor(code) {
     const key = String(code).toUpperCase();
-    let name;
-    if (TRAVERTINE_CODES.has(key)) name = 'travertino';
-    else if (OCRA_CODES.has(key)) name = 'ocra';
-    else if (/^CU\d+$/.test(key)) name = 'cortina'; // la Città Universitaria è in gran parte cortina di mattoni e travertino
-    else name = ['intonaco', 'ocra', 'cortina', 'intonaco'][h % 4]; // quartiere
-    return facadeSets[name][h % 2];
+    if (facadeOverride.has(key)) return facadeOverride.get(key);
+    if (TRAVERTINE_CODES.has(key)) return 'travertino';
+    if (OCRA_CODES.has(key)) return 'ocra';
+    if (/^CU\d+$/.test(key)) return 'cortina'; // la Città Universitaria è in gran parte cortina di mattoni e travertino
+    return ['intonaco', 'ocra', 'cortina', 'intonaco'][codeHash(code) % 4]; // quartiere
+  }
+  function facadeSetFor(code) { return facadeSets[facadeNameFor(code)][codeHash(code) % 2]; }
+  function setFacade(code, name) {
+    const key = String(code).toUpperCase();
+    if (name && FACADE_PALETTES[name]) facadeOverride.set(key, name); else facadeOverride.delete(key);
+    if (!buildingGroup) return;
+    const set = facadeSetFor(key);
+    for (const m of buildingGroup.children) {
+      if (m.userData.facadeCode !== key || !m.userData.kind) continue;
+      if (m.userData.mats) m.userData.mats[1] = set[m.userData.kind];
+      if (Array.isArray(m.material)) m.material[1] = set[m.userData.kind];
+    }
+  }
+  // riquadri che l'editor appoggia sulle celle di facciata: muro senza finestra, oppure una finestra sola
+  function singleWindowTex(p, kind) {
+    const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+    const ctx = c.getContext('2d');
+    if (kind === 'base') drawBaseWindow(ctx, 38, 37, 52, 64); else drawWindow(ctx, p, 38, 26, 52, 70, 0.35, 5);
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8;
+    return t;
+  }
+  const patchMats = new Map();
+  function facadePatchMaterial(name, kind, tipo) {
+    const key = `${name}|${kind}|${tipo}`;
+    if (patchMats.has(key)) return patchMats.get(key);
+    const p = FACADE_PALETTES[name] || FACADE_PALETTES.cortina;
+    const common = { roughness: 0.88, metalness: 0, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 };
+    const mat = tipo === 'finestra' ? new THREE.MeshStandardMaterial(Object.assign({ map: singleWindowTex(p, kind), transparent: true, alphaTest: 0.4 }, common))
+      : kind === 'attic' ? new THREE.MeshStandardMaterial(Object.assign({ color: new THREE.Color(p.attic).convertSRGBToLinear() }, common))
+      : new THREE.MeshStandardMaterial(Object.assign({ map: kind === 'base' ? baseCanvas2(p, 1, false) : windowCanvas(p, 1, false) }, common));
+    patchMats.set(key, mat);
+    return mat;
   }
   function applyWallUVs(geometry, y0, bay, floorH) {
     // Pareti: u = metri lungo il muro / campata, v = metri da terra / interpiano. Così finestre e piani sono in scala reale.
@@ -1860,6 +1893,7 @@
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       mesh.userData.mats = mats;
+      Object.assign(mesh.userData, { facadeCode: code, kind: piece.kind, y0: 0.04 + piece.y0, floorH: piece.kind === 'attic' ? piece.h : piece.floorH });
       mesh.userData.code = b ? code : '';
       mesh.userData.osmId = props.osm_id || feature.id || '';
       buildingGroup.add(mesh);
@@ -2249,6 +2283,7 @@
     });
     tubeMesh.castShadow = true; group.add(tubeMesh);
   }
+  const travCache = new Map(), courtMatCache = new Map();
   // libera le geometrie di un gruppo rimosso (materiali e texture sono condivisi o piccoli)
   function disposeTree(root) { root.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); }
   let exteriorsCfg = null;
@@ -2265,13 +2300,49 @@
     if (old) { scene.remove(old); disposeTree(old); }
     const ring = closeRing(b.rings[0]);
     const holder = new THREE.Group(); holder.name = 'chimica-esterni';
-    const trav = (s = 2.4) => new THREE.MeshStandardMaterial({ map: travertinePhoto(s), normalMap: travertineNormal(s), roughness: 0.8 });
+    // materiali riusati fra una ricostruzione e l'altra: l'editor ricostruisce spesso e ogni texture nuova va ricaricata sulla GPU
+    const trav = (s = 2.4) => { if (!travCache.has(s)) travCache.set(s, new THREE.MeshStandardMaterial({ map: travertinePhoto(s), normalMap: travertineNormal(s), roughness: 0.8 })); return travCache.get(s); };
     // acciaio verniciato marrone ruggine, come nel rilievo (non ocra: niente pareti piene)
     const ocra = new THREE.MeshStandardMaterial({ color: new THREE.Color(0x86603f).convertSRGBToLinear(), roughness: 0.6, metalness: 0.35 });
     const ocraScura = new THREE.MeshStandardMaterial({ color: new THREE.Color(0x7d6a58).convertSRGBToLinear(), roughness: 0.75, metalness: 0.2 });
+    // panchine in travertino: una lastra orizzontale che sporge oltre due lastre verticali, rientrate poco prima delle estremità
+    const bench = (g, p, h) => {
+      const L = Number(p.lunghezza) || 2.2, D = Number(p.profondita) || 0.45, T = 0.12, seatY = Number(p.altezza) || 0.42, inset = Number(p.rientro) || 0.28;
+      const alongV = p.orienta === 'v';
+      const bu0 = p.u - (alongV ? D : L) / 2, bu1 = p.u + (alongV ? D : L) / 2, bv0 = p.v - (alongV ? L : D) / 2, bv1 = p.v + (alongV ? L : D) / 2;
+      g.add(localSlab([[bu0, bv0], [bu1, bv0], [bu1, bv1], [bu0, bv1]], h + seatY - T, h + seatY, trav(1.2)));
+      if (alongV) for (const lv of [bv0 + inset, bv1 - inset - T]) g.add(localSlab([[bu0 + 0.03, lv], [bu1 - 0.03, lv], [bu1 - 0.03, lv + T], [bu0 + 0.03, lv + T]], h, h + seatY - T, trav(1.2)));
+      else for (const lu of [bu0 + inset, bu1 - inset - T]) g.add(localSlab([[lu, bv0 + 0.03], [lu + T, bv0 + 0.03], [lu + T, bv1 - 0.03], [lu, bv1 - 0.03]], h, h + seatY - T, trav(1.2)));
+    };
+    // ringhiere in piatti rettangolari di metallo rosso scuro: corrimano e corrente intermedio larghi in pianta
+    // (faccia larga orizzontale), montanti con la stessa sezione ma con la faccia larga in verticale
+    const railing = (g, all, h, RG) => {
+      const lines = all.filter((l) => Array.isArray(l) && l.length > 1);
+      if (lines.length) {
+      const H = Number(RG.altezza) || 1.0, step = Number(RG.passo) || 1.3, mid = Number(RG.intermedio) || 0.5;
+      const W = Number(RG.larghezza) || 0.1, T = Number(RG.spessore) || 0.04;
+      const red = new THREE.MeshStandardMaterial({ color: new THREE.Color(RG.colore || '#6b1d29').convertSRGBToLinear(), roughness: 0.55, metalness: 0.4 });
+      const posts = [], bars = [];
+      for (const line of lines) for (let i = 0; i < line.length - 1; i += 1) {
+        const [ua, va] = line[i], [ub, vb] = line[i + 1], n = Math.max(1, Math.round(Math.hypot(ub - ua, vb - va) / step)), ang = Math.atan2(vb - va, ub - ua);
+        for (let k = i ? 1 : 0; k <= n; k += 1) posts.push([ua + (ub - ua) * k / n, va + (vb - va) * k / n, ang]);
+        for (const y of [H - T / 2, mid]) bars.push([ua, va, ub, vb, y]);
+      }
+      const unit = new THREE.BoxGeometry(1, 1, 1), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), yAxis = new THREE.Vector3(0, 1, 0);
+      const pm = new THREE.InstancedMesh(unit, red, posts.length), bm = new THREE.InstancedMesh(unit, red, bars.length);
+      posts.forEach(([u, v, ang], i) => { q.setFromAxisAngle(yAxis, ang); m4.compose(new THREE.Vector3(u, h + (H - T) / 2, -v), q, new THREE.Vector3(T, H - T, W)); pm.setMatrixAt(i, m4); });
+      bars.forEach(([ua, va, ub, vb, y], i) => {
+        q.setFromAxisAngle(yAxis, Math.atan2(vb - va, ub - ua));
+        m4.compose(new THREE.Vector3((ua + ub) / 2, h + y, -(va + vb) / 2), q, new THREE.Vector3(Math.hypot(ub - ua, vb - va) + W, T, W));
+        bm.setMatrixAt(i, m4);
+      });
+      for (const mesh of [pm, bm]) { mesh.castShadow = true; mesh.receiveShadow = true; g.add(mesh); }
+      }
+    };
     for (const [index, el] of (cfg.elementi || []).entries()) {
       if (!(el.lato >= 0 && el.lato < ring.length - 1)) continue;
       const g = sideFrame(ring, el.lato); g.userData.elemento = index; holder.add(g);
+      if (el.rimosso) continue; // eliminato dall'editor: resta la cornice, senza contenuto
       if (el.tipo === 'terrazza') {
         const h = Number(el.altezza) || 0.8;
         g.add(localSlab(el.poligono, 0, h, trav()));
@@ -2285,15 +2356,7 @@
           kerb([[u0 - 0.25, v0], [u0, v0], [u0, v1], [u0 - 0.25, v1]]);
           kerb([[u1, v0], [u1 + 0.25, v0], [u1 + 0.25, v1], [u1, v1]]);
         }
-        // panchine in travertino: una lastra orizzontale che sporge oltre due lastre verticali, rientrate poco prima delle estremità
-        for (const p of el.panchine || []) {
-          const L = Number(p.lunghezza) || 2.2, D = Number(p.profondita) || 0.45, T = 0.12, seatY = Number(p.altezza) || 0.42, inset = Number(p.rientro) || 0.28;
-          const alongV = p.orienta === 'v';
-          const bu0 = p.u - (alongV ? D : L) / 2, bu1 = p.u + (alongV ? D : L) / 2, bv0 = p.v - (alongV ? L : D) / 2, bv1 = p.v + (alongV ? L : D) / 2;
-          g.add(localSlab([[bu0, bv0], [bu1, bv0], [bu1, bv1], [bu0, bv1]], h + seatY - T, h + seatY, trav(1.2)));
-          if (alongV) for (const lv of [bv0 + inset, bv1 - inset - T]) g.add(localSlab([[bu0 + 0.03, lv], [bu1 - 0.03, lv], [bu1 - 0.03, lv + T], [bu0 + 0.03, lv + T]], h, h + seatY - T, trav(1.2)));
-          else for (const lu of [bu0 + inset, bu1 - inset - T]) g.add(localSlab([[lu, bv0 + 0.03], [lu + T, bv0 + 0.03], [lu + T, bv1 - 0.03], [lu, bv1 - 0.03]], h, h + seatY - T, trav(1.2)));
-        }
+        for (const p of (el.panchine || []).filter((x) => !x.rimosso)) bench(g, p, h);
         for (const s of el.gradini || []) {
           const n = Math.max(3, Math.round(h / (Number(s.alzata) || 0.16))), rise = h / n, run = Number(s.pedata) || 0.32;
           for (let i = 0; i < n; i += 1) {
@@ -2304,29 +2367,7 @@
             g.add(localSlab(pts, 0, top - rise, trav()));
           }
         }
-        // ringhiere in piatti rettangolari di metallo rosso scuro: corrimano e corrente intermedio larghi in pianta
-        // (faccia larga orizzontale), montanti con la stessa sezione ma con la faccia larga in verticale
-        const lines = el.ringhiere || [], RG = el.ringhiera || {};
-        if (lines.length) {
-          const H = Number(RG.altezza) || 1.0, step = Number(RG.passo) || 1.3, mid = Number(RG.intermedio) || 0.5;
-          const W = Number(RG.larghezza) || 0.1, T = Number(RG.spessore) || 0.04;
-          const red = new THREE.MeshStandardMaterial({ color: new THREE.Color(RG.colore || '#6b1d29').convertSRGBToLinear(), roughness: 0.55, metalness: 0.4 });
-          const posts = [], bars = [];
-          for (const line of lines) for (let i = 0; i < line.length - 1; i += 1) {
-            const [ua, va] = line[i], [ub, vb] = line[i + 1], n = Math.max(1, Math.round(Math.hypot(ub - ua, vb - va) / step)), ang = Math.atan2(vb - va, ub - ua);
-            for (let k = i ? 1 : 0; k <= n; k += 1) posts.push([ua + (ub - ua) * k / n, va + (vb - va) * k / n, ang]);
-            for (const y of [H - T / 2, mid]) bars.push([ua, va, ub, vb, y]);
-          }
-          const unit = new THREE.BoxGeometry(1, 1, 1), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), yAxis = new THREE.Vector3(0, 1, 0);
-          const pm = new THREE.InstancedMesh(unit, red, posts.length), bm = new THREE.InstancedMesh(unit, red, bars.length);
-          posts.forEach(([u, v, ang], i) => { q.setFromAxisAngle(yAxis, ang); m4.compose(new THREE.Vector3(u, h + (H - T) / 2, -v), q, new THREE.Vector3(T, H - T, W)); pm.setMatrixAt(i, m4); });
-          bars.forEach(([ua, va, ub, vb, y], i) => {
-            q.setFromAxisAngle(yAxis, Math.atan2(vb - va, ub - ua));
-            m4.compose(new THREE.Vector3((ua + ub) / 2, h + y, -(va + vb) / 2), q, new THREE.Vector3(Math.hypot(ub - ua, vb - va) + W, T, W));
-            bm.setMatrixAt(i, m4);
-          });
-          for (const mesh of [pm, bm]) { mesh.castShadow = true; mesh.receiveShadow = true; g.add(mesh); }
-        }
+        railing(g, el.ringhiere || [], h, el.ringhiera || {});
       } else if (el.tipo === 'area') {
         const a = localSlab(el.poligono, 0, 0.03, trav()); a.castShadow = false; g.add(a);
       } else if (el.tipo === 'pergolato') {
@@ -2345,6 +2386,8 @@
         for (const v of [v0, v1]) { const s = new THREE.Mesh(new THREE.PlaneGeometry(u1 - u0, base * 0.8), sideMat); s.position.set((u0 + u1) / 2, base * 0.6, -v); g.add(s); }
       } else if (el.tipo === 'pilastro') {
         g.add(localSlab(el.poligono, 0, Number(el.altezza) || 2.5, trav()));
+      } else if (el.tipo === 'ingresso') {
+        buildEntrance(g, el, trav, bench, railing);
       } else if (el.tipo === 'palo') {
         // palo della bandiera in ghisa verde: plinto, rigonfiamento decorato, fusto rastremato e pomo in cima
         const H = Number(el.altezza) || 11, pv = new THREE.Group(); pv.position.set(Number(el.u), 0, -Number(el.v)); g.add(pv);
@@ -2359,7 +2402,136 @@
         addFireStair(g, Number(el.u), Math.max(1, Number(el.piani) || 2), ocra, { lunghezza: el.lunghezza, larghezza: el.larghezza, distacco: el.distacco, pianerottoli: el.pianerottoli, quote: el.quote, pedate: ocraScura });
       }
     }
+    // primitive aggiunte dall'editor (scatola nelle coordinate del lato 0)
+    const g0 = sideFrame(ring, 0); g0.userData.elemento = 'lato0'; holder.add(g0);
+    for (const pr of cfg.primitive || []) if (!pr.rimosso && pr.box) g0.add(buildPrimitive(pr));
     scene.add(holder);
+  }
+  /* ---------- primitive aggiunte dall'editor: forma e materiale a scelta ---------- */
+  const PRIM_COLORS = { intonaco: ['#e0c9a6', 0.9, 0], cemento: ['#9a9a95', 0.95, 0], bianco: ['#f2f1ec', 0.7, 0], 'metallo rosso': ['#6b1d29', 0.55, 0.4], 'ferro verde': ['#235b42', 0.55, 0.35], acciaio: ['#b9bdc0', 0.35, 0.75], legno: ['#6b4a2f', 0.8, 0], erba: ['#5f8a3e', 1, 0], asfalto: ['#4a4d50', 0.95, 0] };
+  const PRIM_MATERIALS = ['travertino', 'mattoni', 'mattoni gialli', 'intonaco', 'cemento', 'bianco', 'metallo rosso', 'ferro verde', 'acciaio', 'legno', 'vetro', 'erba', 'terra', 'sanpietrini', 'asfalto'];
+  const primMats = new Map();
+  function primitiveMaterial(name) {
+    if (primMats.has(name)) return primMats.get(name);
+    let mat;
+    if (name === 'travertino') mat = new THREE.MeshStandardMaterial({ map: travertinePhoto(2.4), normalMap: travertineNormal(2.4), roughness: 0.8 });
+    else if (name === 'mattoni' || name === 'mattoni gialli') { const t = windowCanvas(FACADE_PALETTES[name === 'mattoni' ? 'cortina' : 'giallo'], 1, false); t.repeat.set(0.24, 0.24); mat = new THREE.MeshStandardMaterial({ map: t, roughness: 0.9 }); }
+    else if (name === 'vetro') mat = new THREE.MeshStandardMaterial({ color: new THREE.Color('#9fc3d8').convertSRGBToLinear(), roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.45 });
+    else if (name === 'terra') { const t = soilTex(); t.repeat.set(0.5, 0.5); mat = new THREE.MeshStandardMaterial({ map: t, roughness: 1 }); }
+    else if (name === 'sanpietrini') mat = new THREE.MeshStandardMaterial({ map: sanpietriniTex(1), roughness: 0.95 });
+    else { const [c, r, m] = PRIM_COLORS[name] || PRIM_COLORS.bianco; mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(c).convertSRGBToLinear(), roughness: r, metalness: m }); }
+    primMats.set(name, mat);
+    return mat;
+  }
+  function buildPrimitive(pr) {
+    const b = pr.box, du = Math.max(0.02, b.u1 - b.u0), dv = Math.max(0.02, b.v1 - b.v0), dh = Math.max(0.02, b.h1 - b.h0);
+    let geo;
+    if (pr.forma === 'cilindro') { geo = new THREE.CylinderGeometry(0.5, 0.5, 1, 32); geo.scale(du, dh, dv); }
+    else if (pr.forma === 'sfera') { geo = new THREE.SphereGeometry(0.5, 32, 16); geo.scale(du, dh, dv); }
+    else geo = new THREE.BoxGeometry(du, dh, dv);
+    planarUVs(geo, 1);
+    const m = new THREE.Mesh(geo, primitiveMaterial(pr.materiale || 'travertino'));
+    m.position.set((b.u0 + b.u1) / 2, (b.h0 + b.h1) / 2, -(b.v0 + b.v1) / 2);
+    m.castShadow = true; m.receiveShadow = true; m.userData.primitiva = pr.id;
+    return m;
+  }
+  /* ---------- ingresso principale dell'Istituto Chimico (foto dell'utente del 21/10/2026) ---------- */
+  // rivestimento chiaro attorno al portone in legno, scritta ISTITUTO CHIMICO, targhe rosse, percorso tattile fino alla strada,
+  // aiuole con cordolo e ringhiere rosse basse, panchine in travertino, palme, totem bianchi e rossi, rastrelliera
+  function palmTree(p) {
+    const H = Number(p.altezza) || 4, th = Math.max(0.5, H - 1.1), grp = new THREE.Group();
+    grp.position.set(Number(p.u), 0, -Number(p.v));
+    const bark = new THREE.MeshStandardMaterial({ color: new THREE.Color('#6e5a44').convertSRGBToLinear(), roughness: 1 });
+    const leaf = new THREE.MeshStandardMaterial({ color: new THREE.Color('#3f6a2c').convertSRGBToLinear(), roughness: 0.7, side: THREE.DoubleSide });
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, th, 10), bark); trunk.position.y = th / 2; trunk.castShadow = true; grp.add(trunk);
+    const fan = new THREE.CircleGeometry(0.75, 12, -1.1, 2.2); fan.rotateX(-Math.PI / 2); fan.translate(0.45, 0, 0); // foglia a ventaglio
+    const stem = new THREE.CylinderGeometry(0.015, 0.02, 0.5, 5); stem.rotateZ(Math.PI / 2); stem.translate(0.25, 0, 0);
+    const n = Number(p.foglie) || 16;
+    for (let i = 0; i < n; i += 1) {
+      const piv = new THREE.Group(); piv.position.y = th; piv.rotation.y = (i / n) * Math.PI * 2 + hash01(i, 91) * 0.3;
+      const tilt = new THREE.Group(); tilt.rotation.z = 0.9 - 1.4 * hash01(i, 92); // alcune foglie dritte, altre pendenti
+      const f = new THREE.Mesh(fan, leaf); f.castShadow = true;
+      tilt.add(f, new THREE.Mesh(stem, bark)); piv.add(tilt); grp.add(piv);
+    }
+    return grp;
+  }
+  function buildEntrance(g, el, trav, bench, railing) {
+    const uc = Number(el.u), P = el.porta || {}, W = Number(P.larghezza) || 2.3, Hd = Number(P.altezza) || 3.3;
+    const R = el.rivestimento || {}, [ra, rb] = R.u || [uc - 6, uc + 6], H = Number(R.altezza) || 4.6;
+    const std = (c, r = 0.8, m = 0) => new THREE.MeshStandardMaterial({ color: new THREE.Color(c).convertSRGBToLinear(), roughness: r, metalness: m });
+    const rect = (u0, u1, v0, v1) => [[u0, v0], [u1, v0], [u1, v1], [u0, v1]];
+    const facePlane = (w, hh, u, y, v, mat) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, hh), mat); m.rotation.y = Math.PI; m.position.set(u, y, -v); g.add(m); return m; }; // rivolto verso l'esterno
+    if (!R.rimosso) {
+      // lastre chiare quasi bianche, come nelle foto (il travertino fotografico è troppo scuro qui)
+      const slabs = canvasTex(256, 256, (ctx, w) => {
+        noiseFill(ctx, w, w, '#ece9e2', '#dedad1', 2600);
+        ctx.fillStyle = 'rgba(120,112,100,.35)';
+        for (let y = 0; y < w; y += 64) ctx.fillRect(0, y, w, 1.5);
+        for (let y = 0; y < w; y += 64) for (let x = (y / 64) % 2 ? 0 : 64; x < w; x += 128) ctx.fillRect(x, y, 1.5, 64);
+        const dirt = ctx.createLinearGradient(0, 200, 0, w); dirt.addColorStop(0, 'rgba(90,80,60,0)'); dirt.addColorStop(1, 'rgba(90,80,60,.18)'); ctx.fillStyle = dirt; ctx.fillRect(0, 200, w, 56);
+      }, 1 / 2.4, 1 / 2.4);
+      g.add(localSlab(rect(ra, rb, -0.02, 0.06), 0.02, H, new THREE.MeshStandardMaterial({ map: slabs, roughness: 0.85 })));
+      g.add(localSlab(rect(ra - 0.05, rb + 0.05, -0.02, 0.14), H, H + 0.16, trav())); // cornice
+      const word = (text, u) => facePlane(2.6, 0.49, u, H - 0.42, 0.065, new THREE.MeshStandardMaterial({ roughness: 0.8, transparent: true, alphaTest: 0.3, map: canvasTex(512, 96, (ctx, w, hh) => {
+        ctx.clearRect(0, 0, w, hh); ctx.fillStyle = '#3f3a33'; ctx.font = 'bold 78px "Times New Roman", Times, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, w / 2, hh / 2 + 4);
+      }, 1, 1, true) }));
+      const [w1, w2] = el.scritta || ['ISTITUTO', 'CHIMICO'];
+      word(w1, uc + W / 2 + 1.75); word(w2, uc - W / 2 - 1.75); // a sinistra e a destra del portone, viste da fuori
+      const plaque = canvasTex(64, 48, (ctx, w, hh) => { ctx.fillStyle = '#8a1f2d'; ctx.fillRect(0, 0, w, hh); ctx.fillStyle = 'rgba(255,255,255,.85)'; for (let i = 0; i < 4; i += 1) ctx.fillRect(8, 9 + i * 8, i ? 30 + (i % 2) * 14 : 46, 3); });
+      for (const y of [1.75, 2.3]) facePlane(0.42, 0.32, uc - W / 2 - 0.75, y, 0.075, new THREE.MeshStandardMaterial({ map: plaque, roughness: 0.6 }));
+      const ac = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.55, 0.3), std('#e9e9e6', 0.5)); ac.position.set(uc - W / 2 - 3.6, H - 0.75, -0.21); ac.castShadow = true; g.add(ac);
+    }
+    if (!P.rimosso) {
+      const door = canvasTex(256, 384, (ctx, w, hh) => {
+        ctx.fillStyle = '#3a2416'; ctx.fillRect(0, 0, w, hh);
+        const glass = (x, y, ww, h2) => { const gr = ctx.createLinearGradient(0, y, 0, y + h2); gr.addColorStop(0, '#8b9aa6'); gr.addColorStop(1, '#2a3036'); ctx.fillStyle = gr; ctx.fillRect(x, y, ww, h2); };
+        const t = hh * 0.2;
+        for (let i = 0; i < 4; i += 1) glass(10 + i * 60, 10, 54, t - 16); // sopraluce a riquadri
+        for (const x0 of [8, w / 2 + 4]) { // due ante in legno con specchiature vetrate e zoccolo
+          ctx.fillStyle = '#6b4128'; ctx.fillRect(x0, t, w / 2 - 12, hh - t - 6);
+          const ph = (hh - t - 90) / 3;
+          for (let r = 0; r < 3; r += 1) glass(x0 + 14, t + 14 + r * ph, w / 2 - 40, ph - 12);
+          ctx.fillStyle = '#5a3520'; ctx.fillRect(x0 + 10, hh - 70, w / 2 - 32, 56);
+          ctx.fillStyle = '#c9b48a'; ctx.fillRect(x0 < w / 2 ? x0 + w / 2 - 26 : x0 + 6, hh * 0.55, 6, 34);
+        }
+      });
+      facePlane(W, Hd, uc, Hd / 2 + 0.02, 0.066, new THREE.MeshStandardMaterial({ map: door, roughness: 0.7 }));
+      for (const [a, b] of [[uc - W / 2 - 0.28, uc - W / 2], [uc + W / 2, uc + W / 2 + 0.28]]) g.add(localSlab(rect(a, b, 0, 0.16), 0.02, Hd + 0.3, trav(1.2))); // stipiti
+      g.add(localSlab(rect(uc - W / 2 - 0.28, uc + W / 2 + 0.28, 0, 0.16), Hd + 0.02, Hd + 0.3, trav(1.2))); // architrave
+    }
+    const TT = el.tattile;
+    if (TT && !TT.rimosso) { // percorso tattile a righe dal portone alla strada
+      const w = Number(TT.larghezza) || 0.6, tu = TT.u != null ? Number(TT.u) : uc;
+      const tex = canvasTex(64, 64, (ctx, cw) => { ctx.fillStyle = '#a3a39e'; ctx.fillRect(0, 0, cw, cw); ctx.fillStyle = '#7f7f7a'; for (let x = 4; x < cw; x += 16) ctx.fillRect(x, 0, 6, cw); }, 1 / w, 1);
+      const strip = localSlab(rect(tu - w / 2, tu + w / 2, TT.v[0], TT.v[1]), 0, 0.045, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 }));
+      strip.castShadow = false; g.add(strip);
+    }
+    for (const a of (el.aiuole || []).filter((x) => !x.rimosso)) { // prato rialzato con cordolo in travertino
+      const [u0, u1] = a.u, [v0, v1] = a.v, k = 0.2, hk = Number(a.cordolo) || 0.18;
+      const lawn = localSlab(rect(u0, u1, v0, v1), 0, hk - 0.04, std('#5f8a3e', 1)); lawn.castShadow = false; g.add(lawn);
+      for (const pts of [rect(u0, u1, v0, v0 + k), rect(u0, u1, v1 - k, v1), rect(u0, u0 + k, v0, v1), rect(u1 - k, u1, v0, v1)]) g.add(localSlab(pts, 0, hk, trav()));
+    }
+    const F = el.fiori;
+    if (F && !F.rimosso) g.add(localSlab(rect(F.u[0], F.u[1], F.v[0], F.v[1]), 0.1, Number(F.altezza) || 0.4, new THREE.MeshStandardMaterial({ roughness: 1, map: canvasTex(128, 128, (ctx, w) => {
+      ctx.fillStyle = '#3f6b32'; ctx.fillRect(0, 0, w, w);
+      for (let i = 0; i < 420; i += 1) { const t = hash01(i, 81); ctx.fillStyle = t > 0.35 ? (t > 0.7 ? '#e86aa0' : '#d24f86') : '#5d8a45'; ctx.beginPath(); ctx.arc(hash01(i, 82) * w, hash01(i, 83) * w, 2 + 3 * hash01(i, 84), 0, Math.PI * 2); ctx.fill(); }
+    }, 1.5, 1.5) })));
+    for (const p of (el.panchine || []).filter((x) => !x.rimosso)) bench(g, p, 0);
+    railing(g, el.ringhiere || [], 0, el.ringhiera || { altezza: 0.9 });
+    for (const p of (el.palme || []).filter((x) => !x.rimosso)) g.add(palmTree(p));
+    for (const t of (el.totem || []).filter((x) => !x.rimosso)) { // totem bianco con base e fascia rosse
+      const th = Number(t.altezza) || 2.4, box = rect(t.u - 0.25, t.u + 0.25, t.v - 0.1, t.v + 0.1);
+      for (const [h0, h1, c] of [[0, 0.9, '#8a1f2d'], [0.9, th - 0.18, '#f4f3ef'], [th - 0.18, th, '#8a1f2d']]) g.add(localSlab(box, h0, h1, std(c, 0.5)));
+    }
+    const RS = el.rastrelliera;
+    if (RS && !RS.rimosso) { // rastrelliera per bici ad archetti
+      const dark = std('#3a3d40', 0.5, 0.6);
+      for (let i = 0; i < (Number(RS.posti) || 3); i += 1) {
+        const uu = Number(RS.u) + i * 0.6, vv = Number(RS.v);
+        for (const dv of [-0.35, 0.35]) g.add(localSlab(rect(uu - 0.02, uu + 0.02, vv + dv - 0.02, vv + dv + 0.02), 0, 0.8, dark));
+        g.add(localSlab(rect(uu - 0.02, uu + 0.02, vv - 0.37, vv + 0.37), 0.76, 0.8, dark));
+      }
+    }
   }
   async function loadCourtyardModel() {
     if (!courtyardFrame) return;
@@ -2380,17 +2552,19 @@
     const add = (geom, mat, x, y, z, shadow = true) => { const m = new THREE.Mesh(geom, mat); m.position.set(x, y, z); m.castShadow = shadow; m.receiveShadow = true; court.add(m); return m; };
     const box = (u0, u1, h0, h1, v0, v1, mat) => add(new THREE.BoxGeometry(u1 - u0, h1 - h0, v1 - v0), mat, (u0 + u1) / 2, (h0 + h1) / 2, -(v0 + v1) / 2);
     const std = (o) => { if (o.color !== undefined) o.color = new THREE.Color(o.color).convertSRGBToLinear(); return new THREE.MeshStandardMaterial(Object.assign({ roughness: 0.85, metalness: 0 }, o)); };
-    const travMat = (ru, rv) => std({ map: travertineTex(ru, rv) });
+    const once = (k, make) => { if (!courtMatCache.has(k)) courtMatCache.set(k, make()); return courtMatCache.get(k); }; // materiali riusati alle ricostruzioni dell'editor
+    const travMat = (ru, rv) => once(`trav|${ru}|${rv}`, () => std({ map: travertineTex(ru, rv) }));
 
     // pavimento: sanpietrini con fasce di travertino
     const P = M.pavimento, du = P.u[1] - P.u[0], dv = P.v[1] - P.v[0];
-    const floor = add(new THREE.PlaneGeometry(du, dv), std({ map: sanpietriniTex(1), roughness: 0.95 }), (P.u[0] + P.u[1]) / 2, 0.012, -(P.v[0] + P.v[1]) / 2, false);
+    const floor = add(new THREE.PlaneGeometry(du, dv), once('sanpietrini', () => std({ map: sanpietriniTex(1), roughness: 0.95 })), (P.u[0] + P.u[1]) / 2, 0.012, -(P.v[0] + P.v[1]) / 2, false);
     floor.rotation.x = -Math.PI / 2; floor.material.map.repeat.set(du / 2, dv / 2);
     for (const [v0, v1] of P.fasceTravertino) { const s = add(new THREE.PlaneGeometry(du, v1 - v0), travMat(du / 2.4, 0.25), (P.u[0] + P.u[1]) / 2, 0.02, -(v0 + v1) / 2, false); s.rotation.x = -Math.PI / 2; }
 
     // aiuole: cordolo in travertino e terra con foglie
-    const curb = travMat(1, 0.2), soil = std({ map: soilTex(), roughness: 1 });
-    for (const a of M.aiuole) {
+    const curb = travMat(1, 0.2), soil = once('terra', () => std({ map: soilTex(), roughness: 1 }));
+    const live = (arr) => (arr || []).filter((x) => !x.rimosso); // gli elementi eliminati dall'editor restano nel file con rimosso: true
+    for (const a of live(M.aiuole)) {
       const t = 0.16, h = a.altezza, cut = a.varco || null; // varco: tratto di cordolo abbassato (soglia della porticina)
       const side = (lato, u0, u1, v0, v1) => {
         if (!cut || cut.lato !== lato) { box(u0, u1, 0, h, v0, v1, curb); return; }
@@ -2406,7 +2580,7 @@
     // magnolie (Magnolia grandiflora): doppio tronco e chioma scura e lucida, alta e ovale
     const bark = std({ color: 0x4a3e36, roughness: 0.95 });
     const leaf = std({ color: 0x2c4327, roughness: 0.5, metalness: 0.05, flatShading: true });
-    M.magnolie.forEach((t, n) => {
+    live(M.magnolie).forEach((t, n) => {
       const base = 0.36;
       for (const [dx, tilt, r] of [[-0.18, -0.12, 0.2], [0.2, 0.1, 0.17]]) {
         const tr = add(new THREE.CylinderGeometry(r * 0.75, r, 5.2, 10), bark, t.u + dx, base + 2.5, -t.v, true);
@@ -2443,7 +2617,7 @@
 
     // tubo di scarico del serbatoio (foto del 19/10/2026): metallico, esce sotto il serbatoio, corre orizzontale
     // verso il lato della porticina, scavalca il cordolo, scende a terra con un gomito e poggia su una canaletta bianca
-    const TS = M.tuboScarico;
+    const TS = M.tuboScarico && !M.tuboScarico.rimosso ? M.tuboScarico : null;
     if (TS && Array.isArray(TS.percorso) && TS.percorso.length > 1) {
       const pipeMat = std({ color: 0xd3d6d8, roughness: 0.4, metalness: 0.45 }), pr = Number(TS.raggio) || 0.08, yAxis = new THREE.Vector3(0, 1, 0);
       const pts = TS.percorso.map(([u, v, h]) => new THREE.Vector3(u, h, -v));
@@ -2474,7 +2648,7 @@
 
     // gabbia verde: montanti, rete e porticina; cartello di sicurezza sul lato verso l'albero
     const G = M.gabbia, green = std({ color: 0x2f5a3c, roughness: 0.6, metalness: 0.3 });
-    const meshMat = new THREE.MeshStandardMaterial({ map: wireMeshTex(), alphaTest: 0.5, transparent: false, side: THREE.DoubleSide, roughness: 0.6, metalness: 0.3 });
+    const meshMat = once('rete', () => new THREE.MeshStandardMaterial({ map: wireMeshTex(), alphaTest: 0.5, transparent: false, side: THREE.DoubleSide, roughness: 0.6, metalness: 0.3 }));
     const g0 = 0.42, gh = G.altezza, PD = G.porta && typeof G.porta === 'object' ? G.porta : null;
     // montanti tondi verde acqua agli angoli e a metà dei lati; nessun montante dentro il vano della porticina
     const postMat = std({ color: 0x5f9f88, roughness: 0.5, metalness: 0.3 });
@@ -2550,7 +2724,7 @@
     }
 
     // portico: pilastri in travertino e soffitto scuro
-    for (const p of M.pilastri) box(p.u[0], p.u[1], 0, p.altezza, p.v[0], p.v[1], travMat(0.6, 1.8));
+    for (const p of live(M.pilastri)) box(p.u[0], p.u[1], 0, p.altezza, p.v[0], p.v[1], travMat(0.6, 1.8));
     const PO = M.portico;
     box(PO.u[0], PO.u[1], PO.soffitto, PO.soffitto + 0.35, PO.v[0], PO.v[1], std({ color: 0x6a4535, roughness: 0.9 }));
     // fondo del portico (rilievo 132517 e commenti sul posto): cancellata chiusa a barre su tutta la larghezza, alta fin sotto
@@ -2591,13 +2765,14 @@
         g.computeVertexNormals();
         const mats = [k === pieces.length - 1 ? normalRoof : hiddenCapMaterial(), set[piece.kind]];
         const mesh = new THREE.Mesh(g, mats); mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.mats = mats; mesh.userData.porticoCorpo = true;
+        Object.assign(mesh.userData, { facadeCode: 'CU014', kind: piece.kind, y0: 0.04 + piece.y0, floorH: piece.kind === 'attic' ? piece.h : piece.floorH });
         buildingGroup.add(mesh);
       });
     }
 
     // tombini quadrati in ghisa con telaio, a filo del pavimento
     const iron = std({ color: 0x3b3a38, roughness: 0.7, metalness: 0.45 }), ironFrame = std({ color: 0x55524d, roughness: 0.6, metalness: 0.4 });
-    for (const t of M.tombini || []) {
+    for (const t of live(M.tombini)) {
       const L = Number(t.lato) || 0.6, f = 0.05;
       box(t.u - L / 2 - f, t.u + L / 2 + f, 0, 0.03, t.v - L / 2 - f, t.v + L / 2 + f, ironFrame);
       box(t.u - L / 2, t.u + L / 2, 0, 0.034, t.v - L / 2, t.v + L / 2, iron);
@@ -2606,7 +2781,7 @@
 
     // transenne zincate accanto all'aiuola
     const zinc = std({ color: 0xa9adb0, roughness: 0.4, metalness: 0.6 });
-    for (const t of M.transenne || []) {
+    for (const t of live(M.transenne)) {
       const g = new THREE.Group(); g.position.set(t.u, 0, -t.v); g.rotation.y = t.angoloDeg * Math.PI / 180; court.add(g);
       for (const hh of [0.15, 1.05]) { const r = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, t.lunghezza, 8), zinc); r.rotation.z = Math.PI / 2; r.position.set(t.lunghezza / 2, hh, 0); g.add(r); }
       for (let x = 0; x <= t.lunghezza + 0.01; x += 0.16) { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.9, 6), zinc); b.position.set(x, 0.6, 0); g.add(b); }
@@ -2617,12 +2792,22 @@
   }
   /* ---------- alberi da OpenStreetMap (natural=tree, tree_row), in istanze ---------- */
   function rnd(i, k) { const s = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return s - Math.floor(s); }
+  let treeData = null;
   async function addTrees() {
     let data = null;
     try { const response = await fetch('trees.json'); if (response.ok) data = await response.json(); } catch (_) { data = null; }
-    const list = (data?.trees || []).filter((t) => Array.isArray(t.p) && insideMap(t.p) && nearFocusPoint(t.p));
-    if (!list.length || !scene) return;
-    const isPine = (t) => t.g === 'needleleaved' || /pinus|pino/i.test(t.g || '');
+    // id stabile dalla posizione nel file: le modifiche fatte sul posto vi si riferiscono
+    treeData = (data?.trees || []).filter((t) => Array.isArray(t.p)).map((t) => Object.assign({ id: t.id || `t${Math.round(t.p[0] * 1e6)}_${Math.round(t.p[1] * 1e6)}` }, t));
+    buildTrees();
+  }
+  const isPineTree = (t) => t.g === 'needleleaved' || /pinus|pino/i.test(t.g || '');
+  function treeSize(t) { const pine = isPineTree(t), R = Number(t.r) > 0 ? Number(t.r) : (pine ? 5 : 3.5); return { R, h: Math.min(22, Math.max(5, pine ? R * 2.6 + 3 : R * 2.1 + 2.5)), pine }; }
+  function buildTrees() {
+    if (!scene || !treeData) return;
+    if (treeGroup) { scene.remove(treeGroup); disposeTree(treeGroup); treeGroup = null; }
+    const list = treeData.filter((t) => !t.rimosso && insideMap(t.p) && nearFocusPoint(t.p));
+    if (!list.length) return;
+    const isPine = isPineTree;
     const pines = list.filter(isPine), broad = list.filter((t) => !isPine(t)), all = broad.concat(pines);
     const LUMPS = 3;
     const trunkGeo = new THREE.CylinderGeometry(0.14, 0.26, 1, 6); trunkGeo.translate(0, 0.5, 0);
@@ -2662,6 +2847,7 @@
     });
     for (const mesh of [trunks, crowns]) { mesh.castShadow = true; mesh.receiveShadow = true; mesh.instanceMatrix.needsUpdate = true; }
     if (crowns.instanceColor) crowns.instanceColor.needsUpdate = true;
+    trunks.userData.treeIds = crowns.userData.treeIds = all.map((t) => t.id); crowns.userData.lumps = LUMPS;
     treeGroup = new THREE.Group();
     treeGroup.name = 'alberi';
     treeGroup.add(trunks, crowns);
@@ -2873,7 +3059,10 @@
   window.campus3d = { get camera() { return camera; }, get controls() { return controls; }, get scene() { return scene; }, get renderer() { return renderer; }, bounceMinerva: () => bounceMinerva(), pdfToWorld: (x, y) => pdfToWorld(x, y),
     toLonLat: (w) => worldToLonLat(w),
     // editor sul posto (editor.js): configurazioni vive e ricostruzione dei gruppi
-    esterni: { get cfg() { return exteriorsCfg; }, rebuild: () => buildChemistryExteriors() },
+    esterni: { get cfg() { return exteriorsCfg; }, rebuild: () => buildChemistryExteriors(), materiali: PRIM_MATERIALS },
+    project: (lonLat) => { const p = project(lonLat); return new THREE.Vector3(p.x, 0, -p.n); },
+    alberi: { get list() { return treeData; }, rebuild: () => buildTrees(), misure: (t) => treeSize(t) },
+    facciate: { nomi: Object.keys(FACADE_PALETTES), nomeDi: (code) => facadeNameFor(code), set: (code, name) => setFacade(code, name), materiale: (name, kind, tipo) => facadePatchMaterial(name, kind, tipo), campata: FACADE_BAY },
     cortile: { get M() { return courtyardFrame ? courtyardFrame.M : null; }, rebuild: () => loadCourtyardModel() } };
   init();
 })();

@@ -1,0 +1,5 @@
+{
+ "versione": 1,
+ "nota": "Facciate degli edifici modificate dall'editor sul posto: texture ('cortina', 'giallo', 'travertino', 'ocra', 'intonaco') e celle con finestra tolta ('togli') o aggiunta ('aggiungi'), in coordinate di mondo della scena (x, y, z del centro, w × h, ang = direzione del muro).",
+ "edifici": {}
+}

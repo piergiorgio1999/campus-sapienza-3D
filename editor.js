@@ -5,7 +5,10 @@
   // · Modifica: ogni solido ha una scatola di ridimensionamento a parallelepipedo, con una maniglia su ognuna delle sei
   //   facce, sugli angoli e una (rossa, in alto) per spostarlo. Gli oggetti descritti nei JSON (terrazza, panchine, scale,
   //   cortile…) cambiano i loro dati; ogni altro pezzo ("primitiva": una barra, un tubo, un edificio…) viene deformato
-  //   con una trasformazione. Tutto finisce nella collezione "modifiche" del db dell'artifact, che Claude riporta nei file.
+  //   con una trasformazione. Gli alberi si spostano, si eliminano e si aggiungono; "＋ Aggiungi" crea primitive
+  //   (parallelepipedo, cilindro, sfera) con il materiale scelto. Gli edifici non si deformano: si cambia la texture
+  //   della facciata e si tolgono o aggiungono finestre cella per cella.
+  //   Tutto finisce nella collezione "modifiche" del db dell'artifact, che Claude riporta nei file.
   const SNAP = 0.05, MIN = 0.05, HANDLE_PX = 28;
   const ROOTS = ['chimica-esterni', 'cortile-modello', 'alberi', 'edifici', 'minerva', 'planimetria'];
   const KEYS = ['u0', 'u1', 'v0', 'v1', 'h0', 'h1'];
@@ -15,7 +18,11 @@
   let T = null, C = null, scene = null, camera = null, controls = null, canvas = null;
   let db = null, myId = null, saving = false;
   let mode = null; // 'commenta' | 'modifica' | null
-  const base = { esterni: null, cortile: null };
+  const base = { esterni: null, cortile: null, alberi: null, facciate: {} };
+  const FORME = { box: 'Parallelepipedo', cilindro: 'Cilindro', sfera: 'Sfera', albero: 'Albero', pino: 'Pino' };
+  const TEXTURE = { cortina: 'mattoni rossi', giallo: 'mattoni gialli', travertino: 'travertino', ocra: 'intonaco ocra', intonaco: 'intonaco chiaro' };
+  const facadeState = new Map(); // codice edificio → { facciata, finestre: [riquadri] }
+  let placing = null, removed = null, patchGroup = null;
   let overrides = [];
   let comments = [];
   let sel = null, drag = null, down = null;
@@ -38,7 +45,10 @@
     .ed-card .ed-row button{min-height:40px;padding:0 12px;border-radius:8px;border:1px solid #d6cfcc;background:#fff;font:600 13px Arial,Helvetica,sans-serif;cursor:pointer}
     .ed-card .ed-row button.ed-primary{background:#822433;border-color:#822433;color:#fff}
     .ed-card .ed-meta{color:#6f6866;font-size:12px}
-    .ed-card p{margin:0 0 6px;white-space:pre-wrap;overflow-wrap:anywhere}`;
+    .ed-card p{margin:0 0 6px;white-space:pre-wrap;overflow-wrap:anywhere}
+    .ed-card label{display:block;margin:6px 0 2px;font-size:12px;color:#6f6866}
+    .ed-card select{width:100%;min-height:40px;box-sizing:border-box;padding:0 8px;border:1px solid #d6cfcc;border-radius:8px;background:#fff;font:14px Arial,Helvetica,sans-serif}
+    .ed-card .ed-row button[aria-pressed="true"]{background:#f6e9eb;border-color:#822433;color:#822433}`;
     document.head.appendChild(st);
   }
   function el(tag, cls, text) { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
@@ -48,12 +58,14 @@
     ui.bar = el('div', 'ed-bar');
     ui.comment = el('button', 'ed-btn', '💬 Commenta'); ui.comment.type = 'button'; ui.comment.setAttribute('aria-pressed', 'false');
     ui.edit = el('button', 'ed-btn', '⤡ Modifica'); ui.edit.type = 'button'; ui.edit.setAttribute('aria-pressed', 'false');
-    ui.bar.append(ui.comment, ui.edit);
+    ui.add = el('button', 'ed-btn', '＋ Aggiungi'); ui.add.type = 'button'; ui.add.hidden = true;
+    ui.bar.append(ui.add, ui.comment, ui.edit);
     ui.hint = el('div', 'ed-hint'); ui.hint.hidden = true;
     ui.card = el('div', 'ed-card'); ui.card.hidden = true;
     host.append(ui.bar, ui.hint, ui.card);
     ui.comment.addEventListener('click', () => setMode(mode === 'commenta' ? null : 'commenta'));
     ui.edit.addEventListener('click', () => setMode(mode === 'modifica' ? null : 'modifica'));
+    ui.add.addEventListener('click', addCard);
   }
   function hint(text) { ui.hint.textContent = text || ''; ui.hint.hidden = !text; }
   function closeCard() { ui.card.hidden = true; ui.card.replaceChildren(); }
@@ -67,12 +79,13 @@
   }
   function button(label, fn, primary) { const b = el('button', primary ? 'ed-primary' : '', label); b.type = 'button'; b.addEventListener('click', fn); return b; }
   function setMode(next) {
-    mode = next; closeCard(); deselect();
+    mode = next; closeCard(); deselect(); placing = null;
+    ui.add.hidden = mode !== 'modifica';
     ui.comment.setAttribute('aria-pressed', String(mode === 'commenta'));
     ui.edit.setAttribute('aria-pressed', String(mode === 'modifica'));
     const offline = db ? '' : ' (senza accesso a claude.ai non si salva)';
     if (mode === 'commenta') hint('Tocca un punto della scena per lasciare un commento. Tocca una puntina per leggerla.' + offline);
-    else if (mode === 'modifica') hint('Tocca un oggetto: compare la sua scatola. Facce: un lato · angoli: due lati · rossa in alto: sposta.' + offline);
+    else if (mode === 'modifica') hint('Tocca un oggetto o un albero: compare la sua scatola. Tocca un edificio per texture e finestre. ＋ Aggiungi per nuove primitive.' + offline);
     else hint('');
     if (pins) pins.visible = true;
   }
@@ -82,10 +95,10 @@
   // tutto il resto usa il lato 0 di Chimica, allineato con gli edifici vicini
   function frameEsterni(i) { const h = scene.getObjectByName('chimica-esterni'); return h ? h.children.find((g) => g.userData.elemento === i) || null : null; }
   function frameCortile() { const h = scene.getObjectByName('cortile-modello'); return h ? h.children[0] : null; }
-  function frameBy(key) { if (key === 'cortile') return frameCortile(); const m = /^esterni:(\d+)$/.exec(key || ''); return frameEsterni(m ? Number(m[1]) : 0); }
+  function frameBy(key) { if (key === 'cortile') return frameCortile(); const m = /^esterni:(\d+)$/.exec(key || ''); return frameEsterni(m ? Number(m[1]) : 'lato0'); }
   function frameKeyOf(obj) {
     for (let o = obj; o; o = o.parent) {
-      if (o.parent && o.parent.name === 'chimica-esterni' && o.userData.elemento !== undefined) return 'esterni:' + o.userData.elemento;
+      if (o.parent && o.parent.name === 'chimica-esterni' && o.userData.elemento !== undefined) return typeof o.userData.elemento === 'number' ? 'esterni:' + o.userData.elemento : 'lato0';
       if (o.name === 'cortile-modello') return 'cortile';
     }
     return 'lato0';
@@ -96,7 +109,7 @@
   function rayFrom(e) { const rc = new T.Raycaster(); rc.setFromCamera(pointerNdc(e), camera); return rc; }
   const shown = (o) => { for (let x = o; x; x = x.parent) if (!x.visible) return false; return true; };
   function hits(e) {
-    const rc = rayFrom(e), targets = scene.children.filter((o) => o !== fx && o !== pins && o.visible);
+    const rc = rayFrom(e), targets = scene.children.filter((o) => o !== fx && o !== pins && o !== patchGroup && o.visible);
     return rc.intersectObjects(targets, true).filter((h) => {
       const o = h.object, mat = Array.isArray(o.material) ? o.material[(h.face && h.face.materialIndex) || 0] : o.material;
       return shown(o) && !(mat && mat.visible === false) && !o.isSprite;
@@ -125,34 +138,43 @@
   function defQuote(piani) { const out = []; for (let k = 1, prev = 0; k <= piani; k += 1) { const f = 5.25 + 3.95 * (k - 1); out.push(round((prev + f) / 2), round(f)); prev = f; } return out; }
 
   /* ---------- oggetti descritti nei file (cambiano i loro dati) ---------- */
-  function items(E, M) {
+  const isPine = (t) => t.g === 'needleleaved' || /pinus|pino/i.test(t.g || '');
+  function items(E, M, A) {
     const out = [];
+    // ogni oggetto si può eliminare (rimosso: true nel file) salvo quelli "fixed"; parent: l'elemento che lo contiene
     const add = (it) => {
       const { fields, obj } = it;
+      if (!it.fixed && !it.remove && !fields.includes('rimosso')) fields.push('rimosso');
+      const own = it.gone || (() => !!obj.rimosso);
       out.push(Object.assign(it, {
         key: `${it.sorgente}:${it.percorso}`, lock: it.lock || {},
         get: () => { const r = {}; for (const k of fields) if (obj[k] !== undefined) r[k] = clone(obj[k]); return r; },
-        set: (val) => { for (const k of fields) if (val && val[k] !== undefined) obj[k] = clone(val[k]); },
+        set: (val) => { for (const k of fields) { if (val && val[k] !== undefined) obj[k] = clone(val[k]); else if (k === 'rimosso') delete obj.rimosso; } },
+        remove: it.fixed ? null : (it.remove || (() => { obj.rimosso = true; })),
+        gone: () => own() || !!(it.parent && it.parent !== obj && it.parent.rimosso),
       }));
     };
+    const benchItems = (b, P, list, th) => (list || []).forEach((p, k) => add({ ...b, obj: p, percorso: `${P}.panchine.${k}`, label: `Panchina ${k + 1}`, fields: ['u', 'v', 'lunghezza', 'profondita', 'altezza'], lock: { h0: true },
+      box: () => { const L = Number(p.lunghezza) || 2.2, D = Number(p.profondita) || 0.45, av = p.orienta === 'v', du = av ? D : L, dv = av ? L : D; return { u0: p.u - du / 2, u1: p.u + du / 2, v0: p.v - dv / 2, v1: p.v + dv / 2, h0: th(), h1: th() + (Number(p.altezza) || 0.42) }; },
+      apply: (o, n) => { const av = p.orienta === 'v'; p.u = round((n.u0 + n.u1) / 2); p.v = round((n.v0 + n.v1) / 2); p.lunghezza = round(av ? n.v1 - n.v0 : n.u1 - n.u0); p.profondita = round(av ? n.u1 - n.u0 : n.v1 - n.v0); p.altezza = round(n.h1 - th()); } }));
+    const railItems = (b, P, e, th) => (e.ringhiere || []).forEach((l, k) => add({ ...b, percorso: `${P}.ringhiere.${k}`, label: `Ringhiera ${k + 1}`, fields: ['ringhiere', 'ringhiera'], lock: { h0: true },
+      box: () => ({ ...bboxPts(e.ringhiere[k]), h0: th(), h1: th() + (Number((e.ringhiera || {}).altezza) || 1) }),
+      apply: (o, n) => { e.ringhiere[k] = scalePts(e.ringhiere[k], o, n); e.ringhiera = Object.assign({}, e.ringhiera, { altezza: round(n.h1 - th()) }); },
+      verts: { get: () => e.ringhiere[k], set: (q) => { e.ringhiere[k] = q; } },
+      remove: () => { e.ringhiere[k] = []; }, gone: () => !Array.isArray(e.ringhiere[k]) || e.ringhiere[k].length < 2 }));
     if (E) (E.elementi || []).forEach((e, i) => {
-      const b = { sorgente: 'esterni', frameKey: 'esterni:' + i, nome: e.nome || e.tipo, obj: e }, P = `elementi.${i}`;
+      const b = { sorgente: 'esterni', frameKey: 'esterni:' + i, nome: e.nome || e.tipo, obj: e, parent: e }, P = `elementi.${i}`;
       if (e.tipo === 'terrazza') {
         const th = () => Number(e.altezza) || 0.8;
         add({ ...b, percorso: P, label: 'Terrazza', fields: ['poligono', 'altezza'], lock: { h0: true },
           box: () => ({ ...bboxPts(e.poligono), h0: 0, h1: th() }),
           apply: (o, n) => { e.poligono = scalePts(e.poligono, o, n); e.altezza = round(n.h1); },
           verts: { get: () => e.poligono, set: (q) => { e.poligono = q; } } });
-        if (e.prato) add({ ...b, percorso: P + '.prato', label: 'Aiuola della terrazza', fields: ['prato'], lock: { h0: true, h1: true },
+        if (e.prato) add({ ...b, percorso: P + '.prato', label: 'Aiuola della terrazza', fields: ['prato'], lock: { h0: true, h1: true }, fixed: true,
           box: () => ({ u0: e.prato[0], v0: e.prato[1], u1: e.prato[2], v1: e.prato[3], h0: th(), h1: th() + 0.18 }),
           apply: (o, n) => { e.prato = [n.u0, n.v0, n.u1, n.v1].map(round); } });
-        (e.panchine || []).forEach((p, k) => add({ ...b, obj: p, percorso: `${P}.panchine.${k}`, label: `Panchina ${k + 1}`, fields: ['u', 'v', 'lunghezza', 'profondita', 'altezza'], lock: { h0: true },
-          box: () => { const L = Number(p.lunghezza) || 2.2, D = Number(p.profondita) || 0.45, av = p.orienta === 'v', du = av ? D : L, dv = av ? L : D; return { u0: p.u - du / 2, u1: p.u + du / 2, v0: p.v - dv / 2, v1: p.v + dv / 2, h0: th(), h1: th() + (Number(p.altezza) || 0.42) }; },
-          apply: (o, n) => { const av = p.orienta === 'v'; p.u = round((n.u0 + n.u1) / 2); p.v = round((n.v0 + n.v1) / 2); p.lunghezza = round(av ? n.v1 - n.v0 : n.u1 - n.u0); p.profondita = round(av ? n.u1 - n.u0 : n.v1 - n.v0); p.altezza = round(n.h1 - th()); } }));
-        (e.ringhiere || []).forEach((l, k) => add({ ...b, percorso: `${P}.ringhiere.${k}`, label: `Ringhiera ${k + 1}`, fields: ['ringhiere', 'ringhiera'], lock: { h0: true },
-          box: () => ({ ...bboxPts(e.ringhiere[k]), h0: th(), h1: th() + (Number((e.ringhiera || {}).altezza) || 1) }),
-          apply: (o, n) => { e.ringhiere[k] = scalePts(e.ringhiere[k], o, n); e.ringhiera = Object.assign({}, e.ringhiera, { altezza: round(n.h1 - th()) }); },
-          verts: { get: () => e.ringhiere[k], set: (q) => { e.ringhiere[k] = q; } } }));
+        benchItems(b, P, e.panchine, th);
+        railItems(b, P, e, th);
       } else if (e.tipo === 'area' || e.tipo === 'pilastro') {
         const pil = e.tipo === 'pilastro';
         add({ ...b, percorso: P, label: b.nome, fields: pil ? ['poligono', 'altezza'] : ['poligono'], lock: pil ? { h0: true } : { h0: true, h1: true },
@@ -164,6 +186,39 @@
         add({ ...b, percorso: P, label: b.nome, fields: ['u', 'lunghezza', 'larghezza', 'distacco', 'quote'], lock: { h0: true },
           box: () => { const L = Number(e.lunghezza) || 8.4, W = Number(e.larghezza) || 4.3, d = Number(e.distacco) || 0.5, q = quote(); return { u0: e.u - L / 2, u1: e.u + L / 2, v0: d, v1: d + W, h0: 0, h1: q[q.length - 1] + 1 }; },
           apply: (o, n) => { const k = (n.h1 - 1) / Math.max(0.5, o.h1 - 1); e.quote = quote().map((x) => round(x * k)); e.u = round((n.u0 + n.u1) / 2); e.lunghezza = round(n.u1 - n.u0); e.distacco = round(Math.max(0.05, n.v0)); e.larghezza = round(n.v1 - n.v0); } });
+      } else if (e.tipo === 'ingresso') {
+        const W = () => Number((e.porta || {}).larghezza) || 2.3, zero = () => 0;
+        add({ ...b, percorso: P + '.porta', label: "Portone d'ingresso", fields: ['u', 'porta'], lock: { h0: true },
+          box: () => ({ u0: e.u - W() / 2, u1: e.u + W() / 2, v0: 0, v1: 0.16, h0: 0, h1: Number((e.porta || {}).altezza) || 3.3 }),
+          apply: (o, n) => { e.u = round((n.u0 + n.u1) / 2); e.porta = Object.assign({}, e.porta, { larghezza: round(n.u1 - n.u0), altezza: round(n.h1) }); },
+          remove: () => { e.porta = Object.assign({}, e.porta, { rimosso: true }); }, gone: () => !!(e.porta && e.porta.rimosso) });
+        const RV = e.rivestimento;
+        if (RV) add({ ...b, obj: RV, percorso: P + '.rivestimento', label: 'Rivestimento chiaro con la scritta', fields: ['u', 'altezza'], lock: { h0: true },
+          box: () => ({ u0: RV.u[0], u1: RV.u[1], v0: -0.02, v1: 0.14, h0: 0, h1: Number(RV.altezza) || 4.6 }),
+          apply: (o, n) => { RV.u = [round(n.u0), round(n.u1)]; RV.altezza = round(n.h1); } });
+        const TT = e.tattile;
+        if (TT) add({ ...b, obj: TT, percorso: P + '.tattile', label: 'Percorso tattile', fields: ['u', 'v', 'larghezza'], lock: { h0: true, h1: true },
+          box: () => { const w = Number(TT.larghezza) || 0.6, tu = TT.u != null ? Number(TT.u) : e.u; return { u0: tu - w / 2, u1: tu + w / 2, v0: TT.v[0], v1: TT.v[1], h0: 0, h1: 0.05 }; },
+          apply: (o, n) => { TT.u = round((n.u0 + n.u1) / 2); TT.larghezza = round(n.u1 - n.u0); TT.v = [round(n.v0), round(n.v1)]; } });
+        (e.aiuole || []).forEach((a, k) => add({ ...b, obj: a, percorso: `${P}.aiuole.${k}`, label: `Prato ${k + 1} dell'ingresso`, fields: ['u', 'v', 'cordolo'], lock: { h0: true },
+          box: () => ({ u0: a.u[0], u1: a.u[1], v0: a.v[0], v1: a.v[1], h0: 0, h1: Number(a.cordolo) || 0.18 }),
+          apply: (o, n) => { a.u = [round(n.u0), round(n.u1)]; a.v = [round(n.v0), round(n.v1)]; a.cordolo = round(n.h1); } }));
+        const FI = e.fiori;
+        if (FI) add({ ...b, obj: FI, percorso: P + '.fiori', label: 'Aiuola fiorita', fields: ['u', 'v', 'altezza'], lock: { h0: true },
+          box: () => ({ u0: FI.u[0], u1: FI.u[1], v0: FI.v[0], v1: FI.v[1], h0: 0.1, h1: Number(FI.altezza) || 0.4 }),
+          apply: (o, n) => { FI.u = [round(n.u0), round(n.u1)]; FI.v = [round(n.v0), round(n.v1)]; FI.altezza = round(n.h1); } });
+        benchItems(b, P, e.panchine, zero);
+        railItems(b, P, e, zero);
+        (e.palme || []).forEach((p, k) => add({ ...b, obj: p, percorso: `${P}.palme.${k}`, label: `Palma ${k + 1}`, fields: ['u', 'v', 'altezza'], lock: { h0: true },
+          box: () => ({ u0: p.u - 0.9, u1: p.u + 0.9, v0: p.v - 0.9, v1: p.v + 0.9, h0: 0, h1: Number(p.altezza) || 4 }),
+          apply: (o, n) => { p.u = round((n.u0 + n.u1) / 2); p.v = round((n.v0 + n.v1) / 2); p.altezza = round(n.h1); } }));
+        (e.totem || []).forEach((t, k) => add({ ...b, obj: t, percorso: `${P}.totem.${k}`, label: `Totem ${k + 1}`, fields: ['u', 'v', 'altezza'], lock: { h0: true },
+          box: () => ({ u0: t.u - 0.25, u1: t.u + 0.25, v0: t.v - 0.1, v1: t.v + 0.1, h0: 0, h1: Number(t.altezza) || 2.4 }),
+          apply: (o, n) => { t.u = round((n.u0 + n.u1) / 2); t.v = round((n.v0 + n.v1) / 2); t.altezza = round(n.h1); } }));
+        const RS = e.rastrelliera;
+        if (RS) add({ ...b, obj: RS, percorso: P + '.rastrelliera', label: 'Rastrelliera per bici', fields: ['u', 'v', 'posti'], lock: { h0: true, h1: true },
+          box: () => ({ u0: RS.u - 0.02, u1: RS.u + ((Number(RS.posti) || 3) - 1) * 0.6 + 0.02, v0: RS.v - 0.37, v1: RS.v + 0.37, h0: 0, h1: 0.8 }),
+          apply: (o, n) => { RS.u = round(n.u0 + 0.02); RS.posti = Math.max(1, Math.round((n.u1 - n.u0 - 0.04) / 0.6) + 1); RS.v = round((n.v0 + n.v1) / 2); } });
       } else if (e.tipo === 'palo') {
         add({ ...b, percorso: P, label: b.nome, fields: ['u', 'v', 'altezza'], lock: { h0: true },
           box: () => ({ u0: e.u - 0.2, u1: e.u + 0.2, v0: e.v - 0.2, v1: e.v + 0.2, h0: 0, h1: Number(e.altezza) || 11 }),
@@ -177,20 +232,20 @@
       const circ = (o, r) => ({ u0: o.u - r, u1: o.u + r, v0: o.v - r, v1: o.v + r });
       const mid = (n) => [round((n.u0 + n.u1) / 2), round((n.v0 + n.v1) / 2)];
       const side = (n) => round(Math.max(n.u1 - n.u0, n.v1 - n.v0));
-      if (M.pavimento) add({ ...b, obj: M.pavimento, percorso: 'pavimento', label: 'Pavimento del cortile', fields: ['u', 'v'], lock: { h0: true, h1: true }, box: () => rect(M.pavimento, 0, 0.03), apply: (o, n) => setRect(M.pavimento, n) });
+      if (M.pavimento) add({ ...b, obj: M.pavimento, percorso: 'pavimento', label: 'Pavimento del cortile', fields: ['u', 'v'], lock: { h0: true, h1: true }, fixed: true, box: () => rect(M.pavimento, 0, 0.03), apply: (o, n) => setRect(M.pavimento, n) });
       (M.aiuole || []).forEach((a, k) => add({ ...b, obj: a, percorso: `aiuole.${k}`, label: `Aiuola ${a.id || k + 1} del cortile`, fields: ['u', 'v', 'altezza'], lock: { h0: true }, box: () => rect(a, 0, Number(a.altezza) || 0.42), apply: (o, n) => { setRect(a, n); a.altezza = round(n.h1); } }));
       const G = M.gabbia;
       if (G) {
-        add({ ...b, obj: G, percorso: 'gabbia', label: 'Gabbia del silos', fields: ['u', 'v', 'altezza'], lock: { h0: true }, box: () => rect(G, 0.42, 0.42 + (Number(G.altezza) || 2)), apply: (o, n) => { setRect(G, n); G.altezza = round(n.h1 - 0.42); } });
-        if (G.porta && typeof G.porta === 'object') add({ ...b, obj: G, percorso: 'gabbia.porta', label: 'Porticina della gabbia', fields: ['porta'],
+        add({ ...b, obj: G, percorso: 'gabbia', label: 'Gabbia del silos', fields: ['u', 'v', 'altezza'], lock: { h0: true }, fixed: true, box: () => rect(G, 0.42, 0.42 + (Number(G.altezza) || 2)), apply: (o, n) => { setRect(G, n); G.altezza = round(n.h1 - 0.42); } });
+        if (G.porta && typeof G.porta === 'object') add({ ...b, obj: G, percorso: 'gabbia.porta', label: 'Porticina della gabbia', fields: ['porta'], fixed: true,
           box: () => ({ u0: G.u[0] - 0.07, u1: G.u[0] - 0.01, v0: G.porta.v[0], v1: G.porta.v[1], h0: Number(G.porta.soglia) || 0.12, h1: Number(G.porta.sommita) || 2.05 }),
           apply: (o, n) => { G.porta = Object.assign({}, G.porta, { v: [round(n.v0), round(n.v1)], soglia: round(n.h0), sommita: round(n.h1) }); } });
       }
       (M.pilastri || []).forEach((p, k) => add({ ...b, obj: p, percorso: `pilastri.${k}`, label: `Pilastro ${k + 1} del portico`, fields: ['u', 'v', 'altezza'], lock: { h0: true }, box: () => rect(p, 0, Number(p.altezza) || 4.5), apply: (o, n) => { setRect(p, n); p.altezza = round(n.h1); } }));
-      if (M.portico) add({ ...b, obj: M.portico, percorso: 'portico', label: 'Portico', fields: ['u', 'v', 'soffitto'], lock: { h0: true }, box: () => rect(M.portico, 0, Number(M.portico.soffitto) || 4.5), apply: (o, n) => { setRect(M.portico, n); M.portico.soffitto = round(n.h1); } });
+      if (M.portico) add({ ...b, obj: M.portico, percorso: 'portico', label: 'Portico', fields: ['u', 'v', 'soffitto'], lock: { h0: true }, fixed: true, box: () => rect(M.portico, 0, Number(M.portico.soffitto) || 4.5), apply: (o, n) => { setRect(M.portico, n); M.portico.soffitto = round(n.h1); } });
       (M.magnolie || []).forEach((m, k) => add({ ...b, obj: m, percorso: `magnolie.${k}`, label: `Magnolia ${m.id || k + 1}`, fields: ['u', 'v', 'raggio', 'altezza'], lock: { h0: true }, box: () => ({ ...circ(m, Number(m.raggio) || 3), h0: 0, h1: Number(m.altezza) || 12 }), apply: (o, n) => { [m.u, m.v] = mid(n); m.raggio = round(side(n) / 2); m.altezza = round(n.h1); } }));
       const S = M.serbatoio;
-      if (S) add({ ...b, obj: S, percorso: 'serbatoio', label: "Silos dell'azoto", fields: ['u', 'v', 'raggio', 'altezza'], lock: { h0: true }, box: () => ({ ...circ(S, Number(S.raggio) || 0.8), h0: 0, h1: Number(S.altezza) || 4.2 }), apply: (o, n) => { [S.u, S.v] = mid(n); S.raggio = round(side(n) / 2); S.altezza = round(n.h1); } });
+      if (S) add({ ...b, obj: S, percorso: 'serbatoio', label: "Silos dell'azoto", fields: ['u', 'v', 'raggio', 'altezza'], lock: { h0: true }, fixed: true, box: () => ({ ...circ(S, Number(S.raggio) || 0.8), h0: 0, h1: Number(S.altezza) || 4.2 }), apply: (o, n) => { [S.u, S.v] = mid(n); S.raggio = round(side(n) / 2); S.altezza = round(n.h1); } });
       (M.tombini || []).forEach((t, k) => add({ ...b, obj: t, percorso: `tombini.${k}`, label: `Tombino ${k + 1}`, fields: ['u', 'v', 'lato'], lock: { h0: true, h1: true }, box: () => ({ ...circ(t, (Number(t.lato) || 0.6) / 2), h0: 0, h1: 0.04 }), apply: (o, n) => { [t.u, t.v] = mid(n); t.lato = side(n); } }));
       (M.transenne || []).forEach((t, k) => add({ ...b, obj: t, percorso: `transenne.${k}`, label: `Transenna ${k + 1}`, fields: ['u', 'v', 'lunghezza'], lock: { h0: true, h1: true }, box: () => ({ u0: t.u, u1: t.u + (Number(t.lunghezza) || 2), v0: t.v - 0.05, v1: t.v + 0.05, h0: 0, h1: 1.1 }), apply: (o, n) => { t.u = round(n.u0); t.lunghezza = round(n.u1 - n.u0); t.v = round((n.v0 + n.v1) / 2); } }));
       const TS = M.tuboScarico;
@@ -202,20 +257,37 @@
             const f0 = TS.percorso[TS.percorso.length - 1]; TS.percorso = scalePts(TS.percorso, inner(o), inner(n)); const f1 = TS.percorso[TS.percorso.length - 1];
             if (TS.canaletta) TS.canaletta = Object.assign({}, TS.canaletta, { u: round(TS.canaletta.u + f1[0] - f0[0]), v: TS.canaletta.v.map((x) => round(x + f1[1] - f0[1])) });
           } });
-        if (TS.fossetta) add({ ...b, obj: TS, percorso: 'tuboScarico.fossetta', label: 'Fossetta di scarico', fields: ['fossetta'], lock: { h0: true, h1: true },
+        if (TS.fossetta) add({ ...b, obj: TS, percorso: 'tuboScarico.fossetta', label: 'Fossetta di scarico', fields: ['fossetta'], lock: { h0: true, h1: true }, parent: TS,
+          remove: () => { TS.fossetta = null; }, gone: () => !TS.fossetta,
           box: () => { const F = TS.fossetta, w = (Number(F.larghezza) || 0.2) / 2; return { u0: F.u - w, u1: F.u + w, v0: F.v[0], v1: F.v[1], h0: 0, h1: 0.04 }; },
           apply: (o, n) => { TS.fossetta = Object.assign({}, TS.fossetta, { u: round((n.u0 + n.u1) / 2), larghezza: round(n.u1 - n.u0), v: [round(n.v0), round(n.v1)] }); } });
       }
     }
+    // alberi (dalle chiome dell'ortofoto o aggiunti): si spostano, si ridimensionano e si eliminano
+    if (A) A.forEach((t) => {
+      const ms = () => C.alberi.misure(t);
+      add({ sorgente: 'albero', frameKey: 'lato0', obj: t, percorso: t.id, nome: t.id, label: isPine(t) ? 'Pino' : 'Albero', fields: ['p', 'r', 'g', 'nuovo'], lock: { h0: true },
+        box: () => { const q = toLocal(frameBy('lato0'), C.project(t.p)), m = ms(); return { u0: q.u - m.R, u1: q.u + m.R, v0: q.v - m.R, v1: q.v + m.R, h0: 0, h1: m.h }; },
+        apply: (o, n) => {
+          const ll = C.toLonLat(toWorld(frameBy('lato0'), (n.u0 + n.u1) / 2, (n.v0 + n.v1) / 2, 0)), pine = ms().pine;
+          t.p = [Number(ll[0].toFixed(7)), Number(ll[1].toFixed(7))];
+          // trascinando la faccia alta cambia l'altezza (e con lei la chioma), altrimenti la larghezza della chioma
+          t.r = round(Math.abs(n.h1 - o.h1) > 1e-3 ? Math.max(0.6, (n.h1 - (pine ? 3 : 2.5)) / (pine ? 2.6 : 2.1)) : Math.max(0.3, Math.max(n.u1 - n.u0, n.v1 - n.v0) / 2));
+        } });
+    });
+    // primitive aggiunte: scatola nelle coordinate del lato 0
+    if (E) (E.primitive || []).forEach((pr) => add({ sorgente: 'aggiunta', frameKey: 'lato0', obj: pr, percorso: pr.id, nome: pr.id, label: `${FORME[pr.forma] || FORME.box} in ${pr.materiale || 'travertino'}`, fields: ['id', 'forma', 'materiale', 'box'], primitiva: true,
+      box: () => pr.box, apply: (o, n) => { pr.box = roundBox(n); } }));
     return out;
   }
-  const liveItems = () => items(C.esterni.cfg, C.cortile.M);
+  const liveItems = () => items(C.esterni.cfg, C.cortile.M, C.alberi.list);
   const findItem = (key) => liveItems().find((it) => it.key === key) || null;
-  function baseValue(it) { const twin = items(base.esterni, base.cortile).find((x) => x.key === it.key); return twin ? clone(twin.get()) : null; }
+  function baseValue(it) { const twin = items(base.esterni, base.cortile, base.alberi).find((x) => x.key === it.key); return twin ? clone(twin.get()) : null; }
   // l'oggetto descritto più piccolo la cui scatola contiene il punto toccato
   function itemAt(world) {
     let best = null;
     for (const it of liveItems()) {
+      if (it.sorgente === 'albero' || it.gone()) continue; // gli alberi si prendono toccando tronco o chioma
       const f = frameBy(it.frameKey); if (!f) continue;
       const b = it.box();
       if (inBox(b, toLocal(f, world), 0.25) && (!best || vol(b) < best.v)) best = { it, v: vol(b) };
@@ -249,9 +321,15 @@
     }
     return roundBox(o);
   }
+  function treeItemFromHit(h) {
+    const o = h.object, ids = o && o.userData.treeIds;
+    if (!ids || h.instanceId == null) return null;
+    const id = ids[o.userData.lumps ? Math.floor(h.instanceId / o.userData.lumps) : h.instanceId];
+    return id ? findItem('albero:' + id) : null;
+  }
   function primFromHit(h) {
-    const o = h.object;
-    if (!o || !o.isMesh || !rootOf(o)) return null;
+    const o = h.object, root = o && rootOf(o);
+    if (!o || !o.isMesh || !root || root.name === 'edifici' || root.name === 'alberi') return null; // edifici: solo texture e finestre
     const p = { mesh: o, inst: h.instanceId != null ? h.instanceId : null, path: pathOf(o), frameKey: frameKeyOf(o) };
     if (!p.path || !frameBy(p.frameKey)) return null;
     const b = primBox(p);
@@ -296,6 +374,7 @@
 
   /* ---------- selezione e maniglie ---------- */
   function selBox() { return sel.type === 'item' ? roundBox(sel.it.box()) : primBox(sel.p); }
+  const boxed = () => sel && sel.type !== 'edificio';
   function deselect() {
     if (!sel) return;
     fx.remove(sel.vis); sel.vis.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
@@ -338,11 +417,11 @@
     scaleHandles();
   }
   function scaleHandles() {
-    if (!sel) return;
+    if (!boxed()) return;
     for (const m of sel.handles) { const r = m.userData.handle.role, d = camera.position.distanceTo(m.position); m.scale.setScalar(Math.max(0.08, d * 0.016) * (r === 'move' ? 1.3 : r === 'corner' ? 0.75 : r === 'vertex' ? 0.8 : 1)); }
   }
   function handleAt(e) {
-    if (!sel) return null;
+    if (!boxed()) return null;
     const r = canvas.getBoundingClientRect(); let best = null;
     for (const m of sel.handles) {
       const q = m.position.clone().project(camera); if (q.z > 1) continue;
@@ -360,9 +439,24 @@
       el('p', 'ed-meta', 'Facce: un lato · angoli: due lati · rossa in alto: sposta' + (sel.type === 'item' && sel.it.verts ? ' · gialle: vertici' : '') + (sel.type === 'item' && sel.it.lock.h0 ? ' · la base resta ferma' : '') + '.')];
     const row = el('div', 'ed-row');
     if (sel.alt) { const alt = sel.alt, back = sel.type === 'item' ? { type: 'item', it: sel.it } : { type: 'prim', p: sel.p }; row.append(button(alt.type === 'prim' ? 'Solo questo pezzo' : 'Oggetto intero', () => select(Object.assign({}, alt, { alt: back })))); }
-    if (overrideOf()) row.append(button('Ripristina originale', restore));
+    if (sel.type === 'item' && sel.it.primitiva) {
+      const pr = sel.it.obj, pick = (lbl, opts, val, fn) => { const l = el('label', '', lbl), sl = el('select'); for (const [k, t] of opts) { const o = el('option', '', t); o.value = k; o.selected = k === val; sl.append(o); } sl.addEventListener('change', () => fn(sl.value)); return [l, sl]; };
+      const change = (k, v) => { pr[k] = v; saveItem(sel.it); rebuild('aggiunta'); };
+      nodes.push(...pick('Forma', [['box', FORME.box], ['cilindro', FORME.cilindro], ['sfera', FORME.sfera]], pr.forma || 'box', (v) => change('forma', v)));
+      nodes.push(...pick('Materiale', C.esterni.materiali.map((m) => [m, m]), pr.materiale || 'travertino', (v) => change('materiale', v)));
+    }
+    if (overrideOf()) row.append(button(sel.type === 'item' && !baseValue(sel.it) ? 'Annulla aggiunta' : 'Ripristina originale', restore));
+    if (sel.type === 'item' && sel.it.remove) row.append(button('Elimina', removeSel));
     row.append(button('Fine', () => deselect(), true));
     nodes.push(row); openCard(nodes, 'dock');
+  }
+  // elimina l'oggetto selezionato (resta nel file con rimosso: true) e offre di annullare
+  function removeSel() {
+    const it = sel.it, prev = it.get();
+    it.remove(); saveItem(it); rebuild(it.sorgente); deselect();
+    removed = { it, prev };
+    openCard([el('h3', '', 'Eliminato: ' + it.label), el('p', 'ed-meta', 'Resta nel file come "rimosso": Claude lo toglie anche dai dati.'),
+      (() => { const r = el('div', 'ed-row'); r.append(button('Annulla', () => { const x = removed; removed = null; if (!x) return; x.it.set(x.prev); saveItem(x.it); rebuild(x.it.sorgente); closeCard(); }), button('Chiudi', closeCard, true)); return r; })()], 'dock');
   }
 
   /* ---------- trascinamento ---------- */
@@ -400,6 +494,116 @@
     } else saveSelPrim();
   }
 
+
+  /* ---------- aggiunta di primitive e alberi ---------- */
+  function addCard() {
+    if (mode !== 'modifica') return;
+    deselect();
+    const shape = el('select'), mat = el('select'), matLbl = el('label', '', 'Materiale');
+    for (const [k, t] of Object.entries(FORME)) { const o = el('option', '', t); o.value = k; shape.append(o); }
+    for (const m of C.esterni.materiali) { const o = el('option', '', m); o.value = m; mat.append(o); }
+    const sync = () => { const tree = shape.value === 'albero' || shape.value === 'pino'; mat.hidden = matLbl.hidden = tree; };
+    shape.addEventListener('change', sync); sync();
+    const row = el('div', 'ed-row');
+    row.append(button('Annulla', () => { placing = null; closeCard(); setMode('modifica'); }), button('Tocca dove metterlo', () => {
+      placing = { forma: shape.value, materiale: mat.value }; closeCard();
+      hint('Tocca il punto della scena dove mettere: ' + FORME[placing.forma].toLowerCase() + (placing.forma in { albero: 1, pino: 1 } ? '' : ' in ' + placing.materiale) + '.');
+    }, true));
+    openCard([el('h3', '', 'Aggiungi'), el('label', '', 'Forma'), shape, matLbl, mat, row], 'dock');
+  }
+  const newId = (p) => p + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
+  function placeAt(hit) {
+    const what = placing; placing = null;
+    if (what.forma === 'albero' || what.forma === 'pino') {
+      if (!C.alberi.list) return;
+      const ll = C.toLonLat(hit.point), t = { id: newId('n'), p: [Number(ll[0].toFixed(7)), Number(ll[1].toFixed(7))], r: what.forma === 'pino' ? 4 : 3, g: what.forma === 'pino' ? 'needleleaved' : null, nuovo: true };
+      C.alberi.list.push(t); C.alberi.rebuild();
+      const it = findItem('albero:' + t.id); if (it) { saveItem(it); select({ type: 'item', it }); }
+      return;
+    }
+    const q = toLocal(frameBy('lato0'), hit.point), u = snap(q.u), v = snap(q.v), h = round(q.h);
+    const pr = { id: newId('p'), forma: what.forma, materiale: what.materiale, box: { u0: round(u - 0.5), u1: round(u + 0.5), v0: round(v - 0.5), v1: round(v + 0.5), h0: h, h1: round(h + 1) } };
+    const E = C.esterni.cfg; (E.primitive = E.primitive || []).push(pr); C.esterni.rebuild();
+    const it = findItem('aggiunta:' + pr.id); if (it) { saveItem(it); select({ type: 'item', it }); }
+  }
+
+  /* ---------- edifici: texture della facciata e finestre ---------- */
+  // ogni cella di facciata (una campata × un piano) ha una finestra; un riquadro appoggiato sul muro la toglie (muro pieno)
+  // o ne aggiunge una (finestra singola); i riquadri sono in coordinate di mondo, salvati con l'edificio
+  function facadeOf(code) { if (!facadeState.has(code)) facadeState.set(code, clone(base.facciate[code] || { facciata: null, finestre: [] })); return facadeState.get(code); }
+  function drawPatches(code) {
+    for (const m of patchGroup.children.filter((c) => c.userData.codice === code)) { patchGroup.remove(m); m.geometry.dispose(); }
+    const st = facadeOf(code), name = C.facciate.nomeDi(code);
+    for (const f of st.finestre || []) {
+      const g = new T.PlaneGeometry(f.w, f.h), uv = g.attributes.uv;
+      if (f.tipo === 'togli') for (let i = 0; i < uv.count; i += 1) uv.setXY(i, f.u0 + uv.getX(i) * f.du, f.v0 + uv.getY(i) * f.dv); // stesse coordinate del muro: i mattoni combaciano
+      const m = new T.Mesh(g, C.facciate.materiale(name, f.kind, f.tipo === 'togli' ? 'muro' : 'finestra'));
+      const x = new T.Vector3(Math.cos(f.ang), 0, Math.sin(f.ang)), y = new T.Vector3(0, 1, 0), z = new T.Vector3().crossVectors(x, y);
+      m.matrixAutoUpdate = false; m.matrix.makeBasis(x, y, z).setPosition(f.x, f.y, f.z); m.matrixWorldNeedsUpdate = true;
+      m.userData.codice = code; m.receiveShadow = true; patchGroup.add(m);
+    }
+  }
+  function applyFacade(code) { const st = facadeOf(code); C.facciate.set(code, st.facciata || null); drawPatches(code); }
+  function applyFacadeDoc(o) {
+    const code = o.codice; if (!code) return;
+    const st = facadeOf(code), next = { facciata: o.facciata || null, finestre: clone(o.finestre || []) };
+    if (JSON.stringify(st) === JSON.stringify(next)) return;
+    facadeState.set(code, next); applyFacade(code);
+    if (sel && sel.type === 'edificio' && sel.code === code) buildingCard();
+  }
+  function saveFacade(code) {
+    const st = facadeOf(code);
+    return saveDoc(docId('edificio:' + code), { sorgente: 'edificio', codice: code, oggetto: 'Facciata ' + code, tipo: 'facciata', facciata: st.facciata || null, finestre: st.finestre || [], originale: base.facciate[code] || null, stato: 'da applicare', autore: myId, aggiornato: new Date().toISOString() });
+  }
+  // la cella sotto il dito: campata e piano dalle stesse coordinate usate per le texture del muro
+  function cellFromHit(h) {
+    const m = h.object, ud = m.userData;
+    if (!ud.facadeCode || !ud.kind || !h.face) return null;
+    m.updateWorldMatrix(true, false);
+    const n = h.face.normal.clone().transformDirection(m.matrixWorld);
+    if (Math.abs(n.y) > 0.5) return null; // tetto
+    const pos = m.geometry.attributes.position, vs = [h.face.a, h.face.b, h.face.c].map((i) => new T.Vector3().fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld));
+    let dx = 0, dz = 0, best = -1;
+    for (let a = 0; a < 3; a += 1) for (let b = a + 1; b < 3; b += 1) { const ex = vs[b].x - vs[a].x, ez = vs[b].z - vs[a].z, l = ex * ex + ez * ez; if (l > best) { best = l; dx = ex; dz = ez; } }
+    const len = Math.sqrt(best) || 1; dx /= len; dz /= len;
+    if (dx < -1e-6 || (Math.abs(dx) <= 1e-6 && dz < 0)) { dx = -dx; dz = -dz; }
+    const bay = C.facciate.campata, fh = ud.floorH, y0 = ud.y0, along = (p) => p.x * dx + p.z * dz;
+    const sHit = along(h.point), i = Math.floor(sHit / bay), j = Math.floor((h.point.y - y0) / fh), sa = vs.map(along), ys = vs.map((v) => v.y);
+    const s0 = Math.max(i * bay, Math.min(...sa)), s1 = Math.min((i + 1) * bay, Math.max(...sa)), ya = Math.max(y0 + j * fh, Math.min(...ys)), yb = Math.min(y0 + (j + 1) * fh, Math.max(...ys));
+    if (s1 - s0 < 0.3 || yb - ya < 0.3) return null;
+    const c = h.point.clone().addScaledVector(new T.Vector3(dx, 0, dz), (s0 + s1) / 2 - sHit).addScaledVector(new T.Vector3(n.x, 0, n.z).normalize(), 0.025);
+    return { code: ud.facadeCode, kind: ud.kind, x: round(c.x), y: round((ya + yb) / 2), z: round(c.z), w: round(s1 - s0), h: round(yb - ya), ang: Math.round(Math.atan2(dz, dx) * 1e4) / 1e4, u0: s0 / bay, v0: (ya - y0) / fh, du: (s1 - s0) / bay, dv: (yb - ya) / fh };
+  }
+  function togglePatch(h) {
+    const c = cellFromHit(h);
+    if (!c || c.code !== sel.code) { hint(c ? 'Questa è la facciata di un altro edificio: selezionalo prima.' : 'Qui non c’è una cella di facciata (tetto o muro troppo stretto).'); return; }
+    const st = facadeOf(c.code), list = st.finestre || (st.finestre = []);
+    const k = list.findIndex((f) => Math.hypot(f.x - c.x, f.y - c.y, f.z - c.z) < 0.3);
+    if (k >= 0) { list.splice(k, 1); hint('Cella ripristinata com’era.'); }
+    else if (sel.tool === 'togli' && c.kind === 'attic') { hint('Nell’attico non ci sono finestre da togliere.'); return; }
+    else { list.push(Object.assign({ tipo: sel.tool }, c)); delete list[list.length - 1].code; hint(sel.tool === 'togli' ? 'Finestra tolta.' : 'Finestra aggiunta.'); }
+    drawPatches(c.code); saveFacade(c.code);
+  }
+  function selectBuilding(h) {
+    const code = h.object.userData.facadeCode;
+    if (!code) { deselect(); hint('Edificio del quartiere: non si modifica.'); return; }
+    deselect();
+    sel = { type: 'edificio', code, tool: null, vis: new T.Group(), handles: [] };
+    fx.add(sel.vis); buildingCard();
+  }
+  function buildingCard() {
+    if (!sel || sel.type !== 'edificio') return;
+    const code = sel.code, st = facadeOf(code), sl = el('select');
+    for (const k of C.facciate.nomi) { const o = el('option', '', TEXTURE[k] || k); o.value = k; o.selected = k === C.facciate.nomeDi(code); sl.append(o); }
+    sl.addEventListener('change', () => { st.facciata = sl.value; applyFacade(code); saveFacade(code); });
+    const tool = (k, label) => { const b = button(label, () => { sel.tool = sel.tool === k ? null : k; buildingCard(); hint(sel.tool ? 'Tocca una cella della facciata. Toccala di nuovo per rimetterla com’era.' : ''); }); b.setAttribute('aria-pressed', String(sel.tool === k)); return b; };
+    const row = el('div', 'ed-row'), n = (st.finestre || []).length;
+    row.append(tool('togli', 'Togli finestre'), tool('aggiungi', 'Aggiungi finestre'));
+    if (st.facciata || n) row.append(button('Ripristina originale', () => { facadeState.set(code, clone(base.facciate[code] || { facciata: null, finestre: [] })); applyFacade(code); saveFacade(code); buildingCard(); }));
+    row.append(button('Fine', () => deselect(), true));
+    openCard([el('h3', '', 'Edificio ' + code), el('p', 'ed-meta', 'L’edificio non si deforma: si cambiano la texture e le finestre.' + (n ? ` Celle modificate: ${n}.` : '')), el('label', '', 'Texture della facciata'), sl, row], 'dock');
+  }
+
   /* ---------- salvataggio ---------- */
   const docId = (key) => String(key).replace(/[^A-Za-z0-9_\-.~:@+]/g, '_');
   async function saveDoc(id, data) {
@@ -418,8 +622,9 @@
   async function restore() {
     if (!sel) return;
     if (sel.type === 'item') {
-      const it = sel.it, orig = baseValue(it); if (!orig) return;
-      it.set(orig); rebuild(it.sorgente);
+      const it = sel.it, orig = baseValue(it);
+      if (!orig) { if (it.remove) { it.remove(); rebuild(it.sorgente); } } // aggiunto sul posto: annullare vuol dire toglierlo
+      else { it.set(orig); rebuild(it.sorgente); }
       if (db) { try { await db.collection('modifiche').doc(docId(it.key)).delete(); } catch (_) { /* resta in elenco */ } }
     } else {
       primRestore(sel.p); sel.box = primBox(sel.p); drawSel();
@@ -428,20 +633,25 @@
     infoCard();
   }
   function refreshSel() {
-    if (!sel) return;
+    if (!sel || !boxed()) return;
     if (sel.type === 'item') { const it = findItem(sel.it.key); if (!it) { deselect(); return; } sel.it = it; }
     else if (!rootOf(sel.p.mesh) || !scene.getObjectById(sel.p.mesh.id)) { deselect(); return; }
     if (!drag) { sel.box = selBox(); drawSel(); infoCard(); }
   }
   function rebuild(sorgente) {
-    const r = sorgente === 'esterni' ? C.esterni.rebuild() : C.cortile.rebuild();
+    const r = sorgente === 'cortile' ? C.cortile.rebuild() : sorgente === 'albero' ? C.alberi.rebuild() : C.esterni.rebuild();
     Promise.resolve(r).then(() => { reapplyPrims(); refreshSel(); });
   }
   function applyOverrides() {
     const touched = new Set();
     for (const o of overrides) {
-      if (o.stato === 'applicata' || !o.valore || o.sorgente === 'primitiva') continue;
-      const it = findItem(`${o.sorgente}:${o.percorso}`); if (!it) continue;
+      if (o.stato === 'applicata' || o.sorgente === 'primitiva') continue;
+      if (o.sorgente === 'edificio') { applyFacadeDoc(o); continue; }
+      if (!o.valore) continue;
+      let it = findItem(`${o.sorgente}:${o.percorso}`);
+      if (!it && o.sorgente === 'aggiunta') { const E = C.esterni.cfg; (E.primitive = E.primitive || []).push(Object.assign({ id: o.percorso }, clone(o.valore))); touched.add('aggiunta'); continue; }
+      if (!it && o.sorgente === 'albero' && C.alberi.list) { C.alberi.list.push(Object.assign({ id: o.percorso }, clone(o.valore))); touched.add('albero'); continue; }
+      if (!it) continue;
       if (JSON.stringify(it.get()) === JSON.stringify(o.valore)) continue;
       it.set(o.valore); touched.add(it.sorgente);
     }
@@ -483,7 +693,7 @@
     setTimeout(() => ta.focus(), 30);
   }
   function commentDoc(hit, testo) {
-    const w = hit.point, it = itemAt(w), lonLat = C.toLonLat ? C.toLonLat(w) : null;
+    const w = hit.point, it = treeItemFromHit(hit) || itemAt(w), lonLat = C.toLonLat ? C.toLonLat(w) : null;
     const f0 = frameEsterni(0), fc = frameCortile();
     const loc = (f) => { if (!f) return null; const q = toLocal(f, w); return { u: round(q.u), v: round(q.v), h: round(q.h) }; };
     const lc = loc(fc), inCourt = lc && lc.u > -6 && lc.u < 24 && lc.v > -8 && lc.v < 16;
@@ -549,7 +759,13 @@
       if (ph) { showComment(ph.object.userData.comment, e); return; }
       const hit = hits(e)[0]; if (hit) newComment(hit, e);
     } else if (mode === 'modifica') {
-      const hit = hits(e)[0]; if (!hit) { deselect(); return; }
+      const hit = hits(e)[0];
+      if (placing) { if (hit) placeAt(hit); else hint('Tocca un punto della scena.'); return; }
+      if (!hit) { deselect(); return; }
+      const root = rootOf(hit.object);
+      if (sel && sel.type === 'edificio' && sel.tool && root && root.name === 'edifici') { togglePatch(hit); return; }
+      if (root && root.name === 'edifici') { selectBuilding(hit); return; }
+      if (root && root.name === 'alberi') { const t = treeItemFromHit(hit); if (t) select({ type: 'item', it: t }); return; }
       const prim = primFromHit(hit), it = itemAt(hit.point);
       if (it) select({ type: 'item', it, alt: prim ? { type: 'prim', p: prim } : null });
       else if (prim) select({ type: 'prim', p: prim, alt: null });
@@ -573,9 +789,14 @@
   }
   function start() {
     C = window.campus3d; T = window.THREE; scene = C.scene; camera = C.camera; controls = C.controls; canvas = C.renderer.domElement;
-    base.esterni = clone(C.esterni.cfg); base.cortile = clone(C.cortile.M);
-    fx = new T.Group(); fx.name = 'editor-maniglie'; pins = new T.Group(); pins.name = 'editor-commenti';
-    scene.add(fx, pins);
+    base.esterni = clone(C.esterni.cfg); base.cortile = clone(C.cortile.M); base.alberi = C.alberi.list ? clone(C.alberi.list) : [];
+    fx = new T.Group(); fx.name = 'editor-maniglie'; pins = new T.Group(); pins.name = 'editor-commenti'; patchGroup = new T.Group(); patchGroup.name = 'editor-facciate';
+    scene.add(fx, pins, patchGroup);
+    // facciate già riportate nei file da Claude (texture e finestre per edificio)
+    fetch('cortile/facciate.json', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((f) => {
+      base.facciate = (f && f.edifici) || {};
+      for (const code of Object.keys(base.facciate)) if (!facadeState.has(code)) applyFacade(code);
+    }).catch(() => {});
     css(); buildUi();
     canvas.addEventListener('pointerdown', onDown, { capture: true });
     canvas.addEventListener('pointermove', onMove, { capture: true });
@@ -585,9 +806,11 @@
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (ui.card.hidden) setMode(null); else closeCard(); } });
     loop(); connect();
   }
-  // aspetta la scena e le due configurazioni (esterni di Chimica e cortile)
+  // aspetta la scena, le due configurazioni (esterni di Chimica e cortile) e gli alberi
+  let tries = 0;
   const wait = setInterval(() => {
     const c = window.campus3d;
-    if (c && c.scene && c.renderer && c.controls && c.esterni && c.esterni.cfg && c.cortile && c.cortile.M && c.scene.getObjectByName('chimica-esterni') && c.scene.getObjectByName('cortile-modello')) { clearInterval(wait); start(); }
+    tries += 1;
+    if (c && c.scene && c.renderer && c.controls && c.esterni && c.esterni.cfg && c.cortile && c.cortile.M && c.scene.getObjectByName('chimica-esterni') && c.scene.getObjectByName('cortile-modello') && (c.alberi.list || tries > 40)) { clearInterval(wait); start(); }
   }, 400);
 })();

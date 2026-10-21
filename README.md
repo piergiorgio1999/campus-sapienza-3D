@@ -12,7 +12,10 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
     (es. `esterni:elementi.0.prato`) con `valore` e `originale` nei campi del file. Primitive (ogni altro solido):
     documento `prim:<percorso nella scena>`, `sorgente: "primitiva"`, con la scatola `originale` e quella nuova (`valore`)
     in coordinate u/v/h della `cornice` (`esterni:<elemento>`, `cortile` o `lato0`).
-  Claude le legge, le riporta in `cortile/*.json` e segna la modifica `stato: "applicata"` (la pagina ignora quelle applicate).
+    Altri documenti: `albero:<id>` (posizione `p`, raggio `r`, `rimosso`, `nuovo`), `aggiunta:<id>` (primitive con
+    `forma`, `materiale`, `box`), `edificio:<codice>` (texture `facciata` e celle `finestre` tolte o aggiunte).
+  Claude le legge, le riporta nei file (`cortile/*.json`, `trees.json`, `cortile/facciate.json`) e segna la modifica
+  `stato: "applicata"` (la pagina ignora quelle applicate). Gli oggetti eliminati restano nei JSON con `rimosso: true`.
 
 Anteprima locale: `python3 -m http.server 8765` e apri `index.html?standalone`.
 Artifact pubblicato: https://claude.ai/code/artifact/b6b40dff-1e58-4b65-a386-6d4bab8d31ed

@@ -21,16 +21,8 @@
      -15.5
     ],
     [
-     85.3,
+     85.75,
      -15.5
-    ],
-    [
-     85.3,
-     -20.4
-    ],
-    [
-     85.6,
-     -20.4
     ],
     [
      85.6,
@@ -148,7 +140,7 @@
       -15.4
      ],
      [
-      85.3,
+      85.6,
       -15.4
      ]
     ]
@@ -169,20 +161,20 @@
    "lato": 0,
    "poligono": [
     [
-     17.0,
-     0.0
+     0,
+     0
     ],
     [
      56.3,
-     0.0
+     0
     ],
     [
      56.3,
-     6.0
+     6
     ],
     [
-     17.0,
-     6.0
+     0,
+     6
     ]
    ]
   },
@@ -193,14 +185,14 @@
    "poligono": [
     [
      69.4,
-     -20.4
+     -20.65
     ],
     [
-     85.3,
-     -20.4
+     85.75,
+     -20.65
     ],
     [
-     85.3,
+     85.75,
      -15.5
     ],
     [
@@ -237,13 +229,211 @@
    "tipo": "palo",
    "nome": "Palo della bandiera verde, sul marciapiede accanto all'angolo (lato est)",
    "lato": 0,
-   "u": 86.05,
-   "v": 2.35,
+   "u": 86.1,
+   "v": 3.2,
    "altezza": 11.0
   },
   {
+   "tipo": "area",
+   "nome": "Vialetto in travertino dall'ingresso alla strada",
+   "lato": 0,
+   "poligono": [
+    [
+     44.6,
+     6
+    ],
+    [
+     50.6,
+     6
+    ],
+    [
+     50.6,
+     21.5
+    ],
+    [
+     44.6,
+     21.5
+    ]
+   ],
+   "nota": "Commento sul posto del 21/10/2026: rettangolo di travertino che collega il pavimento dell'ingresso fino alla strada."
+  },
+  {
+   "tipo": "ingresso",
+   "nome": "Ingresso principale (Istituto Chimico)",
+   "lato": 0,
+   "u": 47.63,
+   "nota": "Dalle foto dell'ingresso fornite dall'utente (21/10/2026) e dal commento sul posto che fissa il portone a u 47.6.",
+   "porta": {
+    "larghezza": 2.3,
+    "altezza": 3.3
+   },
+   "rivestimento": {
+    "u": [
+     41.6,
+     54.2
+    ],
+    "altezza": 4.6
+   },
+   "scritta": [
+    "ISTITUTO",
+    "CHIMICO"
+   ],
+   "tattile": {
+    "v": [
+     0.3,
+     21.5
+    ],
+    "larghezza": 0.6
+   },
+   "aiuole": [
+    {
+     "u": [
+      36.5,
+      44.6
+     ],
+     "v": [
+      6.4,
+      20.6
+     ]
+    },
+    {
+     "u": [
+      50.6,
+      56.0
+     ],
+     "v": [
+      6.4,
+      20.6
+     ]
+    }
+   ],
+   "ringhiere": [
+    [
+     [
+      44.5,
+      6.6
+     ],
+     [
+      44.5,
+      20.4
+     ]
+    ],
+    [
+     [
+      50.7,
+      6.6
+     ],
+     [
+      50.7,
+      20.4
+     ]
+    ]
+   ],
+   "ringhiera": {
+    "altezza": 0.9,
+    "passo": 1.3,
+    "intermedio": 0.45,
+    "larghezza": 0.08,
+    "spessore": 0.04,
+    "colore": "#6b1d29"
+   },
+   "panchine": [
+    {
+     "u": 45.0,
+     "v": 9.0,
+     "lunghezza": 1.9,
+     "profondita": 0.5,
+     "altezza": 0.45,
+     "rientro": 0.25,
+     "orienta": "v"
+    },
+    {
+     "u": 45.0,
+     "v": 13.0,
+     "lunghezza": 1.9,
+     "profondita": 0.5,
+     "altezza": 0.45,
+     "rientro": 0.25,
+     "orienta": "v"
+    },
+    {
+     "u": 45.0,
+     "v": 17.0,
+     "lunghezza": 1.9,
+     "profondita": 0.5,
+     "altezza": 0.45,
+     "rientro": 0.25,
+     "orienta": "v"
+    },
+    {
+     "u": 50.2,
+     "v": 9.0,
+     "lunghezza": 1.9,
+     "profondita": 0.5,
+     "altezza": 0.45,
+     "rientro": 0.25,
+     "orienta": "v"
+    },
+    {
+     "u": 50.2,
+     "v": 13.0,
+     "lunghezza": 1.9,
+     "profondita": 0.5,
+     "altezza": 0.45,
+     "rientro": 0.25,
+     "orienta": "v"
+    },
+    {
+     "u": 50.2,
+     "v": 17.0,
+     "lunghezza": 1.9,
+     "profondita": 0.5,
+     "altezza": 0.45,
+     "rientro": 0.25,
+     "orienta": "v"
+    }
+   ],
+   "palme": [
+    {
+     "u": 52.6,
+     "v": 7.7,
+     "altezza": 3.8
+    },
+    {
+     "u": 42.4,
+     "v": 7.9,
+     "altezza": 3.4
+    }
+   ],
+   "totem": [
+    {
+     "u": 44.0,
+     "v": 20.9
+    },
+    {
+     "u": 51.2,
+     "v": 20.9
+    }
+   ],
+   "fiori": {
+    "u": [
+     38.0,
+     44.2
+    ],
+    "v": [
+     18.8,
+     20.3
+    ]
+   },
+   "rastrelliera": {
+    "u": 43.0,
+    "v": 1.4,
+    "posti": 3
+   }
+  },
+  {
    "tipo": "scala",
-   "nome": "Scala antincendio (facciata nord, ingresso principale)",
+   "nome": "Scala antincendio (facciata nord, ala ovest)",
    "lato": 0,
    "u": 12.9,
    "piani": 2

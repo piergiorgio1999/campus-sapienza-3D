@@ -25,7 +25,9 @@
   - «📍 Aula Aldo La Ginestra»: stessa dimensione del dipartimento, rosso e ancora più sottile;
   - «Polo museale Sapienza»: come la Facoltà;
   - «Museo di Chimica / Primo Levi»: come il Dipartimento;
-  - logo «m» del museo.
+  - logo «m» del museo, a lato di «Polo museale Sapienza», sullo stesso cartello: usare l'immagine
+    `riferimenti/logo-museo-m.jpg` così com'è (come il logo Nippon Gases sul silos, disegnata nella texture del
+    cartello). La patch `handoff/totem-nuovo.patch` disegna ancora una «m» di testo: va sostituita con l'immagine.
 - **Cartello 3:** mappa della città universitaria con l'edificio evidenziato.
 - **Foto:** `riferimenti/totem-cu014.jpg`.
 

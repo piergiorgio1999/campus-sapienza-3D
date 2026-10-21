@@ -26,11 +26,19 @@
     ],
     [
      82.0,
-     1.5
+     6.0
+    ],
+    [
+     58.1,
+     6.0
+    ],
+    [
+     58.1,
+     0.0
     ],
     [
      56.3,
-     1.5
+     0.0
     ]
    ],
    "altezza": 0.8,
@@ -69,12 +77,13 @@
      "pedata": 0.36
     },
     {
-     "nota": "bordo nord, verso la scala antincendio",
-     "lungo": "v",
-     "da": 57.5,
-     "a": 62.5,
-     "bordo": 1.5,
-     "verso": 1
+     "nota": "estremità ovest: scendono verso ovest sul pavimento davanti all'ingresso",
+     "lungo": "u",
+     "da": 0.0,
+     "a": 6.0,
+     "bordo": 58.1,
+     "verso": -1,
+     "pedata": 0.36
     }
    ]
   },

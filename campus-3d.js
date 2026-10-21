@@ -2524,6 +2524,22 @@
     for (const t of (el.totem || []).filter((x) => !x.rimosso)) { // totem bianco con base e fascia rosse
       const th = Number(t.altezza) || 2.4, box = rect(t.u - 0.25, t.u + 0.25, t.v - 0.1, t.v + 0.1);
       for (const [h0, h1, c] of [[0, 0.9, '#8a1f2d'], [0.9, th - 0.18, '#f4f3ef'], [th - 0.18, th, '#8a1f2d']]) g.add(localSlab(box, h0, h1, std(c, 0.5)));
+      if (t.logo || t.scritta) { // pannello: logo Sapienza in alto e codice dell'edificio sotto, sulle due facce larghe
+        const ph = th - 0.18 - 0.9 - 0.06, sign = new THREE.MeshStandardMaterial({ roughness: 0.6, map: canvasTex(256, Math.round(256 * ph / 0.46), (ctx, w, hh) => {
+          ctx.fillStyle = '#f4f3ef'; ctx.fillRect(0, 0, w, hh);
+          const red = '#7d1d2b'; ctx.textAlign = 'center'; ctx.fillStyle = red; ctx.strokeStyle = red;
+          if (t.logo) {
+            ctx.lineWidth = 7; ctx.beginPath(); ctx.arc(w / 2, 96, 62, 0, Math.PI * 2); ctx.stroke(); // emblema (segnaposto finché non arriva il logo originale)
+            ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(w / 2, 96, 48, 0, Math.PI * 2); ctx.stroke();
+            ctx.font = 'bold 54px "Times New Roman", Times, serif'; ctx.fillText('S', w / 2, 116);
+            ctx.font = 'bold 40px "Times New Roman", Times, serif'; ctx.fillText('SAPIENZA', w / 2, 212);
+            ctx.font = '19px Arial, Helvetica, sans-serif'; ctx.fillText('UNIVERSITÀ DI ROMA', w / 2, 242);
+            ctx.fillRect(28, 268, w - 56, 3);
+          }
+          if (t.scritta) { ctx.font = 'bold 68px Arial, Helvetica, sans-serif'; ctx.fillStyle = '#2b2725'; ctx.fillText(String(t.scritta), w / 2, t.logo ? 360 : hh / 2); }
+        }) });
+        for (const [dv, rot] of [[0.101, Math.PI], [-0.101, 0]]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(0.46, ph), sign); m.rotation.y = rot; m.position.set(t.u, 0.9 + 0.03 + ph / 2, -(t.v + dv)); g.add(m); }
+      }
     }
     const RS = el.rastrelliera;
     if (RS && !RS.rimosso) { // rastrelliera per bici ad archetti

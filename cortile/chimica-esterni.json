@@ -407,12 +407,11 @@
    ],
    "totem": [
     {
-     "u": 44.0,
-     "v": 20.9
-    },
-    {
      "u": 51.2,
-     "v": 20.9
+     "v": 20.9,
+     "logo": true,
+     "scritta": "CU014",
+     "nota": "Un solo totem, sul lato est del vialetto: logo Sapienza in alto e codice dell'edificio (disegno dell'utente del 21/10/2026)."
     }
    ],
    "fiori": {

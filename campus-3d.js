@@ -2163,50 +2163,63 @@
       }
     }, 3, 3, true);
   }
-  function addFireStair(group, uc, floors, mat) {
-    const R = 1.8, depth = 1.0, levels = [];
-    for (let k = 0; k < floors; k += 1) levels.push(4.4 + 3.8 * k);
-    const dShape = [];
-    dShape.push([uc - R, 0.1], [uc + R, 0.1], [uc + R, depth]);
-    for (let a = 0; a <= 24; a += 1) { const t = (a / 24) * Math.PI; dShape.push([uc + R * Math.cos(t), depth + R * Math.sin(t)]); }
-    const railMat = mat;
-    const step = (u0, u1, h0, h1, v0, v1) => {
-      // rampa dritta: gradini e due cosciali
-      const rise = h1 - h0, n = Math.max(3, Math.round(Math.abs(rise) / 0.18)), run = (u1 - u0) / n;
-      for (let i = 0; i < n; i += 1) {
-        const tread = new THREE.Mesh(new THREE.BoxGeometry(Math.abs(run) + 0.02, 0.05, v1 - v0), mat);
-        tread.position.set(u0 + run * (i + 0.5), h0 + rise * (i + 1) / n - 0.025, -(v0 + v1) / 2); tread.castShadow = true; group.add(tread);
-      }
-      const L = Math.hypot(u1 - u0, rise), ang = Math.atan2(rise, u1 - u0);
-      for (const [vv, hh] of [[v0, 0], [v1, 0], [v1, 1.0]]) {
-        const s = new THREE.Mesh(new THREE.BoxGeometry(L, hh ? 0.04 : 0.18, 0.05), railMat);
-        s.position.set((u0 + u1) / 2, (h0 + h1) / 2 + hh, -vv); s.rotation.z = ang; s.castShadow = true; group.add(s);
-      }
+  function stadium(uc, vc, len, wid, n = 12) {
+    // pianta a capsula: tratto dritto lungo u, due semicerchi alle estremità
+    const r = wid / 2, s = Math.max(0, len / 2 - r), pts = [];
+    for (let i = 0; i <= n; i += 1) { const t = -Math.PI / 2 + (i / n) * Math.PI; pts.push([uc + s + r * Math.cos(t), vc + r * Math.sin(t)]); }
+    for (let i = 0; i <= n; i += 1) { const t = Math.PI / 2 + (i / n) * Math.PI; pts.push([uc - s + r * Math.cos(t), vc + r * Math.sin(t)]); }
+    return pts;
+  }
+  function localRing(outer, inner, h0, h1, material) {
+    const shape = new THREE.Shape(outer.map(([u, v]) => new THREE.Vector2(u, v)));
+    shape.holes.push(new THREE.Path(inner.slice().reverse().map(([u, v]) => new THREE.Vector2(u, v))));
+    const g = new THREE.ExtrudeGeometry(shape, { depth: h1 - h0, bevelEnabled: false });
+    g.rotateX(-Math.PI / 2); g.translate(0, h0, 0); g.computeVertexNormals(); planarUVs(g, 1);
+    const m = new THREE.Mesh(g, material); m.castShadow = true; m.receiveShadow = true;
+    return m;
+  }
+  function addFireStair(group, uc, floors, mat, opts = {}) {
+    // torre a capsula parallela al muro: parapetti pieni a fasce sovrapposte, rampe a forbice ai lati
+    // di un setto centrale, pianerottoli semicircolari alternati alle due estremità
+    const L = Number(opts.lunghezza) || 7.6, W = Number(opts.larghezza) || 3.8, gap = 0.25, t = 0.16, band = 1.1, setto = 0.2;
+    const vc = gap + W / 2, r = W / 2, s = L / 2 - r, ri = r - t;
+    const tread = opts.pedate || mat;
+    const levels = [0];
+    for (let k = 0; k < floors; k += 1) { const f = 4.4 + 3.8 * k, prev = k ? 4.4 + 3.8 * (k - 1) : 0; levels.push((prev + f) / 2, f); }
+    const top = levels[levels.length - 1];
+    // setto centrale lungo il tratto dritto, dal suolo al parapetto dell'ultimo piano
+    group.add(localSlab([[uc - s, vc - setto / 2], [uc + s, vc - setto / 2], [uc + s, vc + setto / 2], [uc - s, vc + setto / 2]], 0, top + band, mat));
+    // pianerottoli: livello j all'estremità con u minore (j pari) o maggiore (j dispari)
+    const landing = (end) => {
+      const pts = [];
+      for (let i = 0; i <= 16; i += 1) { const a = -Math.PI / 2 + (i / 16) * Math.PI; pts.push([uc + end * (s + ri * Math.cos(a)), vc + ri * Math.sin(a)]); }
+      return pts;
     };
-    levels.forEach((h, k) => {
-      group.add(localSlab(dShape, h - 0.16, h, mat));
-      // ringhiera curva: corrimano e montanti
-      for (let a = 0; a <= 18; a += 1) {
-        const t = (a / 18) * Math.PI, p = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.0, 0.03), railMat);
-        p.position.set(uc + R * Math.cos(t), h + 0.5, -(depth + R * Math.sin(t))); group.add(p);
-      }
-      const top = new THREE.Mesh(new THREE.TorusGeometry(R, 0.03, 6, 32, Math.PI), railMat);
-      top.rotation.x = -Math.PI / 2; top.position.set(uc, h + 1.0, -depth); group.add(top);
-      // rampe: da terra al primo pianerottolo, poi a forbice con un mezzo pianerottolo fra i piani
-      const rise = k === 0 ? h : h - levels[k - 1];
-      const run = rise / Math.tan(37 * Math.PI / 180);
-      if (k === 0) step(uc - R - run, uc - R, 0, h, 0.15, 1.05);
-      else {
-        const h0 = levels[k - 1], hm = h0 + rise / 2, uEnd = uc + R + run / 2;
-        step(uc + R, uEnd, h0, hm, 0.15, 1.05);
-        group.add(localSlab([[uEnd, 0.1], [uEnd + 1.1, 0.1], [uEnd + 1.1, 2.15], [uEnd, 2.15]], hm - 0.16, hm, mat));
-        step(uEnd, uc + R, hm, h, 1.15, 2.05);
-      }
+    levels.forEach((h, j) => {
+      if (j === 0) return;
+      const end = j % 2 ? 1 : -1;
+      group.add(localSlab(landing(end), h - 0.2, h, tread));
     });
-    // pilastrini sotto il mezzo cerchio
-    for (const t of [0.15, 0.5, 0.85]) {
-      const a = t * Math.PI, c = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, levels[levels.length - 1], 8), mat);
-      c.position.set(uc + R * 0.95 * Math.cos(a), levels[levels.length - 1] / 2, -(depth + R * 0.95 * Math.sin(a))); c.castShadow = true; group.add(c);
+    // rampe: dal livello j al j+1, alternate sui due lati del setto
+    for (let j = 0; j < levels.length - 1; j += 1) {
+      const h0 = levels[j], h1 = levels[j + 1], rise = h1 - h0, n = Math.max(3, Math.round(rise / 0.17));
+      const dir = j % 2 ? -1 : 1, u0 = uc - dir * s, run = (2 * s) / n * dir;
+      const [v0, v1] = j % 2 ? [vc + setto / 2, vc + ri] : [vc - ri, vc - setto / 2];
+      for (let i = 0; i < n; i += 1) {
+        const ua = u0 + run * i, ub = ua + run, hh = h0 + rise * (i + 1) / n;
+        group.add(localSlab([[Math.min(ua, ub), v0], [Math.max(ua, ub), v0], [Math.max(ua, ub), v1], [Math.min(ua, ub), v1]], hh - 0.17, hh, tread));
+      }
+      // soletta inclinata sotto i gradini
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(Math.hypot(2 * s, rise), 0.18, v1 - v0), mat);
+      slab.position.set(uc, (h0 + h1) / 2 - 0.22, -(v0 + v1) / 2); slab.rotation.z = Math.atan2(rise, 2 * s) * dir; slab.castShadow = true; group.add(slab);
+    }
+    // involucro: fasce piene di parapetto a ogni pianerottolo, aperte fra una fascia e l'altra
+    const outer = stadium(uc, vc, L, W), inner = stadium(uc, vc, L - 2 * t, W - 2 * t);
+    for (let j = 1; j < levels.length; j += 1) group.add(localRing(outer, inner, levels[j] - 0.25, levels[j] + band, mat));
+    // pilastri sotto le estremità curve
+    for (const end of [-1, 1]) {
+      const c = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, top, 10), mat);
+      c.position.set(uc + end * (s + r - 0.25), top / 2, -vc); c.castShadow = true; group.add(c);
     }
   }
   async function loadChemistryExteriors() {
@@ -2217,7 +2230,8 @@
     const ring = closeRing(b.rings[0]);
     const holder = new THREE.Group(); holder.name = 'chimica-esterni';
     const trav = (s = 2.4) => new THREE.MeshStandardMaterial({ map: travertinePhoto(s), normalMap: travertineNormal(s), roughness: 0.8 });
-    const ocra = new THREE.MeshStandardMaterial({ color: new THREE.Color(0xd9a640).convertSRGBToLinear(), roughness: 0.55, metalness: 0.3 });
+    const ocra = new THREE.MeshStandardMaterial({ color: new THREE.Color(0xd99a48).convertSRGBToLinear(), roughness: 0.85 });
+    const ocraScura = new THREE.MeshStandardMaterial({ color: new THREE.Color(0xa8784a).convertSRGBToLinear(), roughness: 0.9 });
     for (const el of cfg.elementi || []) {
       if (!(el.lato >= 0 && el.lato < ring.length - 1)) continue;
       const g = sideFrame(ring, el.lato); holder.add(g);
@@ -2269,7 +2283,7 @@
         const sideMat = leaves.clone(); sideMat.map = leafTex(); sideMat.map.repeat.set((u1 - u0) / 4, base / 4);
         for (const v of [v0, v1]) { const s = new THREE.Mesh(new THREE.PlaneGeometry(u1 - u0, base * 0.8), sideMat); s.position.set((u0 + u1) / 2, base * 0.6, -v); g.add(s); }
       } else if (el.tipo === 'scala') {
-        addFireStair(g, Number(el.u), Math.max(1, Number(el.piani) || 3), ocra);
+        addFireStair(g, Number(el.u), Math.max(1, Number(el.piani) || 3), ocra, { lunghezza: el.lunghezza, larghezza: el.larghezza, pedate: ocraScura });
       }
     }
     scene.add(holder);

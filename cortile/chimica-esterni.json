@@ -13,57 +13,89 @@
      -20.4
     ],
     [
-     69.7,
+     69.4,
      -20.4
     ],
     [
-     69.7,
+     69.4,
      -15.5
     ],
     [
-     82.0,
+     85.3,
      -15.5
     ],
     [
-     82.0,
-     6.0
+     85.3,
+     -20.4
     ],
     [
-     58.1,
-     6.0
+     85.6,
+     -20.4
     ],
     [
-     58.1,
-     0.0
+     85.6,
+     3.6
     ],
     [
      56.3,
-     0.0
+     3.6
     ]
    ],
-   "altezza": 0.8,
+   "altezza": 1.2,
    "prato": [
-    68.5,
-    -13.5,
-    80.0,
-    -8.8
+    69.4,
+    -12.6,
+    82.0,
+    -7.9
    ],
    "panchine": [
     {
-     "u": 74.0,
-     "v": -8.25,
-     "lunghezza": 2.8,
-     "profondita": 0.5,
+     "u": 70.0,
+     "v": -6.7,
+     "lunghezza": 1.7,
+     "profondita": 0.55,
      "altezza": 0.45,
-     "rientro": 0.3
+     "rientro": 0.2
     },
     {
-     "u": 78.4,
-     "v": -8.25,
-     "lunghezza": 2.8,
-     "profondita": 0.5,
+     "u": 72.24,
+     "v": -6.7,
+     "lunghezza": 1.7,
+     "profondita": 0.55,
      "altezza": 0.45,
-     "rientro": 0.3
+     "rientro": 0.2
+    },
+    {
+     "u": 74.48,
+     "v": -6.7,
+     "lunghezza": 1.7,
+     "profondita": 0.55,
+     "altezza": 0.45,
+     "rientro": 0.2
+    },
+    {
+     "u": 76.72,
+     "v": -6.7,
+     "lunghezza": 1.7,
+     "profondita": 0.55,
+     "altezza": 0.45,
+     "rientro": 0.2
+    },
+    {
+     "u": 78.96,
+     "v": -6.7,
+     "lunghezza": 1.7,
+     "profondita": 0.55,
+     "altezza": 0.45,
+     "rientro": 0.2
+    },
+    {
+     "u": 81.2,
+     "v": -6.7,
+     "lunghezza": 1.7,
+     "profondita": 0.55,
+     "altezza": 0.45,
+     "rientro": 0.2
     }
    ],
    "gradini": [
@@ -72,20 +104,23 @@
      "lungo": "u",
      "da": -20.4,
      "a": -15.5,
-     "bordo": 69.7,
+     "bordo": 69.4,
      "verso": 1,
-     "pedata": 0.36
+     "pedata": 0.45,
+     "alzata": 0.15
     },
     {
-     "nota": "estremità ovest: scendono verso ovest sul pavimento davanti all'ingresso",
+     "nota": "estremità ovest: dallo spigolo del museo scendono verso ovest sul pavimento davanti all'ingresso",
      "lungo": "u",
      "da": 0.0,
-     "a": 6.0,
-     "bordo": 58.1,
+     "a": 3.6,
+     "bordo": 56.3,
      "verso": -1,
-     "pedata": 0.36
+     "pedata": 0.3,
+     "alzata": 0.15
     }
-   ]
+   ],
+   "nota": "Misure dalla foto satellitare Google annotata dall'utente (21/10/2026), agganciata allo spigolo nord-est del museo (u 56.3, v 0) e allo spigolo sud-est (u 85.6, v -20.6). Il bordo est è allineato alla facciata est; un muretto chiude la rientranza a est. Altezza 1.2 m: circa 8-9 gradini nella foto."
   },
   {
    "tipo": "area",
@@ -116,19 +151,19 @@
    "lato": 0,
    "poligono": [
     [
-     69.7,
+     69.4,
      -20.4
     ],
     [
-     82.0,
+     85.3,
      -20.4
     ],
     [
-     82.0,
+     85.3,
      -15.5
     ],
     [
-     69.7,
+     69.4,
      -15.5
     ]
    ]

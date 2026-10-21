@@ -87,11 +87,18 @@ stesso travertino del resto dell'edificio. Fatto: usa la texture del piano terra
 ### Commento 2 — corpo sopra il portico e cortile interno (`segnalazioni/4koi46r8db3vpkeooc9c`)
 «Un solo rettangolo che collega i due lati dell'edificio; il cortile interno è un rettangolo semplice, senza il
 rettangolino in più, ed è largo quanto quello esterno.»
-Piano: in `cortile/modello.json` il portico va da u 1.5 a 16.6, mentre le pareti del cortile dell'azoto sono a u 0.2
-e 16.6. Il buco del cortile interno viene da `courtyards.json` (CU014, rilevato dall'ortofoto) e lascia il
-rettangolino. Va sostituito con un rettangolo nella cornice del cortile, u 0.2 → 16.6 (stessa larghezza del cortile
-dell'azoto), da v 13.0 fino al fondo misurato sull'ortofoto. Il corpo sopra il portico va steso su u 0.2 → 16.6,
-così diventa un solo blocco fra le due ali. Il buco interno va tolto da `courtyards.json` o messo nei `vuoti`.
+**Fatto.**
+- Cortile interno: in `courtyards.json` il buco di CU014 rilevato dall'ortofoto (u 3.1→17.5, v 12.1→40.4, sporgeva oltre
+  la parete destra del portico e lasciava il rettangolino) è sostituito da un solo rettangolo nella cornice del cortile,
+  u 0.2 → 16.6 (stessa larghezza del cortile dell'azoto), v 13.0 → 40.3 (fondo medio del buco rilevato, 40.2–40.4).
+  Le coordinate lon/lat sono quelle dei quattro angoli convertiti con la cornice di `modello.json`; se si ricalibra
+  `riferimento` vanno rifatte. Gli altri sei buchi di CU014 sono invariati.
+- Corpo sopra il portico: `portico.corpoU` [0.2, 16.6] in `cortile/modello.json` (default `portico.u`); in
+  `loadCourtyardModel` (`campus-3d.js`, anello `ringLL`) il corpo si stende su tutta la larghezza fra le due ali.
+- Il portico a terra (`portico.u`, `vuoti`) resta 1.5 → 16.6 come prima.
+- Verificato con render headless prima/dopo (dall'alto e in obliquo): buco largo quanto il cortile esterno, nessuna
+  giunzione a gradino, ingresso e ala ovest identici pixel per pixel; in console solo i 404 di `/api/campus-ortho` e
+  `tiles/manifest.json` (backend assente in locale).
 
 ### Commento 3 — cancello fra i due cortili (`segnalazioni/mid7pp1ka9564qvf5h3q`)
 Il cancello in fondo al portico non è largo quanto tutto il portico: sta dentro una parete. Le foto promesse non sono

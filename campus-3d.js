@@ -3212,7 +3212,8 @@
     // (basamento, corpo, attico) con le stesse quote delle texture, così piani e finestre continuano senza giunte
     const cu = buildings.find((x) => String(x.code).toUpperCase() === 'CU014') || {};
     const topH = heightInfo({ height: cu.height, levels: cu.levels }).value, baseH = PO.soffitto + 0.35; // stessa altezza e piani dell'edificio
-    const ringLL = [[PO.u[0], PO.v[0]], [PO.u[1], PO.v[0]], [PO.u[1], PO.v[1]], [PO.u[0], PO.v[1]], [PO.u[0], PO.v[0]]].map((q) => {
+    const [cu0, cu1] = PO.corpoU || PO.u; // il corpo si stende su tutta la larghezza fra le due ali (come il cortile), anche sopra i pilastri
+    const ringLL = [[cu0, PO.v[0]], [cu1, PO.v[0]], [cu1, PO.v[1]], [cu0, PO.v[1]], [cu0, PO.v[0]]].map((q) => {
       const [x, n] = courtyardFrame.toMap(q);
       return [(x + mapWidth / 2) / metersPerLon + bounds.west, (n + mapDepth / 2) / metersPerLat + bounds.south];
     });

@@ -47,6 +47,22 @@
 - **Pilastri:** il pilastro sinistro è lo specchio di quello dietro la gabbia (u 5.02–6.22, v 8.05–8.95, altezza 5,75), tiene la scritta AULE.
 - **Asse di simmetria:** u = 8.4, mezzeria dei muri del cortile (sinistro u 0.2, destro u 16.6) e del varco del fondo (6.4–10.4); u' = 16.8 − u.
 
+## Cortile dell'azoto: magnolie 3D con foglie stagionali (21/10) — fatto
+- **Modello:** 3DExport «magnolia» (https://3dexport.com/3d-model-magnolia-tree-321349, fornito dall'utente: verificare la
+  licenza prima della pubblicazione), solo l'albero `magnolia_003` (~5000 vertici), convertito con Blender in GLB senza
+  texture, alto 10 m con i piedi a quota 0, centrato sul tronco.
+- **File:** `models/magnolia.json` (config: altezza e raggio di riferimento del modello), `models/magnolia-glb.json` (GLB
+  in base64, come la statua), `tex/magnolia-corteccia.jpg`, `tex/magnolia-foglie-{primavera,estate,autunno,inverno}.png`
+  (256 px). Codice: `magnoliaTree` in `campus-3d.js`; l'albero di prima resta come ripiego (`magnoliaProcedurale`) finché
+  il GLB non è pronto o se non si carica.
+- **Posizione e misure:** `u`, `v` posizionano; `altezza` → scala Y; `raggio` → scala orizzontale (raggio della chioma al
+  95° percentile); l'editor che sposta o ridimensiona le magnolie funziona come prima. Ombre attive.
+- **Stagione:** automatica dalla data, ora di Roma (primavera mar–mag, estate giu–ago, autunno set–nov, inverno dic–feb).
+  Si forza con `?stagione=primavera|estate|autunno|inverno` nell'URL (vale per tutte), oppure nel JSON con
+  `magnolie[k].stagione` (per un albero) o `stagione` nell'oggetto del cortile (per tutti); `"auto"` = dalla data.
+  Ordine: URL, albero, cortile, data. La foglia usa `alphaTest` per i bordi.
+- **Da controllare dopo il rendering:** proporzioni della chioma rispetto alle misure precedenti e verso delle normali.
+
 ## Fatto nella versione 32
 - Catalogo «Oggetto del modello» in ＋ Aggiungi con tutti gli oggetti costruiti nel modello (anche la transenna a
   strisce bianche e rosse inclinate di 35° in senso orario, del commento 4).

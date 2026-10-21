@@ -68,14 +68,16 @@
       "u": 3.3,
       "v": 4.2,
       "altezza": 12.5,
-      "raggio": 3.8
+      "raggio": 3.8,
+      "stagione": "auto"
     },
     {
       "id": "B",
       "u": 13.8,
       "v": 3.4,
       "altezza": 13.5,
-      "raggio": 4.2
+      "raggio": 4.2,
+      "stagione": "auto"
     }
   ],
   "serbatoio": {

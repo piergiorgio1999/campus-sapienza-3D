@@ -1,0 +1,7 @@
+{
+ "file": "magnolia-glb.json",
+ "height": 10,
+ "raggioRif": 4.3,
+ "chiomaDa": 2.1,
+ "nota": "3DExport magnolia_003 (modello fornito dall utente); height = altezza del modello in m, raggioRif = raggio della chioma (95 percentile) in m; texture in tex/magnolia-*.png"
+}

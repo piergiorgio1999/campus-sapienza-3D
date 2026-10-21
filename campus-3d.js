@@ -3144,8 +3144,65 @@
       g.add(localSlab(rectPts(uu - 0.02, uu + 0.02, vv - 0.37, vv + 0.37), 0.76, 0.8, dark));
     }
   }
-  // magnolia (Magnolia grandiflora): doppio tronco e chioma scura e lucida, alta e ovale
+  /* magnolia vera (3DExport, modello fornito dall'utente): models/magnolia.json + models/magnolia-glb.json (stesso schema
+     della statua), foglie con la texture della stagione (tex/magnolia-foglie-<stagione>.png, bordi con alphaTest).
+     Finché il GLB non è pronto, o se non si carica, resta l'albero procedurale (magnoliaProcedurale). */
+  const STAGIONI = ['primavera', 'estate', 'autunno', 'inverno'];
+  let magnoliaAsset = null, magnoliaStato = 0; // 0 da caricare, 1 in corso, 2 pronto, -1 non disponibile
+  // stagione: ?stagione=autunno (tutte) > magnolie[k].stagione > "stagione" del cortile nel JSON > data di oggi (ora di Roma)
+  function stagioneMagnolia(t) {
+    let forzata = null;
+    try { forzata = new URLSearchParams(location.search).get('stagione'); } catch (_) { /* nessun URL */ }
+    for (const s of [forzata, t && t.stagione, courtyardFrame && courtyardFrame.M && courtyardFrame.M.stagione]) {
+      const k = String(s || '').toLowerCase().trim();
+      if (STAGIONI.includes(k)) return k;
+    }
+    let mese;
+    try { mese = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Rome', month: 'numeric' }).format(new Date())); } catch (_) { mese = new Date().getMonth() + 1; }
+    return mese >= 3 && mese <= 5 ? 'primavera' : mese >= 6 && mese <= 8 ? 'estate' : mese >= 9 && mese <= 11 ? 'autunno' : 'inverno';
+  }
+  async function loadMagnoliaAsset() {
+    if (magnoliaStato !== 0) return;
+    magnoliaStato = 1;
+    try {
+      const rc = await fetch('models/magnolia.json', { cache: 'no-cache' });
+      if (!rc.ok) throw new Error('magnolia.json assente');
+      const cfg = await rc.json();
+      if (!cfg?.file || !/^[\w.-]+\.(glb|gltf|json)$/i.test(cfg.file)) throw new Error('magnolia.json non valido');
+      await loadDependency('vendor/GLTFLoader.js', () => typeof THREE.GLTFLoader === 'function');
+      const scene = await new Promise((resolve, reject) => {
+        const done = (gltf) => resolve(gltf.scene);
+        if (/\.json$/i.test(cfg.file)) {
+          fetch(`models/${cfg.file}`).then((r) => (r.ok ? r.json() : Promise.reject(new Error('GLB assente')))).then((data) => {
+            const bin = Uint8Array.from(atob(data.glb_base64), (c) => c.charCodeAt(0));
+            new THREE.GLTFLoader().parse(bin.buffer, 'models/', done, reject);
+          }).catch(reject);
+        } else new THREE.GLTFLoader().load(`models/${cfg.file}`, done, undefined, reject);
+      });
+      scene.traverse((o) => { if (o.isMesh) o.userData.ruoloMagnolia = /foglie/i.test((o.material && o.material.name) || '') ? 'foglie' : 'corteccia'; });
+      magnoliaAsset = { scene, h: Number(cfg.height) || 10, r: Number(cfg.raggioRif) || 4.3 };
+      magnoliaStato = 2;
+      if (courtyardModel) loadCourtyardModel(); // il cortile era già pronto: ricostruiscilo con gli alberi veri
+    } catch (_) { magnoliaStato = -1; }
+  }
   function magnoliaTree(t, n) {
+    if (magnoliaStato === 0) loadMagnoliaAsset();
+    if (magnoliaStato !== 2) return magnoliaProcedurale(t, n);
+    const grp = new THREE.Group(); grp.position.set(Number(t.u) || 0, 0, -(Number(t.v) || 0));
+    const texLoad = (url, repeat) => { const tx = new THREE.TextureLoader().load(url); tx.encoding = THREE.sRGBEncoding; tx.anisotropy = 4; if (repeat) tx.wrapS = tx.wrapT = THREE.RepeatWrapping; return tx; };
+    const corteccia = courtOnce('magnolia|corteccia-tex', () => stdMat({ map: texLoad('tex/magnolia-corteccia.jpg', true), roughness: 0.95, side: THREE.DoubleSide }));
+    const stagione = stagioneMagnolia(t);
+    const foglie = courtOnce(`magnolia|foglie|${stagione}`, () => stdMat({ map: texLoad(`tex/magnolia-foglie-${stagione}.png`), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.6 }));
+    const base = 0.25, model = magnoliaAsset.scene.clone(true);
+    // altezza → scala Y; raggio → scala orizzontale (chioma al 95° percentile); rotazione diversa per ogni albero
+    const sxz = (Number(t.raggio) || magnoliaAsset.r) / magnoliaAsset.r, sy = Math.max(1, (Number(t.altezza) || magnoliaAsset.h) - base) / magnoliaAsset.h;
+    model.scale.set(sxz, sy, sxz); model.position.y = base; model.rotation.y = hash01(n * 31, 9) * Math.PI * 2;
+    model.traverse((o) => { if (o.isMesh) { o.material = o.userData.ruoloMagnolia === 'foglie' ? foglie : corteccia; o.castShadow = true; o.receiveShadow = true; } });
+    grp.add(model);
+    return grp;
+  }
+  // magnolia procedurale (Magnolia grandiflora): doppio tronco e chioma scura e lucida, alta e ovale; ripiego del modello vero
+  function magnoliaProcedurale(t, n) {
     const grp = new THREE.Group(), { add } = partAdder(grp); grp.position.set(Number(t.u) || 0, 0, -(Number(t.v) || 0));
     const bark = courtOnce('magnolia|corteccia', () => stdMat({ color: 0x4a3e36, roughness: 0.95 }));
     const leaf = courtOnce('magnolia|foglie', () => stdMat({ color: 0x2c4327, roughness: 0.5, metalness: 0.05, flatShading: true }));

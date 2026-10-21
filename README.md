@@ -30,5 +30,10 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
   dell'editor e C (o «Commenta») un commento su quello che si mira; la passeggiata va in pausa e riparte chiusa la scheda.
   Collisioni con edifici, esterni, cortile e tronchi; si salgono gradini e cordoli fino a 45 cm.
 
+- Magnolie del cortile: modello 3D in `models/magnolia.json` + `models/magnolia-glb.json`, texture in `tex/magnolia-*`.
+  La stagione delle foglie segue la data (ora di Roma: primavera mar–mag, estate giu–ago, autunno set–nov, inverno
+  dic–feb); si forza con `?stagione=autunno` nell'URL, con `magnolie[k].stagione` o con `stagione` in `cortile/modello.json`
+  (`"auto"` = dalla data).
+
 Anteprima locale: `python3 -m http.server 8765` e apri `index.html?standalone`.
 Artifact pubblicato: https://claude.ai/code/artifact/b6b40dff-1e58-4b65-a386-6d4bab8d31ed

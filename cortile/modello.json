@@ -33,14 +33,15 @@
     {
       "id": "A",
       "u": [
-        1.5,
-        5.0
+        1.75,
+        6.15
       ],
       "v": [
-        1.8,
-        6.8
+        1.45,
+        8.3
       ],
-      "altezza": 0.42
+      "altezza": 0.42,
+      "nota": "Specchio dell'aiuola B rispetto all'asse u 8.4 (senza il varco della porticina, che è della gabbia)."
     },
     {
       "id": "B",
@@ -152,15 +153,16 @@
   "pilastri": [
     {
       "u": [
-        3.2,
-        4.25
+        5.02,
+        6.22
       ],
       "v": [
-        8.45,
-        9.25
+        8.05,
+        8.95
       ],
-      "altezza": 5,
-      "scritta": "AULE"
+      "altezza": 5.75,
+      "scritta": "AULE",
+      "nota": "Specchio della colonna dietro la gabbia rispetto all'asse u 8.4 (mezzeria dei muri sinistro 0.2 e destro 16.6)."
     },
     {
       "u": [
@@ -188,7 +190,9 @@
       0.2,
       16.6
     ],
-    "soffitto": 4.5
+    "soffitto": 4.5,
+    "piani": 1,
+    "nota_piani": "Piani del corpo sopra il portico oltre il piano terra (1 = solo il primo piano, chiuso da tetto piano e attico)."
   },
   "transenne": [
     {

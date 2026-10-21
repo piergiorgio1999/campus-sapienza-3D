@@ -3391,8 +3391,9 @@
     box(vA, vB, gH - 0.06, gH, fv - 0.03, fv + 0.03, rust);
     const nLeaf = Math.max(1, Math.round(fw / 2.5)); // montanti delle ante
     for (let i = 0; i <= nLeaf; i += 1) { const u = vA + (fw * i) / nLeaf; box(u - 0.04, u + 0.04, 0, gH, fv - 0.04, fv + 0.04, rust); }
-    // corpo dell'edificio sopra il portico (le sagome sono svuotate fino al soffitto): stessi pezzi dell'edificio
-    // (basamento, corpo, attico) con le stesse quote delle texture, così piani e finestre continuano senza giunte
+    // corpo dell'edificio sopra il portico (le sagome sono svuotate fino al cielo): stessi pezzi dell'edificio
+    // (corpo, attico) con le stesse quote delle texture, così piani e finestre continuano senza giunte.
+    // Alto solo PO.piani piani (1 = il primo piano) sopra il piano terra, chiuso da un tetto piano con l'attico sottile.
     const cu = buildings.find((x) => String(x.code).toUpperCase() === 'CU014') || {};
     const topH = heightInfo({ height: cu.height, levels: cu.levels }).value, baseH = PO.soffitto + 0.35; // stessa altezza e piani dell'edificio
     const [cu0, cu1] = PO.corpoU || PO.u; // il corpo si stende su tutta la larghezza fra le due ali (come il cortile), anche sopra i pilastri
@@ -3402,7 +3403,12 @@
     });
     const shp = makeShape([ringLL]);
     if (shp && topH > baseH + 1 && buildingGroup) {
-      const set = facadeSetFor('CU014'), pieces = buildingPieces(topH, Number(cu.levels));
+      const set = facadeSetFor('CU014'), full = buildingPieces(topH, Number(cu.levels));
+      const bodyP = full.find((q) => q.kind === 'body'), atticP = full.find((q) => q.kind === 'attic');
+      const nFloors = Math.max(1, Math.round(Number(PO.piani) || 1));
+      const bodyTop = Math.min(topH - (atticP ? atticP.h : 0), bodyP.y0 + nFloors * bodyP.floorH); // quota del solaio sotto il tetto
+      const pieces = [{ ...bodyP, h: bodyTop - bodyP.y0 }];
+      if (atticP) pieces.push({ ...atticP, y0: bodyTop });
       pieces.forEach((piece, k) => {
         const y0 = Math.max(piece.y0, baseH), y1 = piece.y0 + piece.h;
         if (y1 <= y0 + 0.01) return;

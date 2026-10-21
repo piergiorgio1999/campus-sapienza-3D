@@ -36,6 +36,16 @@
   `logoMuseo` (false = senza logo); valgono anche per i totem aggiunti dal catalogo e per i duplicati.
 - **Foto:** `riferimenti/totem-cu014.jpg`.
 
+## Cortile dell'azoto: corpo sopra il portico e aiuole speculari (21/10) — fatto
+- **Corpo sopra il portico:** alto un solo piano (`portico.piani: 1` in `cortile/modello.json`), dal solaio (soffitto + 0,35)
+  fino a `y0 del corpo + piani × altezza del piano`, con le stesse fasce/finestre della facciata e chiuso da tetto piano con
+  l'attico sottile; poggia sui pilastri. Le sagome OSM sono già svuotate (`vuoti`) a tutta altezza, quindi sopra si vede il cielo
+  e le pareti dei due cortili restano quelle dell'edificio. Codice: `loadCourtyardModel` in `campus-3d.js`.
+- **Aiuole speculari:** riferimento l'aiuola B (vicino al silos); la A è il suo specchio (u 1.75–6.15, v 1.45–8.3), senza il varco
+  della porticina (che è della gabbia). Entrambe arrivano al pilastro vicino (v fino a 8.3, i pilastri partono da 8.05).
+- **Pilastri:** il pilastro sinistro è lo specchio di quello dietro la gabbia (u 5.02–6.22, v 8.05–8.95, altezza 5,75), tiene la scritta AULE.
+- **Asse di simmetria:** u = 8.4, mezzeria dei muri del cortile (sinistro u 0.2, destro u 16.6) e del varco del fondo (6.4–10.4); u' = 16.8 − u.
+
 ## Fatto nella versione 32
 - Catalogo «Oggetto del modello» in ＋ Aggiungi con tutti gli oggetti costruiti nel modello (anche la transenna a
   strisce bianche e rosse inclinate di 35° in senso orario, del commento 4).

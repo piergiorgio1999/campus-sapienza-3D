@@ -21,6 +21,13 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
     `cornice` = `cortile` o `esterni:<elemento>` per i duplicati fatti in quelle coordinate), `edificio:<codice>`
     (texture `facciata` e celle `finestre` tolte o aggiunte; la texture di un solo lato è una toppa `tipo: "texture"` in `finestre`, come «Texture di un muro»).
   Nel trascinamento c'è la calamita (allineamenti, misure, spaziature, con le guide colorate; Alt la sospende).
+  Selettore **⤡ Sposta / ⟳ Ruota** in cima alla scheda (e tasto flottante «⟳ Ruota» accanto a «▤ Scheda» quando la scheda è
+  nascosta; scorciatoia **R**, non mentre si scrive in un campo). In «Ruota» le maniglie della scatola lasciano il posto a un
+  anello orizzontale con una maniglia: trascinandola (o l'anello) l'oggetto gira attorno al centro della scatola, passo 5°,
+  aggancio magnetico a 0/90/180/270° e agli angoli dei solidi vicini già ruotati (soglia 4°; Alt o un secondo dito lo sospendono),
+  angolo mostrato nel suggerimento in alto; al rilascio salva il campo `angolo` come il cursore «Rotazione». Vale per i solidi
+  e gli oggetti del catalogo; per totem e panchine «Ruota» alterna `orienta` u/v (ora salvato nei campi); per gli altri
+  oggetti dei JSON il tasto è spento con un suggerimento.
   Claude le legge, le riporta nei file (`cortile/*.json`, `trees.json`, `cortile/facciate.json`) e segna la modifica
   `stato: "applicata"` (la pagina ignora quelle applicate). Gli oggetti eliminati restano nei JSON con `rimosso: true`.
 

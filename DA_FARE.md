@@ -182,6 +182,16 @@ parallelepipedi, cilindri e sfere, e angolo libero per tutti.
 - Limiti noti: «Solo questo pezzo» (deformazione per primitiva) su un solido ruotato lavora sulla scatola dritta del
   pezzo; marciapiedi e aiuole (`poligono`) non hanno angolo (si ruotano spostando i vertici).
 
+### Selettore Sposta / Ruota — fatto (richiesta dell'utente)
+- `editor.js`: `sel.rot` + `turnKind()` ('angolo' per solidi e oggetti del catalogo, 'orienta' per totem e panchine, altrimenti
+  nessuna rotazione). Modo Ruota: `drawSel` disegna un anello (`sel.ring`) e una maniglia `rotate` al posto delle maniglie della
+  scatola; `startDrag`/`rotMove`/`endDrag` ruotano `angolo` a passi di 5° con `turnMagnet` (0/90/180/270° e angoli dei vicini
+  ruotati, soglia 4°, Alt o secondo dito sospendono), ricostruzione ogni 90 ms come il cursore, salvataggio al rilascio.
+- Selettore in cima a `infoCard` (`modeSwitch`), tasto flottante `ui.rot` (sincronizzato in `loop`) e tasto R.
+- `orienta` aggiunto ai `fields` di totem e panchine (prima non veniva salvato); «Ripristina» lo toglie.
+- Limiti: gli altri oggetti dei JSON (pilastri, aiuole, terrazze, alberi, edifici) non hanno rotazione e il tasto è spento;
+  in Ruota non si ridimensiona né si sposta (si torna a «Sposta»); non provato nel browser.
+
 ### Commento 5 — bordo dei marciapiedi (`segnalazioni/471gbrlr71ggbi0hzmf2`)
 Bordo a cornice in blocchi di travertino bianco.
 - In `buildSidewalk`: anello del cordolo, cioè il contorno raccordato meno il contorno spostato verso l'interno di

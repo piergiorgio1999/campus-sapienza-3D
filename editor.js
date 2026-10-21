@@ -62,6 +62,7 @@
     .ed-card label.ed-check input{width:20px;height:20px;accent-color:#822433}
     .ed-card select{width:100%;min-height:40px;box-sizing:border-box;padding:0 8px;border:1px solid #d6cfcc;border-radius:8px;background:#fff;font:14px Arial,Helvetica,sans-serif}
     .ed-card .ed-row button[aria-pressed="true"]{background:#f6e9eb;border-color:#822433;color:#822433}
+    .ed-card .ed-seg{justify-content:stretch;margin:0 0 8px}.ed-card .ed-seg button{flex:1;min-height:44px}.ed-card .ed-seg button.ed-off,.ed-btn.ed-off{opacity:.45}
     .ed-fotos{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
     .ed-fotos img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #e3ddd7;background:#f3eeec;cursor:zoom-in}
     .ed-lightbox{position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:#000d;cursor:zoom-out}
@@ -79,6 +80,7 @@
     ui.show = el('button', 'ed-btn', '▤ Scheda'); ui.show.type = 'button'; ui.show.hidden = true; ui.show.title = 'Riapri la scheda dell’oggetto selezionato';
     ui.trees = el('button', 'ed-btn', '🌳 Alberi'); ui.trees.type = 'button'; ui.trees.title = 'Mostra o nascondi tutti gli alberi';
     ui.bar.append(ui.show, ui.add, ui.trees, ui.comment, ui.edit);
+    ui.rot = el('button', 'ed-btn', '⟳ Ruota'); ui.rot.type = 'button'; ui.rot.hidden = true; ui.rot.title = 'Ruota l’oggetto selezionato (scorciatoia R)'; ui.rot.setAttribute('aria-pressed', 'false'); ui.show.after(ui.rot);
     ui.hint = el('div', 'ed-hint'); ui.hint.hidden = true;
     ui.card = el('div', 'ed-card'); ui.card.hidden = true;
     host.append(ui.bar, ui.hint, ui.card);
@@ -87,6 +89,7 @@
     ui.add.addEventListener('click', addCard);
     ui.trees.addEventListener('click', () => setTrees(ui.trees.getAttribute('aria-pressed') !== 'true'));
     ui.show.addEventListener('click', showCard);
+    ui.rot.addEventListener('click', toggleRot);
   }
   // «Alberi»: acceso = alberi visibili; lo stato resta nel browser e campus-3d.js lo riapplica a ogni ricostruzione
   function setTrees(on) {
@@ -221,12 +224,12 @@
       out.push(Object.assign(it, {
         key: `${it.sorgente}:${it.percorso}`, lock: it.lock || {},
         get: () => { const r = {}; for (const k of fields) if (obj[k] !== undefined) r[k] = clone(obj[k]); return r; },
-        set: (val) => { for (const k of fields) { if (val && val[k] !== undefined) obj[k] = clone(val[k]); else if (k === 'rimosso' || k === 'angolo') delete obj[k]; } },
+        set: (val) => { for (const k of fields) { if (val && val[k] !== undefined) obj[k] = clone(val[k]); else if (k === 'rimosso' || k === 'angolo' || k === 'orienta') delete obj[k]; } },
         remove: it.fixed ? null : (it.remove || (() => { obj.rimosso = true; })),
         gone: () => own() || !!(it.parent && it.parent !== obj && it.parent.rimosso),
       }));
     };
-    const benchItems = (b, P, list, th) => (list || []).forEach((p, k) => add({ ...b, obj: p, percorso: `${P}.panchine.${k}`, label: `Panchina ${k + 1}`, fields: ['u', 'v', 'lunghezza', 'profondita', 'altezza'], lock: { h0: true },
+    const benchItems = (b, P, list, th) => (list || []).forEach((p, k) => add({ ...b, obj: p, percorso: `${P}.panchine.${k}`, label: `Panchina ${k + 1}`, fields: ['u', 'v', 'lunghezza', 'profondita', 'altezza', 'orienta'], lock: { h0: true },
       box: () => { const L = Number(p.lunghezza) || 2.2, D = Number(p.profondita) || 0.45, av = p.orienta === 'v', du = av ? D : L, dv = av ? L : D; return { u0: p.u - du / 2, u1: p.u + du / 2, v0: p.v - dv / 2, v1: p.v + dv / 2, h0: th(), h1: th() + (Number(p.altezza) || 0.42) }; },
       apply: (o, n) => { const av = p.orienta === 'v'; p.u = round((n.u0 + n.u1) / 2); p.v = round((n.v0 + n.v1) / 2); p.lunghezza = round(av ? n.v1 - n.v0 : n.u1 - n.u0); p.profondita = round(av ? n.u1 - n.u0 : n.v1 - n.v0); p.altezza = round(n.h1 - th()); } }));
     const railItems = (b, P, e, th) => (e.ringhiere || []).forEach((l, k) => add({ ...b, percorso: `${P}.ringhiere.${k}`, label: `Ringhiera ${k + 1}`, fields: ['ringhiere', 'ringhiera'], lock: { h0: true },
@@ -284,7 +287,7 @@
         (e.palme || []).forEach((p, k) => add({ ...b, obj: p, percorso: `${P}.palme.${k}`, label: `Palma ${k + 1}`, fields: ['u', 'v', 'altezza'], lock: { h0: true },
           box: () => ({ u0: p.u - 0.9, u1: p.u + 0.9, v0: p.v - 0.9, v1: p.v + 0.9, h0: 0, h1: Number(p.altezza) || 4 }),
           apply: (o, n) => { p.u = round((n.u0 + n.u1) / 2); p.v = round((n.v0 + n.v1) / 2); p.altezza = round(n.h1); } }));
-        (e.totem || []).forEach((t, k) => add({ ...b, obj: t, percorso: `${P}.totem.${k}`, label: `Totem ${k + 1}`, fields: ['u', 'v', 'altezza', 'larghezza', 'spessore', 'scritta', 'cartello', 'logoMuseo'], lock: { h0: true }, totem: true,
+        (e.totem || []).forEach((t, k) => add({ ...b, obj: t, percorso: `${P}.totem.${k}`, label: `Totem ${k + 1}`, fields: ['u', 'v', 'altezza', 'larghezza', 'spessore', 'scritta', 'cartello', 'logoMuseo', 'orienta'], lock: { h0: true }, totem: true,
           // larghezza: lato lungo (con la scritta), spessore: lato corto; orienta 'v' li gira lungo il vialetto
           box: () => { const w = (Number(t.larghezza) || 0.8) / 2 + 0.05, d = (Number(t.spessore) || 0.5) / 2, a = t.orienta === 'v' ? d : w, c = t.orienta === 'v' ? w : d; return { u0: t.u - a, u1: t.u + a, v0: t.v - c, v1: t.v + c, h0: 0, h1: Number(t.altezza) || 2.75 }; },
           apply: (o, n) => { const av = t.orienta === 'v'; t.u = round((n.u0 + n.u1) / 2); t.v = round((n.v0 + n.v1) / 2); t.altezza = round(n.h1); t.larghezza = round((av ? n.v1 - n.v0 : n.u1 - n.u0) - 0.1); t.spessore = round(av ? n.u1 - n.u0 : n.v1 - n.v0); } })); // la pedana sporge 5 cm per lato
@@ -478,8 +481,9 @@
     sel = null; closeCard(); ui.show.hidden = true;
   }
   function select(t) {
+    const rot = !!(sel && sel.rot && sel.type === 'item' && t.type === 'item' && sel.it.key === t.it.key); // stesso oggetto toccato di nuovo: resta in Ruota
     deselect();
-    sel = Object.assign({ vis: new T.Group(), handles: [] }, t);
+    sel = Object.assign({ vis: new T.Group(), handles: [], rot }, t);
     sel.frameKey = t.type === 'item' ? frameOfItem(t.it) : t.p.frameKey;
     sel.box = selBox();
     if (t.type === 'prim') sel.orig = primBox(t.p, true);
@@ -495,7 +499,16 @@
     for (const [a, z] of [[[0, 0, 0], [1, 0, 0]], [[0, 1, 0], [1, 1, 0]], [[0, 0, 1], [1, 0, 1]], [[0, 1, 1], [1, 1, 1]], [[0, 0, 0], [0, 1, 0]], [[1, 0, 0], [1, 1, 0]], [[0, 0, 1], [0, 1, 1]], [[1, 0, 1], [1, 1, 1]], [[0, 0, 0], [0, 0, 1]], [[1, 0, 0], [1, 0, 1]], [[0, 1, 0], [0, 1, 1]], [[1, 1, 0], [1, 1, 1]]]) pts.push(c(...a), c(...z));
     const edges = new T.LineSegments(new T.BufferGeometry().setFromPoints(pts), new T.LineBasicMaterial({ color: 0x822433, depthTest: false, transparent: true }));
     edges.renderOrder = 998; sel.vis.add(edges);
-    const hs = [];
+    const hs = [], rot = rotOn();
+    if (rot) { // modo Ruota: al posto delle maniglie un anello orizzontale attorno alla scatola, con una maniglia all'angolo dell'oggetto
+      const pr = sel.it.obj, fb = frameBy(pr.cornice || 'lato0'); if (!fb) return;
+      const R = Math.max(0.6, 0.5 * Math.hypot(b.u1 - b.u0, b.v1 - b.v0) + 0.4), a = (angleOf(pr) * Math.PI) / 180, hr = b.h0 + 0.05, ring = [];
+      for (let i = 0; i < 96; i += 1) ring.push(toWorld(fb, um + R * Math.cos((i / 96) * 2 * Math.PI), vm + R * Math.sin((i / 96) * 2 * Math.PI), hr));
+      const hw = toWorld(fb, um + R * Math.cos(a), vm + R * Math.sin(a), hr), mat = () => new T.LineBasicMaterial({ color: 0x822433, depthTest: false, transparent: true });
+      const rl = new T.LineLoop(new T.BufferGeometry().setFromPoints(ring), mat()), sp = new T.LineSegments(new T.BufferGeometry().setFromPoints([toWorld(fb, um, vm, hr), hw]), mat());
+      rl.renderOrder = sp.renderOrder = 998; sel.vis.add(rl, sp); sel.ring = { pts: ring };
+      hs.push({ role: 'rotate', world: hw });
+    } else {
     for (const [axis, val] of [['u', [b.u0, b.u1]], ['v', [b.v0, b.v1]], ['h', [b.h0, b.h1]]]) val.forEach((x, i) => {
       if (axis === 'h' && lock['h' + i]) return;
       hs.push({ role: 'face', axis, side: String(i), u: axis === 'u' ? x : um, v: axis === 'v' ? x : vm, h: axis === 'h' ? x : hm });
@@ -504,18 +517,19 @@
     for (const i of [0, 1]) for (const j of [0, 1]) for (const k of flat ? [1] : [0, 1]) hs.push({ role: 'corner', u: String(i), v: String(j), pu: i ? b.u1 : b.u0, pv: j ? b.v1 : b.v0, ph: k ? b.h1 : b.h0 });
     hs.push({ role: 'move', u: um, v: vm, h: b.h1 + 0.45 });
     if (sel.type === 'item' && sel.it.verts) sel.it.verts.get().forEach((q, k) => hs.push({ role: 'vertex', k, u: q[0], v: q[1], h: b.h1 }));
+    }
     for (const h of hs) {
       const geo = h.role === 'vertex' ? new T.SphereGeometry(0.5, 12, 8) : new T.BoxGeometry(1, 1, 1);
-      const m = new T.Mesh(geo, new T.MeshBasicMaterial({ color: h.role === 'move' ? 0x822433 : h.role === 'vertex' ? (sel.corner === h.k ? 0x2f7de1 : 0xf2c84b) : 0xffffff, depthTest: false, transparent: true }));
+      const m = new T.Mesh(geo, new T.MeshBasicMaterial({ color: h.role === 'move' || h.role === 'rotate' ? 0x822433 : h.role === 'vertex' ? (sel.corner === h.k ? 0x2f7de1 : 0xf2c84b) : 0xffffff, depthTest: false, transparent: true }));
       if (h.role !== 'vertex') { const ed = new T.LineSegments(new T.EdgesGeometry(geo), new T.LineBasicMaterial({ color: 0x822433, depthTest: false, transparent: true })); ed.renderOrder = 1000; m.add(ed); }
-      m.position.copy(h.role === 'corner' ? toWorld(f, h.pu, h.pv, h.ph) : toWorld(f, h.u, h.v, h.h)); m.renderOrder = 999; m.userData.handle = h;
+      m.position.copy(h.world ? h.world : h.role === 'corner' ? toWorld(f, h.pu, h.pv, h.ph) : toWorld(f, h.u, h.v, h.h)); m.renderOrder = 999; m.userData.handle = h;
       sel.vis.add(m); sel.handles.push(m);
     }
     scaleHandles();
   }
   function scaleHandles() {
     if (!boxed()) return;
-    for (const m of sel.handles) { const r = m.userData.handle.role, d = camera.position.distanceTo(m.position); m.scale.setScalar(Math.max(0.08, d * 0.016) * (r === 'move' ? 1.3 : r === 'corner' ? 0.75 : r === 'vertex' ? 0.8 : 1)); }
+    for (const m of sel.handles) { const r = m.userData.handle.role, d = camera.position.distanceTo(m.position); m.scale.setScalar(Math.max(0.08, d * 0.016) * (r === 'move' || r === 'rotate' ? 1.3 : r === 'corner' ? 0.75 : r === 'vertex' ? 0.8 : 1)); }
   }
   function handleAt(e) {
     if (!boxed()) return null;
@@ -526,10 +540,74 @@
       const pri = m.userData.handle.role === 'vertex' ? d - 10 : d; // un vertice sopra l'angolo della scatola vince: si sceglie il suo raggio
       if (d < HANDLE_PX && (!best || pri < best.d)) best = { m, d: pri };
     }
+    if (!best && rotOn() && sel.ring) { // anche l'anello si trascina, non solo la sua maniglia
+      for (const w of sel.ring.pts) {
+        const q = w.clone().project(camera); if (q.z > 1) continue;
+        if (Math.hypot(r.left + ((q.x + 1) / 2) * r.width - e.clientX, r.top + ((1 - q.y) / 2) * r.height - e.clientY) < HANDLE_PX * 0.75) return sel.handles.find((m) => m.userData.handle.role === 'rotate') || null;
+      }
+    }
     return best ? best.m : null;
   }
   const dims = (b) => `${round(b.u1 - b.u0)} × ${round(b.v1 - b.v0)} × ${round(b.h1 - b.h0)} m · u ${b.u0} → ${b.u1} · v ${b.v0} → ${b.v1} · h ${b.h0} → ${b.h1}`;
   const overrideOf = () => sel && overrides.find((o) => o.id === (sel.type === 'item' ? docId(sel.it.key) : primId(sel.p)));
+  /* ---------- modo Ruota ---------- */
+  // «⤡ Sposta» (maniglie della scatola) / «⟳ Ruota» (anello con maniglia): selettore a due stati per l'oggetto selezionato.
+  // 'angolo': solidi e oggetti del catalogo (anello libero, campo `angolo`); 'orienta': totem e panchine, dove Ruota alterna u↔v;
+  // null: tutto il resto (nessuna rotazione libera inventata).
+  const ROT_STEP = 5, ROT_SNAP = 4, NO_TURN = 'Questo oggetto non si ruota: si ruotano i solidi e gli oggetti aggiunti dal catalogo.';
+  function turnKind() {
+    if (!sel || sel.type !== 'item') return null;
+    const it = sel.it;
+    if (it.primitiva) { const pr = it.obj; return pr.box && TURNABLE.includes(pr.forma) ? 'angolo' : null; }
+    return it.fields.includes('orienta') ? 'orienta' : null;
+  }
+  const rotOn = () => !!(sel && sel.rot && turnKind() === 'angolo');
+  function toggleRot() {
+    if (!sel || drag) return;
+    const kind = turnKind();
+    if (!kind) { hint(NO_TURN); return; }
+    if (kind === 'orienta') { // lungo u ↔ lungo v, salvato come gli altri campi
+      const o = sel.it.obj; o.orienta = o.orienta === 'v' ? 'u' : 'v';
+      saveItem(sel.it); rebuild(sel.it.sorgente); hint('Orientamento: lato lungo ' + (o.orienta === 'v' ? 'lungo il vialetto (v)' : 'lungo u') + '.'); return;
+    }
+    sel.rot = !sel.rot; sel.tool = null; drawSel(); infoCard();
+    hint(sel.rot ? 'Ruota: trascina la maniglia sull’anello (passo 5°, Alt sospende l’aggancio). R o «⤡ Sposta» tornano alle maniglie.' : '');
+  }
+  function modeSwitch() {
+    const kind = turnKind(), row = el('div', 'ed-row ed-seg'), rot = rotOn();
+    const mv = button('⤡ Sposta', () => { if (rotOn()) toggleRot(); }), rt = button('⟳ Ruota', toggleRot);
+    mv.setAttribute('aria-pressed', String(!rot)); rt.setAttribute('aria-pressed', String(rot));
+    if (!kind) { rt.classList.add('ed-off'); rt.setAttribute('aria-disabled', 'true'); rt.title = NO_TURN; }
+    else if (kind === 'orienta') rt.title = 'Alterna l’orientamento (lungo u / lungo v)';
+    row.append(mv, rt); return row;
+  }
+  // aggancio magnetico dell'angolo grezzo (gradi): 0/90/180/270° e gli angoli, a passi di 90°, dei solidi vicini già ruotati
+  function turnMagnet(raw, r) {
+    if (magnetOff || touches.size > 1) return null;
+    if (!r.near) {
+      r.near = [];
+      for (const it of liveItems()) {
+        if (it.key === sel.it.key || !it.primitiva || it.gone() || (it.obj.cornice || 'lato0') !== (sel.it.obj.cornice || 'lato0') || !angleOf(it.obj)) continue;
+        let nb = null; try { nb = it.box(); } catch (_) { /* scatola non calcolabile */ }
+        if (nb && Math.hypot(mid(nb, 'u') - r.um, mid(nb, 'v') - r.vm) <= MAG_RANGE) r.near.push({ a: angleOf(it.obj), label: it.label });
+      }
+    }
+    let best = null;
+    const test = (a, text) => { const d = ((((a - raw) % 360) + 540) % 360) - 180; if (Math.abs(d) <= ROT_SNAP && (!best || Math.abs(d) < best.d)) best = { a: raw + d, d: Math.abs(d), text }; };
+    for (let k = 0; k < 4; k += 1) test(k * 90, k * 90 + '°');
+    for (const n of r.near) for (let k = 0; k < 4; k += 1) test(n.a + k * 90, 'come ' + n.label);
+    return best;
+  }
+  function rotMove(e) {
+    const p = new T.Vector3(); if (!rayFrom(e).ray.intersectPlane(drag.plane, p)) return;
+    const r = drag.rot, q = toLocal(r.fb, p), pr = sel.it.obj;
+    const raw = r.a0 + ((Math.atan2(q.v - r.vm, q.u - r.um) - r.ang0) * 180) / Math.PI, hit = turnMagnet(raw, r);
+    const a = ((Math.round(hit ? hit.a : Math.round(raw / ROT_STEP) * ROT_STEP) % 360) + 360) % 360;
+    r.cur = a; pr.angolo = a; sel.frameKey = frameOfItem(sel.it);
+    if (!slideTimer) slideTimer = setTimeout(() => { slideTimer = 0; rebuild('aggiunta'); }, 90); // l'oggetto gira mentre trascini, come col cursore
+    drawSel();
+    hint(`Rotazione ${a}°` + (hit ? ' · ' + hit.text + ' (Alt sospende l’aggancio)' : ''));
+  }
   // cursore in metri: durante il trascinamento ricostruisce senza ridisegnare la scheda, al rilascio salva
   function slider(label, value, max, onInput) {
     const l = el('label'), r = el('input'); r.type = 'range'; r.min = '0'; r.max = String(max); r.step = '0.05'; r.value = String(value);
@@ -583,8 +661,8 @@
   function infoCard() {
     if (!sel || !cardWanted()) return;
     const title = sel.type === 'item' ? sel.it.label : `Pezzo: ${describe(sel.p.mesh)}`;
-    const nodes = [el('h3', '', title), el('p', 'ed-meta', dims(sel.box)),
-      el('p', 'ed-meta', 'Facce: un lato · angoli: due lati · rossa in alto: sposta' + (sel.type === 'item' && sel.it.verts ? ' · gialle: vertici' : '') + (sel.type === 'item' && sel.it.lock.h0 ? ' · la base resta ferma' : '') + '.')];
+    const nodes = [el('h3', '', title), ...(sel.type === 'item' ? [modeSwitch()] : []), el('p', 'ed-meta', dims(sel.box)),
+      rotOn() ? el('p', 'ed-meta', 'Modo Ruota: trascina la maniglia (o l’anello) per girare l’oggetto, passo 5° con aggancio a 0/90/180/270° e agli oggetti vicini; Alt lo sospende. R torna a Sposta.') : el('p', 'ed-meta', 'Facce: un lato · angoli: due lati · rossa in alto: sposta' + (sel.type === 'item' && sel.it.verts ? ' · gialle: vertici' : '') + (sel.type === 'item' && sel.it.lock.h0 ? ' · la base resta ferma' : '') + '.')];
     const row = el('div', 'ed-row');
     if (sel.alt) { const alt = sel.alt, back = sel.type === 'item' ? { type: 'item', it: sel.it } : { type: 'prim', p: sel.p }; row.append(button(alt.type === 'prim' ? 'Solo questo pezzo' : 'Oggetto intero', () => select(Object.assign({}, alt, { alt: back })))); }
     if (sel.type === 'item' && sel.it.primitiva) {
@@ -725,6 +803,13 @@
   function startDrag(m, e) {
     const h = m.userData.handle, wp = m.position.clone(), f = frameBy(sel.frameKey);
     let plane;
+    if (h.role === 'rotate') { // l'angolo segue il puntatore proiettato sul piano orizzontale dell'anello, a partire da dove lo si afferra
+      const pr = sel.it.obj, fb = frameBy(pr.cornice || 'lato0'), b = sel.box, p0 = new T.Vector3();
+      plane = new T.Plane(new T.Vector3(0, 1, 0), -wp.y); if (!fb || !rayFrom(e).ray.intersectPlane(plane, p0)) return false;
+      const um = (b.u0 + b.u1) / 2, vm = (b.v0 + b.v1) / 2, q = toLocal(fb, p0);
+      drag = { h, plane, box0: clone(b), pointerId: e.pointerId, rot: { fb, um, vm, ang0: Math.atan2(q.v - vm, q.u - um), a0: angleOf(pr), cur: angleOf(pr), raw0: pr.angolo } };
+      return true;
+    }
     if (h.role === 'face' && h.axis === 'h') { const dir = new T.Vector3(); camera.getWorldDirection(dir); dir.y = 0; if (dir.lengthSq() < 1e-6) dir.set(0, 0, 1); plane = new T.Plane().setFromNormalAndCoplanarPoint(dir.normalize(), wp); }
     else plane = new T.Plane(new T.Vector3(0, 1, 0), -wp.y);
     const p0 = new T.Vector3(); if (!rayFrom(e).ray.intersectPlane(plane, p0)) return false;
@@ -732,6 +817,7 @@
     return true;
   }
   function moveDrag(e) {
+    if (drag.h.role === 'rotate') { rotMove(e); return; }
     const p = new T.Vector3(); if (!rayFrom(e).ray.intersectPlane(drag.plane, p)) return;
     const q = toLocal(frameBy(sel.frameKey), p), d = { u: q.u - drag.q0.u, v: q.v - drag.q0.v, h: q.h - drag.q0.h }, h = drag.h, b = clone(drag.box0);
     const setSide = (ax, s) => { const k = ax + s, val = snap(drag.box0[k] + d[ax]); b[k] = s === '0' ? Math.min(val, b[ax + '1'] - MIN) : Math.max(val, b[ax + '0'] + MIN); };
@@ -856,6 +942,11 @@
 
   function endDrag() {
     drawGuides([]);
+    if (drag.h.role === 'rotate') { // salva come il cursore «Rotazione»: stesso campo `angolo`
+      const r = drag.rot; drag = null; freeView(); clearTimeout(slideTimer); slideTimer = 0;
+      if (r.cur !== r.a0) { saveItem(sel.it); rebuild('aggiunta'); }
+      sel.frameKey = frameOfItem(sel.it); drawSel(); return;
+    }
     const h = drag.h, changed = h.role === 'vertex' ? !!drag.vNew && JSON.stringify(drag.vNew) !== JSON.stringify(drag.verts) : KEYS.some((k) => sel.box[k] !== drag.box0[k]);
     const box0 = drag.box0, vNew = drag.vNew; drag = null; freeView();
     if (!changed) {
@@ -1257,6 +1348,11 @@
     down = null;
     if (!drag || (e && e.pointerId !== drag.pointerId)) return;
     sel.box = drag.box0; if (sel.type === 'prim') primApply(sel.p, sel.orig, sel.box);
+    if (drag.rot) { // rotazione interrotta: torna l'angolo di prima
+      const pr = sel.it.obj; clearTimeout(slideTimer); slideTimer = 0;
+      if (drag.rot.raw0 === undefined) delete pr.angolo; else pr.angolo = drag.rot.raw0;
+      sel.frameKey = frameOfItem(sel.it); rebuild('aggiunta');
+    }
     drag = null; freeView(); drawGuides([]); drawSel(); infoCard();
   }
   function onUp(e) {
@@ -1291,7 +1387,14 @@
       else { deselect(); hint('Qui c’è solo il terreno: tocca un edificio, un muro, un oggetto o un pezzo.'); }
     }
   }
-  function loop() { scaleHandles(); requestAnimationFrame(loop); }
+  // il tasto flottante «⟳ Ruota» sta accanto a «▤ Scheda»: solo con un oggetto selezionato e la scheda nascosta
+  function syncRot() {
+    const on = !!(mode === 'modifica' && sel && sel.type === 'item' && sel.cardHidden), kind = on ? turnKind() : null;
+    if (ui.rot.hidden === on) ui.rot.hidden = !on;
+    const pr = String(rotOn()); if (ui.rot.getAttribute('aria-pressed') !== pr) ui.rot.setAttribute('aria-pressed', pr);
+    ui.rot.classList.toggle('ed-off', on && !kind);
+  }
+  function loop() { syncRot(); scaleHandles(); requestAnimationFrame(loop); }
 
   /* ---------- avvio ---------- */
   async function connect() {
@@ -1329,6 +1432,10 @@
     canvas.addEventListener('pointerup', onUp, { capture: true });
     canvas.addEventListener('pointercancel', onCancel, { capture: true });
     canvas.addEventListener('lostpointercapture', (e) => { if (drag && e.pointerId === drag.pointerId) setTimeout(() => { if (drag && drag.pointerId === e.pointerId) onCancel(e); }, 0); });
+    document.addEventListener('keydown', (e) => { // R: Sposta ↔ Ruota, non mentre si scrive in un campo
+      const tg = e.target, typing = tg && (/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName) || tg.isContentEditable);
+      if ((e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.metaKey && !e.altKey && !typing && mode === 'modifica' && sel && sel.type === 'item') { toggleRot(); e.preventDefault(); }
+    });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (ui.card.hidden) setMode(null); else closeCard(); } });
     loop(); connect();
     window.campus3dEditor = {

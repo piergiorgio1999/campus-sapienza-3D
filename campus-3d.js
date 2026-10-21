@@ -2200,23 +2200,19 @@
     const m = new THREE.Mesh(g, material); m.castShadow = true; m.receiveShadow = true;
     return m;
   }
-  // vite americana / edera: foglie verdi fitte in più toni, a lobi, su fondo trasparente; si ripete senza giunte (ogni foglia vicina al bordo è disegnata anche dall'altra parte)
-  function leafTex() {
-    const t = canvasTex(256, 256, (ctx, w) => {
-      ctx.clearRect(0, 0, w, w);
-      const tones = ['#2b5527', '#386a2f', '#467a37', '#234a22', '#52853f', '#305f2c', '#6a9a48', '#5d8f3f'];
-      for (let i = 0; i < 640; i += 1) {
-        const x = hash01(i, 52) * w, y = hash01(i, 53) * w, ang = hash01(i, 54) * Math.PI * 2, r = 11 + 7 * hash01(i, 55);
-        ctx.fillStyle = tones[Math.floor(hash01(i, 51) * tones.length)];
-        for (const dx of [-w, 0, w]) for (const dy of [-w, 0, w]) {
-          if (x + dx < -r || x + dx > w + r || y + dy < -r || y + dy > w + r) continue;
-          ctx.save(); ctx.translate(x + dx, y + dy); ctx.rotate(ang);
-          ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(r * 0.55, -r * 0.35); ctx.lineTo(r, 0); ctx.lineTo(r * 0.6, r * 0.5); ctx.lineTo(0, r * 0.9); ctx.lineTo(-r * 0.6, r * 0.5); ctx.lineTo(-r, 0); ctx.lineTo(-r * 0.55, -r * 0.35); ctx.closePath(); ctx.fill(); ctx.restore();
-        }
-      }
-    }, 1, 1, true);
-    t.encoding = THREE.sRGBEncoding;
-    return t;
+  // foglie di vite / edera: foto (ambientCG LeafSet029, CC0, vedi tex/ATTRIBUTION.md) = atlante 3 × 3 di foglie con mappa di opacità separata;
+  // si ripete a tessere, ogni foglia sta dentro la sua cella 1/3 × 1/3
+  function leafTexs() {
+    const ld = new THREE.TextureLoader(), set = (t, col) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; if (col) t.encoding = THREE.sRGBEncoding; return t; };
+    return { map: set(ld.load('tex/vite_LeafSet029_COL_1k.jpg'), true), alpha: set(ld.load('tex/vite_LeafSet029_OPA_1k.jpg'), false) };
+  }
+  // la densità del fogliame (attributo per vertice `dens`, 0..1) decide quali foglie dell'atlante restano: ogni cella ha un valore casuale fisso
+  // e sparisce se supera la densità; così le foglie sono intere e nei vuoti si vede attraverso (e la luce passa anche nella mappa delle ombre)
+  function leafPatch(shader) {
+    shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nattribute float dens;\nvarying float vDens;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvDens = dens;');
+    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vDens;\nfloat leafH(vec2 c) { return fract(sin(dot(c, vec2(12.9898, 78.233))) * 43758.5453); }')
+      .replace('#include <alphatest_fragment>', '#include <alphatest_fragment>\nif (leafH(floor(vUv * 3.0)) > vDens) discard;');
   }
   // lastre irregolari di pietra grigia (opus incertum): celle di Voronoi con giunti scuri, senza giunte ai bordi della texture
   function opusTex() {
@@ -2403,20 +2399,23 @@
     return m;
   }
   // galleria a sezione "a stadio" (pareti verticali + semicerchio) lungo u: la superficie sporge di off dal profilo di raggio R,
-  // con un'ondulazione lenta per farla sembrare una siepe; aperta alle estremità
-  function tunnelGeom(u0, u1, vm, R, imp, off, wob, seed) {
-    const prof = [], nW = 3, nA = 20;
+  // con un'ondulazione lenta per farla sembrare una siepe; aperta alle estremità. Per vertice: attributo `dens` (densità del fogliame:
+  // quasi nulla sotto `da` metri, poi cresce fino al massimo sul tetto, moltiplicata per `cop`); uv ruotate di `rot` e spostate di `seed`
+  function tunnelGeom(u0, u1, vm, R, imp, off, wob, seed, rot, da, cop) {
+    const prof = [], nW = 8, nA = 20, sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
     for (let k = 0; k <= nW; k += 1) prof.push([-R, imp * k / nW, -1, 0]);
     for (let k = 1; k < nA; k += 1) { const th = Math.PI - Math.PI * k / nA; prof.push([R * Math.cos(th), imp + R * Math.sin(th), Math.cos(th), Math.sin(th)]); }
     for (let k = nW; k >= 0; k -= 1) prof.push([R, imp * k / nW, 1, 0]);
-    const nu = Math.max(2, Math.round((u1 - u0) / 0.45)), pos = [], uv = [], idx = [], arc = [0];
+    const nu = Math.max(2, Math.round((u1 - u0) / 0.45)), pos = [], uv = [], dn = [], idx = [], arc = [0], S = 0.6, cr = Math.cos(rot), sr = Math.sin(rot);
     for (let j = 1; j < prof.length; j += 1) arc.push(arc[j - 1] + Math.hypot(prof[j][0] - prof[j - 1][0], prof[j][1] - prof[j - 1][1]));
     for (let i = 0; i <= nu; i += 1) {
       const u = u0 + (u1 - u0) * i / nu;
       for (let j = 0; j < prof.length; j += 1) {
         const [pv, ph, nv, nh] = prof[j], e = off + wob * (Math.sin(u * 1.9 + j * 0.7 + seed) + 0.6 * Math.sin(u * 0.8 - j * 1.3 + seed * 2));
         pos.push(u, Math.max(0.02, ph + nh * e), -(vm + pv + nv * e));
-        uv.push(u / 1.3 + seed, arc[j] / 1.3);
+        const a = u / S, b = arc[j] / S;
+        uv.push(a * cr - b * sr + seed, a * sr + b * cr + seed * 0.7);
+        dn.push((0.04 + 0.96 * sm(da, da + 1.4, ph)) * cop);
       }
     }
     for (let i = 0; i < nu; i += 1) for (let j = 0; j < prof.length - 1; j += 1) {
@@ -2424,8 +2423,19 @@
       idx.push(a, b, c, c, b, d);
     }
     const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    g.setAttribute('dens', new THREE.Float32BufferAttribute(dn, 1)); g.setIndex(idx); g.computeVertexNormals();
     return g;
+  }
+  // fusto della vite: tubo contorto dal cordolo lungo il fianco fino a perdersi nel fogliame; lat = -1/+1 lato del vialetto
+  function trunkGeom(u, vm, R, imp, lat, top, seed, r) {
+    const pts = [], n = 14;
+    for (let k = 0; k <= n; k += 1) {
+      const t = k / n, y = 0.2 + (top - 0.2) * t, q = Math.min(1, Math.max(0, (y - imp) / R)), th = Math.asin(q);
+      const side = R * Math.cos(th) - 0.03 - 0.05 * Math.sin(t * 5 + seed) - 0.04 * t; // verso l'interno, con un po' di torsione
+      pts.push(new THREE.Vector3(u + 0.07 * Math.sin(t * 7 + seed * 3) * (0.4 + t), y, -(vm + lat * side)));
+    }
+    return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, r, 6, false);
   }
   // pergolato come nelle foto Street View del 2015: galleria di archi a tutto sesto in tondino di ferro scuro, uno ogni `passo`,
   // sui cordoli di travertino ai due lati di un vialetto a lastre irregolari; vite fitta su tetto e fianchi (da fuori una siepe
@@ -2449,11 +2459,26 @@
       for (const v of [v0, v1]) g.add(rodMesh([u, 0.2, -v], [u, imp, -v], 0.022, iron));
     }
     for (const a of [Math.PI / 2, Math.PI / 4, 3 * Math.PI / 4]) g.add(rodMesh([u0, imp + R * Math.sin(a), -(vm + R * Math.cos(a))], [u1, imp + R * Math.sin(a), -(vm + R * Math.cos(a))], 0.012, iron));
-    // vite: due gusci di foglie (esterno fitto, interno più rado) e un fondo verde scuro visibile solo da fuori
-    const leaves = courtOnce('pergolato|foglie', () => new THREE.MeshStandardMaterial({ map: leafTex(), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.85 }));
-    const back = courtOnce('pergolato|fondo', () => new THREE.MeshStandardMaterial({ color: new THREE.Color(0x1f3d1c).convertSRGBToLinear(), roughness: 1, side: THREE.FrontSide }));
-    for (const [off, wob, seed, mat] of [[0.32, 0.07, 0.3, leaves], [0.2, 0.04, 0.1, back], [0.1, 0.02, 0.6, leaves]]) {
-      const m = new THREE.Mesh(tunnelGeom(u0 - 0.1, u1 + 0.1, vm, R, imp, off, wob, seed), mat); m.castShadow = mat === leaves; m.receiveShadow = true; g.add(m);
+    // vite: quattro gusci di foglie fotografiche (sfalsati e ruotati) con vuoti fra le foglie; densità quasi nulla sulla parte bassa dei fianchi
+    // (`fogliame_da`, m), crescente salendo, massima sul tetto; `copertura` (0..1) scala la densità. Le ombre usano gli stessi vuoti.
+    const cop = Number.isFinite(Number(el.copertura)) ? Math.min(1, Math.max(0, Number(el.copertura))) : 1, da = Number.isFinite(Number(el.fogliame_da)) ? Number(el.fogliame_da) : 1.0;
+    const lt = courtOnce('pergolato|tex', leafTexs);
+    const leaves = courtOnce('pergolato|foglie', () => { const m = new THREE.MeshStandardMaterial({ map: lt.map, alphaMap: lt.alpha, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.85, color: 0xb4c8a0 }); m.onBeforeCompile = leafPatch; m.customProgramCacheKey = () => 'vite'; return m; });
+    const leafDepth = courtOnce('pergolato|foglie-ombra', () => { const m = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: lt.map, alphaMap: lt.alpha, alphaTest: 0.5 }); m.onBeforeCompile = leafPatch; m.customProgramCacheKey = () => 'vite-ombra'; return m; });
+    for (const [off, wob, seed, rot] of [[0.34, 0.07, 0.31, 0], [0.25, 0.05, 0.57, 2.1], [0.16, 0.04, 0.12, 4.2], [0.08, 0.02, 0.83, 1.0]]) {
+      const m = new THREE.Mesh(tunnelGeom(u0 - 0.1, u1 + 0.1, vm, R, imp, off, wob, seed, rot, da, cop), leaves); m.castShadow = true; m.receiveShadow = true; m.customDepthMaterial = leafDepth; g.add(m);
+    }
+    // fusti della vite: uno o due per campata (hash fisso), spesso a pochi cm dal montante dell'arco, sui cordoli ai lati del vialetto
+    const bark = courtOnce('pergolato|fusto', () => plainMat(0x4a4038, 0.95, 0.0));
+    for (let k = 0; k < n; k += 1) {
+      const cnt = hash01(k, 71) < 0.45 ? 2 : 1;
+      for (let c = 0; c < cnt; c += 1) {
+        const id = k * 5 + c, lat = hash01(id, 72) < 0.5 ? -1 : 1, near = hash01(id, 73) < 0.6;
+        const ua = u0 + (u1 - u0) * k / n, ub = u0 + (u1 - u0) * (k + 1) / n;
+        const u = near ? (hash01(id, 74) < 0.5 ? ua + 0.07 : ub - 0.07) : ua + (ub - ua) * (0.25 + 0.5 * hash01(id, 75));
+        const tm = new THREE.Mesh(trunkGeom(u, vm, R, imp, lat, 1.5 + 1.2 * hash01(id, 76), id, 0.022 + 0.017 * hash01(id, 77)), bark);
+        tm.castShadow = true; tm.receiveShadow = true; g.add(tm);
+      }
     }
     // ringhiera verso l'edificio: montanti, tre correnti tondi e saettoni diagonali verso la strada
     const RG = el.ringhiera;

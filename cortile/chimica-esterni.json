@@ -479,6 +479,8 @@
    "v": [12.1, 14.7],
    "altezza": 3,
    "passo": 1.8,
+   "copertura": 1,
+   "fogliame_da": 1,
    "prato": [6.4, 19.2],
    "ringhiera": { "v": 7.4, "altezza": 1, "passo": 3 },
    "aiuole": [

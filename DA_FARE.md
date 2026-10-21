@@ -76,6 +76,11 @@ non c'era nessun pergolato posato (solo il pezzo del catalogo, ora riscritto): p
 v 12,1–14,7, tra la scala antincendio ovest e il vialetto dell'ingresso, evitando i tronchi esistenti. Nell'editor è un
 oggetto selezionabile (u, v, altezza); prato, ringhiera, aiuole e lampioni si spostano con lui. Da confermare con l'utente
 posizione e lunghezza (26,5 m).
+**Aggiornamento (v111):** foglie con la foto di vite (ambientCG LeafSet029, CC0, `tex/vite_LeafSet029_*`, vedi
+`tex/ATTRIBUTION.md`) con `alphaMap` + `alphaTest` e ombre bucate (`customDepthMaterial`); quattro gusci sfalsati con vuoti
+fra le foglie; la densità sale con la quota (quasi nulla sotto `fogliame_da`, 1 m, massima sul tetto; `copertura` la scala), quindi in
+basso si vedono gli archi in ferro. Uno o due fusti contorti per campata (hash fisso, lato e posizione variabili, spesso
+vicini al montante) dal cordolo fino al fogliame. Da verificare nella pipeline: aspetto delle foglie, densità e fusti.
 L'utente non vuole il pergolato attuale (archi con foglie rosse e arancio). Come nelle foto:
 - **Struttura:** galleria lunga e stretta parallela alla facciata, lungo il viale. Archi a tutto sesto di tondino di
   ferro scuro, uno ogni ~1,5–2 m, che partono dai cordoli in travertino ai due lati del vialetto.

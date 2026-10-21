@@ -2332,6 +2332,18 @@
         canopy.rotation.z = Math.PI / 2; canopy.position.set((u0 + u1) / 2, base, -vm); canopy.castShadow = true; g.add(canopy);
         const sideMat = leaves.clone(); sideMat.map = leafTex(); sideMat.map.repeat.set((u1 - u0) / 4, base / 4);
         for (const v of [v0, v1]) { const s = new THREE.Mesh(new THREE.PlaneGeometry(u1 - u0, base * 0.8), sideMat); s.position.set((u0 + u1) / 2, base * 0.6, -v); g.add(s); }
+      } else if (el.tipo === 'pilastro') {
+        g.add(localSlab(el.poligono, 0, Number(el.altezza) || 2.5, trav()));
+      } else if (el.tipo === 'palo') {
+        // palo della bandiera in ghisa verde: plinto, rigonfiamento decorato, fusto rastremato e pomo in cima
+        const H = Number(el.altezza) || 11, pv = new THREE.Group(); pv.position.set(Number(el.u), 0, -Number(el.v)); g.add(pv);
+        const green = new THREE.MeshStandardMaterial({ color: new THREE.Color(el.colore || '#2f5c3e').convertSRGBToLinear(), roughness: 0.5, metalness: 0.35 });
+        const part = (geo, y) => { const m = new THREE.Mesh(geo, green); m.position.y = y; m.castShadow = true; pv.add(m); };
+        part(new THREE.CylinderGeometry(0.2, 0.24, 0.35, 16), 0.175);
+        part(new THREE.CylinderGeometry(0.1, 0.13, 0.46, 12), 0.57);
+        part(new THREE.LatheGeometry([[0.11, 0], [0.2, 0.12], [0.24, 0.3], [0.2, 0.48], [0.12, 0.58], [0.15, 0.66], [0.1, 0.75]].map(([r, y]) => new THREE.Vector2(r, y)), 20), 0.8);
+        part(new THREE.CylinderGeometry(0.05, 0.1, H - 1.55, 12), 1.55 + (H - 1.55) / 2);
+        part(new THREE.SphereGeometry(0.09, 12, 8), H + 0.05);
       } else if (el.tipo === 'scala') {
         addFireStair(g, Number(el.u), Math.max(1, Number(el.piani) || 2), ocra, { lunghezza: el.lunghezza, larghezza: el.larghezza, distacco: el.distacco, pianerottoli: el.pianerottoli, quote: el.quote, pedate: ocraScura });
       }

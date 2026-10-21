@@ -128,8 +128,14 @@
       3.5
      ],
      [
-      85.5,
+      84.6,
       3.5
+     ]
+    ],
+    [
+     [
+      85.5,
+      2.6
      ],
      [
       85.5,
@@ -200,6 +206,38 @@
      -15.5
     ]
    ]
+  },
+  {
+   "tipo": "pilastro",
+   "nome": "Blocco di pietra rialzato all'angolo esterno della terrazza (al posto della ringhiera)",
+   "lato": 0,
+   "poligono": [
+    [
+     84.6,
+     2.6
+    ],
+    [
+     85.6,
+     2.6
+    ],
+    [
+     85.6,
+     3.6
+    ],
+    [
+     84.6,
+     3.6
+    ]
+   ],
+   "altezza": 2.55
+  },
+  {
+   "tipo": "palo",
+   "nome": "Palo della bandiera verde, sul marciapiede accanto all'angolo (lato est)",
+   "lato": 0,
+   "u": 86.05,
+   "v": 2.35,
+   "altezza": 11.0
   },
   {
    "tipo": "scala",

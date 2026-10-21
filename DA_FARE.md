@@ -28,7 +28,9 @@
   - logo «m» del museo, a lato di «Polo museale Sapienza», sullo stesso cartello: usare l'immagine
     `riferimenti/logo-museo-m.jpg` così com'è (come il logo Nippon Gases sul silos, disegnata nella texture del
     cartello). La patch `handoff/totem-nuovo.patch` disegna ancora una «m» di testo: va sostituita con l'immagine.
-- **Cartello 3:** mappa della città universitaria con l'edificio evidenziato.
+- **Cartello 3:** mappa della città universitaria con l'edificio evidenziato. L'utente la sta ricostruendo in vettoriale
+  e la manda lui: usare quella così com'è nella texture del cartello in basso. La mappa disegnata dalla patch con le
+  sagome degli edifici è solo provvisoria.
 - **Foto:** `riferimenti/totem-cu014.jpg`.
 
 ## Fatto nella versione 32

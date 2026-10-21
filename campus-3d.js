@@ -2423,19 +2423,15 @@
     const capT = add(new THREE.SphereGeometry(R, 40, 12, 0, Math.PI * 2, 0, Math.PI / 2), white, S.u, yt, -S.v); capT.scale.y = 0.45;
     const capB = add(new THREE.SphereGeometry(R, 40, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), white, S.u, yb, -S.v); capB.scale.y = 0.45;
     add(new THREE.CylinderGeometry(R * 0.32, R * 0.42, yb - 0.4, 20), white, S.u, 0.4 + (yb - 0.4) / 2 - 0.15, -S.v);
-    // logo come nel rilievo: emblema sferico blu e verde con una linea chiara, scritta su due righe NIPPON / GASES
-    const band = add(new THREE.CylinderGeometry(R * 1.004, R * 1.004, 0.75, 40, 1, true), std({ map: canvasTex(1024, 152, (ctx, w, h) => {
-      ctx.fillStyle = '#ece9e2'; ctx.fillRect(0, 0, w, h);
-      const cx = 330, cy = 76, r = 60;
-      const sphere = ctx.createRadialGradient(cx + r * 0.35, cy - r * 0.4, r * 0.1, cx, cy, r);
-      sphere.addColorStop(0, '#6cc46e'); sphere.addColorStop(0.4, '#2f9a5a'); sphere.addColorStop(0.72, '#1f75ba'); sphere.addColorStop(1, '#16508f');
-      ctx.fillStyle = sphere; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
-      ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
-      ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 5; ctx.beginPath(); ctx.ellipse(cx - r * 0.2, cy + r * 1.05, r * 1.25, r * 0.95, -0.35, Math.PI * 1.08, Math.PI * 1.72); ctx.stroke();
-      ctx.restore();
-      ctx.fillStyle = '#1f2326'; ctx.font = 'bold 58px Arial, Helvetica, sans-serif';
-      ctx.fillText('NIPPON', cx + r + 18, cy - 6); ctx.fillText('GASES', cx + r + 18, cy + 54);
-    }), roughness: 0.5, transparent: false }), S.u, yt - 0.55, -S.v);
+    // logo originale Nippon Gases (tex/nippon-gases-logo.png, fondo trasparente) sulla fascia del serbatoio
+    const bandTex = canvasTex(2048, 304, (ctx, w, h) => { ctx.fillStyle = '#e9e6de'; ctx.fillRect(0, 0, w, h); });
+    const logo = new Image();
+    logo.onload = () => {
+      const ctx = bandTex.image.getContext('2d'), hh = 215, ww = hh * logo.width / logo.height;
+      ctx.drawImage(logo, 655 - ww / 2, (bandTex.image.height - hh) / 2, ww, hh); bandTex.needsUpdate = true;
+    };
+    logo.src = 'tex/nippon-gases-logo.png';
+    const band = add(new THREE.CylinderGeometry(R * 1.004, R * 1.004, 0.75, 48, 1, true), std({ map: bandTex, roughness: 0.45, metalness: 0.15 }), S.u, yt - 0.55, -S.v);
     band.rotation.y = Math.PI * 0.9;
 
     // gabbia verde: montanti, rete e porticina; cartello di sicurezza sul lato verso l'albero

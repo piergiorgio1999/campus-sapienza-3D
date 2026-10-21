@@ -380,10 +380,13 @@
   const findItem = (key) => liveItems().find((it) => it.key === key) || null;
   function baseValue(it) { const twin = items(base.esterni, base.cortile, base.alberi).find((x) => x.key === it.key); return twin ? clone(twin.get()) : null; }
   // l'oggetto descritto più piccolo la cui scatola contiene il punto toccato
+  // magnolie, palme e alberi del catalogo: con l'interruttore «Alberi» spento non si toccano
+  const isTreeItem = (it) => it.sorgente === 'albero' || /\.palme\.\d+$|^magnolie\.\d+$/.test(it.percorso) || (it.sorgente === 'aggiunta' && it.obj && ['palma', 'magnolia'].includes(it.obj.modello));
   function itemAt(world) {
     let best = null;
     for (const it of liveItems()) {
       if (it.sorgente === 'albero' || it.gone()) continue; // gli alberi si prendono toccando tronco o chioma
+      if (isTreeItem(it) && C.alberiVisibili && C.alberiVisibili() === false) continue; // alberi spenti con «Alberi»: non si selezionano
       const f = frameBy(frameOfItem(it)); if (!f) continue; // un solido ruotato si tocca nella sua cornice ruotata
       const b = it.box();
       if (inBox(b, toLocal(f, world), 0.25) && (!best || vol(b) < best.v)) best = { it, v: vol(b) };

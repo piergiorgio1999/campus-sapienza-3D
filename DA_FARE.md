@@ -52,11 +52,11 @@
   Ora si usano le due magnolie «con chiome ampie» dell'artifact della scansione 3D (3DExport 321349, fornito dall'utente:
   verificare la licenza), albero 1 → magnolia A, albero 2 → magnolia B (i piedi dei tronchi cadono a meno di 0,1 m da
   `u`/`v` di A e B). Chioma da 1,65 m in su, tronco separato con la sua texture.
-- **Formato dei `.bin`:** i `.wasm` dell'artifact erano geometrie grezze, non WebAssembly: `nv` posizioni float32 xyz
+- **Formato dei file geometria (`.wasm`, non WebAssembly):** i `.wasm` dell'artifact erano geometrie grezze, non WebAssembly: `nv` posizioni float32 xyz
   (Z in alto, nel riferimento della scansione), `nv` uv float32, `nf` triangoli uint32. Convertite nel riferimento del
   cortile (X = u, Y = h, Z = −v, origine al piede del tronco) con `angoloDeg` −47,7°, origine (3,66; −6,06) e
   `scanFloorZ` di `scan/scan-georef.json`.
-- **File:** `models/magnolia.json` (misure di riferimento, ceppo), `models/magnolia_{a,b}_{chioma,tronco}.bin` (331 kB in
+- **File:** `models/magnolia.json` (misure di riferimento, ceppo), `models/magnolia_{a,b}_{chioma,tronco}.wasm` (331 kB in
   tutto), `tex/magnolia-corteccia.jpg`, `tex/magnolia-foglie-{primavera,estate,autunno,inverno}.png` (identiche all'artifact,
   256 px). Codice: `magnoliaTree` in `campus-3d.js`; l'albero procedurale resta come ripiego (`magnoliaProcedurale`) finché
   i file non sono caricati o se non si caricano. Le uv escono da 0..1, quindi texture in `RepeatWrapping`.

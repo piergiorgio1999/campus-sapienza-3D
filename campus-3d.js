@@ -3145,7 +3145,7 @@
     }
   }
   /* magnolie con chiome ampie (modello 3DExport fornito dall'utente, le stesse dell'artifact della scansione 3D):
-     models/magnolia.json + models/magnolia_<a|b>_<chioma|tronco>.bin (geometrie grezze, origine al piede del tronco, vedi la
+     models/magnolia.json + models/magnolia_<a|b>_<chioma|tronco>.wasm (geometrie grezze, origine al piede del tronco, vedi la
      nota nel JSON). Chioma con la texture foglie della stagione (tex/magnolia-foglie-<stagione>.png, bordi con alphaTest),
      tronco con la corteccia. Finché i file non sono caricati, o se non si caricano, resta l'albero procedurale. */
   const STAGIONI = ['primavera', 'estate', 'autunno', 'inverno'];
@@ -3162,7 +3162,7 @@
     try { mese = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Rome', month: 'numeric' }).format(new Date())); } catch (_) { mese = new Date().getMonth() + 1; }
     return mese >= 3 && mese <= 5 ? 'primavera' : mese >= 6 && mese <= 8 ? 'estate' : mese >= 9 && mese <= 11 ? 'autunno' : 'inverno';
   }
-  // file .bin: nv posizioni float32 (X = u, Y = h, Z = -v), nv uv float32, nf triangoli uint32 (3 indici ciascuno)
+  // file .wasm (geometria grezza, non WebAssembly: estensione servita dagli artifact): nv posizioni float32 (X = u, Y = h, Z = -v), nv uv float32, nf triangoli uint32 (3 indici ciascuno)
   function magnoliaGeometria(buf, nv, nf) {
     if (buf.byteLength !== nv * 20 + nf * 12) throw new Error('geometria magnolia di dimensione inattesa');
     const g = new THREE.BufferGeometry();

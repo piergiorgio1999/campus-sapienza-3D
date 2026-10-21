@@ -3419,8 +3419,10 @@
     // cancellata su strada: muretto, ringhiera a barre e due ante aperte verso l'interno
     const C = M.cancellata, rust = std({ color: 0x7a4b30, roughness: 0.55, metalness: 0.35 }), wallMat = travMat(2, 0.4);
     const bars = [];
-    const rail = (u0, u1, h0, h1) => { for (let u = u0 + 0.06; u < u1; u += 0.13) bars.push([u, h0, h1, C.v]); box(u0, u1, h1 - 0.05, h1, C.v - 0.025, C.v + 0.025, rust); box(u0, u1, h0, h0 + 0.05, C.v - 0.025, C.v + 0.025, rust); };
-    for (const [u0, u1] of [[M.pavimento.u[0], C.varco[0]], [C.varco[1], M.pavimento.u[1]]]) {
+    // le barre mantengono il passo 0.13 con la fase del bordo del pavimento anche nel tratto che sporge oltre i muri
+    const ph0 = M.pavimento.u[0] + 0.06, ext = Number(C.sporgenza) || 0;
+    const rail = (u0, u1, h0, h1) => { for (let u = ph0 + Math.floor((u0 + 0.04 - ph0) / 0.13) * 0.13; u < u1; u += 0.13) if (u > u0) bars.push([u, h0, h1, C.v]); box(u0, u1, h1 - 0.05, h1, C.v - 0.025, C.v + 0.025, rust); box(u0, u1, h0, h0 + 0.05, C.v - 0.025, C.v + 0.025, rust); };
+    for (const [u0, u1] of [[M.pavimento.u[0] - ext, C.varco[0]], [C.varco[1], M.pavimento.u[1] + ext]]) {
       box(u0, u1, 0, C.muretto, C.v - 0.15, C.v + 0.15, wallMat);
       rail(u0, u1, C.muretto, C.muretto + C.ringhiera);
     }

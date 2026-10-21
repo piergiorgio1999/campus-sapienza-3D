@@ -119,6 +119,8 @@
     "apertureDeg": 70,
     "rientro": 0.9,
     "altezzaCancello": 2.1,
+    "sporgenza": 0.4,
+    "nota_sporgenza": "Muretto e ringhiera si prolungano di \"sporgenza\" metri oltre i muri del cortile (u 0.2 e 16.6), con lo stesso passo delle barre (3 barre per lato), per chiudere il vuoto fra cancellata e ala (commento utente 21/10/2026).",
     "nota": "Cancello a U: anta principale arretrata di \"rientro\" metri verso il cortile, collegata al muretto da due cancelletti pedonali perpendicolari."
   },
   "muri": [
@@ -162,7 +164,7 @@
         8.05,
         8.95
       ],
-      "altezza": 5.75,
+      "altezza": 4.85,
       "scritta": "AULE",
       "nota": "Specchio della colonna dietro la gabbia rispetto all'asse u 8.4 (mezzeria dei muri sinistro 0.2 e destro 16.6)."
     },
@@ -175,13 +177,13 @@
         8.05,
         8.95
       ],
-      "altezza": 5.75,
+      "altezza": 4.85,
       "nota": "Colonna rettangolare in travertino dietro la gabbia (commento sul posto del 21/10/2026)."
     }
   ],
   "portico": {
     "v": [
-      9.4,
+      8.0,
       13.0
     ],
     "u": [
@@ -224,8 +226,8 @@
   "nota_pieni": "Rettangoli [u0, v0, u1, v1] uniti alle sagome OSM che li toccano: la facciata dell'ala sinistra portata a filo del cortile (u 0.2, come i muri e il vuoto), senza il gradino con il fondo.",
   "tombini": [
     {
-      "u": 7.65,
-      "v": 4.6,
+      "u": 8.4,
+      "v": 4.875,
       "lato": 0.6
     }
   ],

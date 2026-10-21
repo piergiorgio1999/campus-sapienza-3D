@@ -235,3 +235,8 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
 ### Commenti nella mappa
 - Commento 1 segnato «fatta».
 - Commenti 2–5 restano aperti finché non sono fatti.
+
+## Cortile dell'azoto: tre commenti (cancellata, ponte, tombino) — fatto, da verificare con il render
+- **Cancellata:** `cancellata.sporgenza` = 0.4 in `cortile/modello.json`: muretto e ringhiera si prolungano di 0.4 m oltre i muri (u −0.2 e 17.0), con 3 barre in più per lato (u −0.13, 0, 0.13 a sinistra; 16.64, 16.77, 16.9 a destra), stesso passo 0.13, sezione e materiale. Il lato destro aveva già la barra a 0.09 dal muro, ma ora è simmetrico.
+- **Ponte:** `portico.v` = [8.0, 13.0] (prima 9.4): soffitto e corpo di un piano arrivano a filo delle due colonne (v 8.05→8.95) con 5 cm oltre. Le colonne (`pilastri`) sono alte 4.85 (solaio del ponte) invece di 5.75. Tetto piano liscio come prima.
+- **Tombino 1:** u 8.4 (asse), v 4.875 (centro delle aiuole v 1.45–8.3), lato 0.6 invariato.

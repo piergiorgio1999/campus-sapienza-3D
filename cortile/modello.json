@@ -246,18 +246,33 @@
       [
         10.48,
         5.95,
-        0.02
+        0.1
+      ],
+      [
+        10.48,
+        1.2,
+        0.1
+      ],
+      [
+        10.48,
+        1.2,
+        0.45
+      ],
+      [
+        10.48,
+        0.925,
+        0.45
       ]
     ],
     "canaletta": {
-      "u": 10.5,
+      "u": 10.48,
       "v": [
         4.5,
         6.05
       ],
-      "larghezza": 0.16
+      "larghezza": 0.22
     },
-    "nota": "Tubo di scarico del silos, metallico (foto del 19/10/2026): dal basamento del serbatoio corre a 0.68 m lungo il lato del cartello, scavalca il cordolo vicino alla porticina, scende e scarica in una fossetta scoperta lungo la base del cordolo, che prosegue fino alla cancellata su strada; nella fossetta è adagiato un mezzo tubo bianco.",
+    "nota": "Tubo di scarico del silos, metallico (foto del 19/10/2026 e indicazioni dell'utente): dal basamento del serbatoio corre a 0.68 m lungo il lato del cartello, scavalca il cordolo vicino alla porticina e scende nella fossetta scoperta lungo la base del cordolo; corre in vista sul fondo della fossetta fino al cancello, dove risale con un doppio gomito (90° verso l'alto, poi 90° in orizzontale) e termina a contatto con l'anta del cancello. Vicino alla discesa è adagiato in un mezzo tubo bianco.",
     "fossetta": {
       "u": 10.5,
       "v": [

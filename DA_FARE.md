@@ -3,10 +3,9 @@
 - **Pubblicato:** artifact https://claude.ai/code/artifact/b6b40dff-1e58-4b65-a386-6d4bab8d31ed, versione 32
   (capacità `db`, `user`, `assets`).
 - **Codice:** branch `claude/new-session-zh34qp`; la v32 corrisponde al commit `29b21e2`.
-- **Da riprendere per primo:** il totem nuovo (sotto). È già scritto ma non applicato né pubblicato: è in
-  `handoff/totem-nuovo.patch`, da applicare con `git apply handoff/totem-nuovo.patch` (tocca `addTotem` in
-  `campus-3d.js` e la scatola del totem in `editor.js`). L'ho provato solo in un render locale: aspetto giusto,
-  cartelli leggibili. Va pubblicato e poi segnata «fatta» la nota del totem.
+- **Totem nuovo: fatto** (sotto). Applicata la patch, «m» del museo sostituita con l'immagine
+  `tex/museo-m-logo.jpg`, campi modificabili nella scheda. Da pubblicare come v33 se non è già pubblicato.
+  Resta solo la **mappa vettoriale** del cartello 3, che manda l'utente (la mappa del 21/10 sera era sbagliata: ignorata).
 - **Prove:** server locale `python3 -m http.server 8765` in questa cartella, pagina `index.html?standalone`, Chromium
   headless (playwright, swiftshader).
   - Gli script di prova usati in sessione non sono nel repo; servono tre controlli:
@@ -14,7 +13,7 @@
     - prove dell'editor con un `window.claude` finto (db, user, assets);
     - prove di `cammina.js` con `campus3dCammina.prova(secondi, tasti)`.
 
-### Totem CU014 (indicazioni dell'utente, 21/10/2026)
+### Totem CU014 (indicazioni dell'utente, 21/10/2026) — fatto
 - **Struttura:** base cubica di travertino che sorregge una lastra spessa rossa con tre cartelli bianchi.
 - **Orientamento:** lato lungo parallelo al vialetto (confermato).
 - **Cartello 1:** «**CU**014», con CU in grassetto.
@@ -26,11 +25,15 @@
   - «Polo museale Sapienza»: come la Facoltà;
   - «Museo di Chimica / Primo Levi»: come il Dipartimento;
   - logo «m» del museo, a lato di «Polo museale Sapienza», sullo stesso cartello: usare l'immagine
-    `riferimenti/logo-museo-m.jpg` così com'è (come il logo Nippon Gases sul silos, disegnata nella texture del
-    cartello). La patch `handoff/totem-nuovo.patch` disegna ancora una «m» di testo: va sostituita con l'immagine.
+    `riferimenti/logo-museo-m.jpg` così com'è: fatto, è `tex/museo-m-logo.jpg` disegnata nella texture del cartello
+    come il logo Nippon Gases sul silos.
 - **Cartello 3:** mappa della città universitaria con l'edificio evidenziato. L'utente la sta ricostruendo in vettoriale
   e la manda lui: usare quella così com'è nella texture del cartello in basso. La mappa disegnata dalla patch con le
   sagome degli edifici è solo provvisoria.
+- **Modifica dalla scheda** (richiesta del 21/10): codice («CU» in grassetto, il resto normale), le sei voci del
+  cartello con la loro formattazione fissa (voce vuota = sparisce, Invio va a capo in nome e museo) e la spunta
+  «Logo «m» del museo». Nel file: `scritta`, `cartello` {nome, facolta, dipartimento, aula, polo, museo},
+  `logoMuseo` (false = senza logo); valgono anche per i totem aggiunti dal catalogo e per i duplicati.
 - **Foto:** `riferimenti/totem-cu014.jpg`.
 
 ## Fatto nella versione 32
@@ -130,24 +133,6 @@ toccato, interno o esterno.
   «Texture di un muro»).
 - La tendina crea le toppe `texture` di `wallPatches` per quella riga.
 - Tenere eventualmente un'opzione separata «tutto l'edificio».
-
-### Totem CU014 vero (foto `riferimenti/totem-cu014.jpg`, 21/10/2026)
-Il totem attuale (base e fascia rosse, corpo bianco) va rifatto come nella foto:
-- **Pannello:** alto e stretto (circa 0,8 m × 2,7 m, spessore circa 12 cm), in lamiera rosso Sapienza scuro, forata
-  a micro-fori, con cornice piena dello stesso rosso.
-- **Targa con il codice:** in alto, bianca, quasi larga quanto il pannello, con «**CU**014» («CU» in grassetto, «014»
-  normale, grigio scuro).
-- **Targa del nome:** sotto, bianca, con:
-  - «Edificio di Chimica Stanislao Cannizzaro»;
-  - «Facoltà di Scienze matematiche, fisiche e naturali · Dipartimento di Chimica · Aula Aldo La Ginestra»;
-  - «Polo museale Sapienza · Museo di Chimica Primo Levi», con i loghi (sigillo Sapienza e «m» del museo).
-  - Senza gli adesivi.
-- **Mappa:** piccola targa bianca «Sei qui» più in basso, spostata a destra.
-- **Base:** in basso il pannello è aperto (telaio rosso con un vano) e davanti c'è un cubo di travertino di circa
-  40 cm con un piccolo riquadro rosso; tutto poggia su una pedana rossa a terra.
-- **Posizione:** sul prato accanto al percorso tattile e al cordolo in travertino.
-- **Da verificare:** l'orientamento. Nella foto le targhe guardano chi arriva lungo il vialetto, mentre il totem
-  attuale ha il lato lungo parallelo al vialetto (indicazione del 21/10).
 
 ### Modifiche nel db non ancora riportate nei file (`modifiche`, stato «da applicare»)
 L'editor le applica dal vivo; vanno riportate nei JSON e segnate «applicata»:

@@ -2579,7 +2579,7 @@
     panchina: { nome: 'Panchina in travertino', crea: () => group((g) => addBench(g, { u: 0, v: 0 }, 0)) },
     palma: { nome: 'Palma', crea: () => palmTree({ u: 0, v: 0, altezza: 4 }) },
     magnolia: { nome: 'Magnolia', crea: () => magnoliaTree({ u: 0, v: 0, altezza: 12.5, raggio: 3.8 }, 0) },
-    totem: { nome: 'Totem (fascia bianca con scritta)', crea: (pr) => group((g) => addTotem(g, { u: 0, v: 0, scritta: pr.scritta != null ? pr.scritta : 'CU014' })) },
+    totem: { nome: 'Totem CU014 (lastra rossa con tre cartelli)', crea: (pr) => group((g) => addTotem(g, { u: 0, v: 0, scritta: pr.scritta != null ? pr.scritta : 'CU014', cartello: pr.cartello, logoMuseo: pr.logoMuseo })) },
     ringhiera: { nome: 'Ringhiera rossa', crea: () => group((g) => addRailing(g, [[[-1.3, 0], [1.3, 0]]], 0, { altezza: 1 })) },
     palo: { nome: 'Palo della bandiera', crea: () => flagPole({ u: 0, v: 0 }) },
     scala: { nome: 'Scala antincendio', crea: (pr) => group((g) => { const m = fireStairMats(); addFireStair(g, 0, Math.max(1, Number(pr.piani) || 4), m.ocra, { pedate: m.ocraScura }); }) },
@@ -2837,20 +2837,112 @@
       for (let i = 0; i < 420; i += 1) { const t = hash01(i, 81); ctx.fillStyle = t > 0.35 ? (t > 0.7 ? '#e86aa0' : '#d24f86') : '#5d8a45'; ctx.beginPath(); ctx.arc(hash01(i, 82) * w, hash01(i, 83) * w, 2 + 3 * hash01(i, 84), 0, Math.PI * 2); ctx.fill(); }
     }, 1.5, 1.5) }));
   }
-  // totem bianco con base e fascia rosse; orienta 'v': lato lungo parallelo al vialetto, facce larghe (con la scritta)
-  // verso il vialetto e verso il prato
-  function addTotem(g, t) {
-    const th = Number(t.altezza) || 2.4, alongV = t.orienta === 'v', hw = (Number(t.larghezza) || 0.5) / 2, hd = (Number(t.spessore) || 0.2) / 2;
-    const box = alongV ? rectPts(t.u - hd, t.u + hd, t.v - hw, t.v + hw) : rectPts(t.u - hw, t.u + hw, t.v - hd, t.v + hd);
-    for (const [h0, h1, c] of [[0, 0.9, '#8a1f2d'], [0.9, th - 0.18, '#f4f3ef'], [th - 0.18, th, '#8a1f2d']]) g.add(localSlab(box, h0, h1, courtOnce('totem|' + c, () => plainMat(c, 0.5))));
-    if (t.scritta) { // la scritta sulla fascia bianca, sulle due facce larghe
-      const ph = th - 0.18 - 0.9 - 0.06, text = String(t.scritta), sign = courtOnce(`totem|${text}|${ph.toFixed(3)}`, () => new THREE.MeshStandardMaterial({ roughness: 0.6, map: canvasTex(256, Math.round(256 * ph / 0.46), (ctx, w, hh) => {
-        ctx.fillStyle = '#f4f3ef'; ctx.fillRect(0, 0, w, hh);
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#2b2725'; ctx.font = 'bold 72px Arial, Helvetica, sans-serif'; ctx.fillText(text, w / 2, hh * 0.3, w - 16);
-      }) }));
-      const faces = alongV ? [[-hd - 0.001, 0, -Math.PI / 2], [hd + 0.001, 0, Math.PI / 2]] : [[0, hd + 0.001, Math.PI], [0, -hd - 0.001, 0]];
-      for (const [du, dv, rot] of faces) { const m = new THREE.Mesh(new THREE.PlaneGeometry(2 * hw - 0.04, ph), sign); m.rotation.y = rot; m.position.set(t.u + du, 0.9 + 0.03 + ph / 2, -(t.v + dv)); g.add(m); }
+  // totem dell'edificio (foto dell'utente del 21/10/2026): pedana rossa, base cubica di travertino, lastra spessa rossa in
+  // lamiera forata con tre cartelli bianchi sulle due facce: codice (CU in grassetto), notizie sull'edificio, mappa della
+  // città universitaria con l'edificio evidenziato. orienta 'v': lato lungo parallelo al vialetto.
+  // larghezza: lato lungo della lastra; spessore: profondità della base; altezza: cima della lastra
+  const SAPIENZA_RED = '#822433', SANS = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+  function signTexture(key, w, h, draw) { return courtOnce('totem|' + key, () => new THREE.MeshStandardMaterial({ roughness: 0.55, map: canvasTex(w, h, (ctx) => { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h); draw(ctx, w, h); }) })); }
+  // testo a capo entro maxW; ritorna la y dopo l'ultima riga
+  function wrapText(ctx, text, x, y, maxW, lineH) {
+    let line = '';
+    for (const word of String(text).split(' ')) {
+      const next = line ? line + ' ' + word : word;
+      if (line && ctx.measureText(next).width > maxW) { ctx.fillText(line, x, y); y += lineH; line = word; } else line = next;
     }
+    if (line) { ctx.fillText(line, x, y); y += lineH; }
+    return y;
+  }
+  function codeSign(text) { // «CU» in grassetto, il resto normale, grigio scuro
+    return signTexture('codice|' + text, 512, 192, (ctx, w, h) => {
+      const m = /^([A-Za-z]+)(.*)$/.exec(text) || [text, text, ''], bold = `bold 118px ${SANS}`, reg = `118px ${SANS}`;
+      ctx.font = bold; const w1 = ctx.measureText(m[1]).width; ctx.font = reg; const w2 = ctx.measureText(m[2]).width;
+      const k = Math.min(1, (w - 40) / (w1 + w2)), x0 = (w - (w1 + w2) * k) / 2;
+      ctx.save(); ctx.translate(x0, h / 2); ctx.scale(k, k); ctx.fillStyle = '#2f2c2b'; ctx.textBaseline = 'middle';
+      ctx.font = bold; ctx.fillText(m[1], 0, 6); ctx.font = reg; ctx.fillText(m[2], w1, 6); ctx.restore();
+    });
+  }
+  // testi del cartello delle notizie (foto del 21/10/2026); ogni voce ha la sua formattazione fissa, Invio va a capo
+  const TOTEM_CARTELLO = { nome: 'Edificio di Chimica\nStanislao\nCannizzaro', facolta: 'Facoltà di Scienze matematiche, fisiche e naturali',
+    dipartimento: 'Dipartimento di Chimica', aula: 'Aula Aldo La Ginestra', polo: 'Polo museale Sapienza', museo: 'Museo di Chimica\nPrimo Levi' };
+  function infoSign(cartello, conLogo) {
+    const c = Object.assign({}, TOTEM_CARTELLO, cartello || {}), key = JSON.stringify([c, !!conLogo]);
+    return courtOnce('totem|notizie+logo|' + key, () => {
+      let polo = -1;
+      const mat = signTexture('notizie|' + key, 512, 700, (ctx, w) => {
+        const x = 30, maxW = w - 60; let y = 70;
+        const lines = (t) => String(t || '').split('\n').map((l) => l.trim()).filter(Boolean);
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = '#1f1d1c'; ctx.font = `bold 50px ${SANS}`;
+        for (const line of lines(c.nome)) y = wrapText(ctx, line, x, y, maxW, 56);
+        y += 22;
+        const small = (t, yy, mw = maxW - 10) => { ctx.fillStyle = SAPIENZA_RED; ctx.font = `bold 21px ${SANS}`; for (const l of lines(t)) yy = wrapText(ctx, l, x, yy, mw, 25); return yy; };
+        const body = (t, yy, mw = maxW) => { ctx.fillStyle = '#1f1d1c'; ctx.font = `25px ${SANS}`; for (const l of lines(t)) yy = wrapText(ctx, l, x, yy, mw, 30); return yy; };
+        if (lines(c.facolta).length) y = small(c.facolta, y) + 6;
+        y = body(c.dipartimento, y);
+        if (lines(c.aula).length) { // segnaposto rosso e aula più sottile, in rosso
+          ctx.fillStyle = SAPIENZA_RED; ctx.beginPath(); ctx.arc(x + 7, y - 15, 6.5, Math.PI, 0); ctx.lineTo(x + 7, y + 1); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x + 7, y - 15, 2.4, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = SAPIENZA_RED; ctx.font = `300 25px ${SANS}`; ctx.fillText(lines(c.aula).join(' '), x + 22, y, maxW - 22); y += 30;
+        }
+        y += 34;
+        polo = y;
+        const mw = conLogo ? maxW - 120 : maxW; // accanto al logo il testo va a capo prima
+        if (lines(c.polo).length) y = small(c.polo, y, mw) + 6;
+        body(c.museo, y, mw);
+      });
+      if (!conLogo) return mat;
+      // logo «m» del museo (tex/museo-m-logo.jpg, immagine fornita usata così com'è) a lato di «Polo museale Sapienza»
+      const logo = new Image();
+      logo.onload = () => {
+        const cv = mat.map.image, ctx = cv.getContext('2d'), hh = 100, ww = hh * logo.width / logo.height;
+        ctx.drawImage(logo, cv.width - 30 - ww, Math.min(polo - 20, cv.height - hh - 10), ww, hh); mat.map.needsUpdate = true;
+      };
+      logo.src = 'tex/museo-m-logo.jpg';
+      return mat;
+    });
+  }
+  function mapSign() { // mappa della città universitaria: sagome degli edifici, quello del totem evidenziato
+    return signTexture('mappa', 384, 360, (ctx, w, h) => {
+      ctx.fillStyle = '#1f1d1c'; ctx.beginPath(); ctx.arc(24, 24, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.font = `bold 18px ${SANS}`; ctx.textBaseline = 'middle'; ctx.fillText('Sei qui', 38, 25);
+      const rings = buildings.filter((b) => Array.isArray(b.rings) && b.rings[0]).map((b) => ({ code: String(b.code).toUpperCase(), pts: b.rings[0].map((p) => project(p)) }));
+      if (!rings.length) return;
+      const xs = rings.flatMap((r) => r.pts.map((p) => p.x)), ns = rings.flatMap((r) => r.pts.map((p) => p.n));
+      const x0 = Math.min(...xs), x1 = Math.max(...xs), n0 = Math.min(...ns), n1 = Math.max(...ns);
+      const k = Math.min((w - 36) / (x1 - x0 || 1), (h - 70) / (n1 - n0 || 1)), ox = (w - (x1 - x0) * k) / 2, oy = 52 + (h - 70 - (n1 - n0) * k) / 2;
+      for (const r of rings.sort((a, b) => (a.code === 'CU014') - (b.code === 'CU014'))) {
+        ctx.beginPath(); r.pts.forEach((p, i) => { const X = ox + (p.x - x0) * k, Y = oy + (n1 - p.n) * k; if (i) ctx.lineTo(X, Y); else ctx.moveTo(X, Y); }); ctx.closePath();
+        ctx.fillStyle = r.code === 'CU014' ? SAPIENZA_RED : '#e7c4c9'; ctx.fill();
+        ctx.strokeStyle = r.code === 'CU014' ? '#4d0f19' : '#b56a75'; ctx.lineWidth = r.code === 'CU014' ? 2 : 1; ctx.stroke();
+      }
+    });
+  }
+  function addTotem(g, t) {
+    const H = Number(t.altezza) || 2.75, W = Number(t.larghezza) || 0.8, D = Math.max(0.2, Number(t.spessore) || 0.5), T = 0.12;
+    const tot = new THREE.Group(); tot.name = 'totem'; tot.position.set(Number(t.u) || 0, 0, -(Number(t.v) || 0)); if (t.orienta === 'v') tot.rotation.y = Math.PI / 2; g.add(tot);
+    const { box } = partAdder(tot), red = courtOnce('totem|rosso', () => plainMat('#8a1f2d', 0.5, 0.25)), trav = courtOnce('totem|travertino', () => stdMat({ map: travertineTex(1 / 2.4, 1 / 2.4) }));
+    const sheetH = H - 0.04 - 0.74, sheetW = W - 0.12;
+    const perforated = courtOnce(`totem|lamiera|${sheetW.toFixed(2)}|${sheetH.toFixed(2)}`, () => new THREE.MeshStandardMaterial({ roughness: 0.5, metalness: 0.25, map: canvasTex(64, 64, (ctx, cw) => {
+      ctx.fillStyle = '#8a1f2d'; ctx.fillRect(0, 0, cw, cw); ctx.fillStyle = '#5c1320';
+      for (let yy = 4; yy < cw; yy += 8) for (let xx = (yy / 8) % 2 ? 8 : 4; xx < cw; xx += 8) { ctx.beginPath(); ctx.arc(xx, yy, 1.7, 0, Math.PI * 2); ctx.fill(); }
+    }, sheetW / 0.08, sheetH / 0.08) }));
+    // in X la larghezza, in Z la profondità (faccia anteriore verso +Z); coordinate: box(x0, x1, y0, y1, -z1, -z0)
+    box(-W / 2 - 0.05, W / 2 + 0.05, 0, 0.03, -D / 2, D / 2, red); // pedana
+    const c = Math.min(0.46, W * 0.6), cd = Math.min(D, 0.46);
+    box(-c / 2, c / 2, 0.03, 0.49, -cd / 2, cd / 2, trav); // base cubica di travertino
+    for (const sgn of [1, -1]) box(-0.05, 0.05, 0.2, 0.3, sgn > 0 ? -cd / 2 - 0.002 : cd / 2 - 0.004, sgn > 0 ? -cd / 2 + 0.004 : cd / 2 + 0.002, red); // riquadro rosso sul cubo
+    for (const x of [-W / 2 + 0.03, W / 2 - 0.03]) box(x - 0.03, x + 0.03, 0.03, H, -T / 2, T / 2, red); // montanti
+    box(-W / 2, W / 2, 0.62, 0.74, -T / 2, T / 2, red); box(-W / 2, W / 2, H - 0.04, H, -T / 2, T / 2, red); // traversi
+    box(-sheetW / 2, sheetW / 2, 0.74, H - 0.04, -T / 2 + 0.01, T / 2 - 0.01, [red, red, red, red, perforated, perforated]); // lamiera forata
+    // cartelli bianchi sulle due facce
+    const s1 = [W - 0.1, 0.28], s2 = [W * 0.78, W * 1.06], s3 = [W * 0.5, W * 0.47];
+    const y1 = H - 0.12 - s1[1] / 2, y2 = H - 0.12 - s1[1] - 0.08 - s2[1] / 2, y3 = y2 - s2[1] / 2 - 0.1 - s3[1] / 2;
+    const plate = courtOnce('totem|cartello', () => plainMat('#f3f2ee', 0.6));
+    const sign = (sz, x, y, mat) => { for (const front of [1, -1]) { const m = new THREE.Mesh(new THREE.BoxGeometry(sz[0], sz[1], 0.012), [plate, plate, plate, plate, front > 0 ? mat : plate, front > 0 ? plate : mat]); m.position.set(x, y, front * (T / 2 + 0.006)); m.castShadow = true; tot.add(m); } };
+    sign(s1, 0, y1, codeSign(t.scritta != null ? String(t.scritta) : 'CU014'));
+    sign(s2, -W / 2 + 0.06 + s2[0] / 2 - 0.02, y2, infoSign(t.cartello, t.logoMuseo !== false));
+    sign(s3, W / 2 - 0.06 - s3[0] / 2, y3, mapSign());
   }
   // rastrelliera per bici ad archetti
   function addBikeRack(g, RS) {
@@ -3415,7 +3507,7 @@
     toLonLat: (w) => worldToLonLat(w),
     // editor sul posto (editor.js): configurazioni vive e ricostruzione dei gruppi
     esterni: { get cfg() { return exteriorsCfg; }, rebuild: () => buildChemistryExteriors(), materiali: PRIM_MATERIALS,
-      catalogo: Object.entries(CATALOGO).map(([k, d]) => [k, d.nome]), misura: (modello, ruota) => catalogSize(modello, ruota) },
+      catalogo: Object.entries(CATALOGO).map(([k, d]) => [k, d.nome]), totemCartello: TOTEM_CARTELLO, misura: (modello, ruota) => catalogSize(modello, ruota) },
     project: (lonLat) => { const p = project(lonLat); return new THREE.Vector3(p.x, 0, -p.n); },
     alberi: { get list() { return treeData; }, rebuild: () => buildTrees(), misure: (t) => treeSize(t) },
     facciate: { nomi: Object.keys(FACADE_PALETTES), nomeDi: (code) => facadeNameFor(code), set: (code, name) => setFacade(code, name), materiale: (name, kind, tipo) => facadePatchMaterial(name, kind, tipo), campata: FACADE_BAY },

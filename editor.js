@@ -57,6 +57,8 @@
     .ed-card .ed-meta{color:#6f6866;font-size:12px}
     .ed-card p{margin:0 0 6px;white-space:pre-wrap;overflow-wrap:anywhere}
     .ed-card label{display:block;margin:6px 0 2px;font-size:12px;color:#6f6866}
+    .ed-card label.ed-check{display:flex;align-items:center;gap:8px;min-height:40px;margin-top:8px;font-size:14px;color:#2b2725;cursor:pointer}
+    .ed-card label.ed-check input{width:20px;height:20px;accent-color:#822433}
     .ed-card select{width:100%;min-height:40px;box-sizing:border-box;padding:0 8px;border:1px solid #d6cfcc;border-radius:8px;background:#fff;font:14px Arial,Helvetica,sans-serif}
     .ed-card .ed-row button[aria-pressed="true"]{background:#f6e9eb;border-color:#822433;color:#822433}
     .ed-fotos{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
@@ -248,10 +250,10 @@
         (e.palme || []).forEach((p, k) => add({ ...b, obj: p, percorso: `${P}.palme.${k}`, label: `Palma ${k + 1}`, fields: ['u', 'v', 'altezza'], lock: { h0: true },
           box: () => ({ u0: p.u - 0.9, u1: p.u + 0.9, v0: p.v - 0.9, v1: p.v + 0.9, h0: 0, h1: Number(p.altezza) || 4 }),
           apply: (o, n) => { p.u = round((n.u0 + n.u1) / 2); p.v = round((n.v0 + n.v1) / 2); p.altezza = round(n.h1); } }));
-        (e.totem || []).forEach((t, k) => add({ ...b, obj: t, percorso: `${P}.totem.${k}`, label: `Totem ${k + 1}`, fields: ['u', 'v', 'altezza', 'larghezza', 'spessore'], lock: { h0: true },
+        (e.totem || []).forEach((t, k) => add({ ...b, obj: t, percorso: `${P}.totem.${k}`, label: `Totem ${k + 1}`, fields: ['u', 'v', 'altezza', 'larghezza', 'spessore', 'scritta', 'cartello', 'logoMuseo'], lock: { h0: true }, totem: true,
           // larghezza: lato lungo (con la scritta), spessore: lato corto; orienta 'v' li gira lungo il vialetto
-          box: () => { const w = (Number(t.larghezza) || 0.5) / 2, d = (Number(t.spessore) || 0.2) / 2, a = t.orienta === 'v' ? d : w, c = t.orienta === 'v' ? w : d; return { u0: t.u - a, u1: t.u + a, v0: t.v - c, v1: t.v + c, h0: 0, h1: Number(t.altezza) || 2.4 }; },
-          apply: (o, n) => { const av = t.orienta === 'v'; t.u = round((n.u0 + n.u1) / 2); t.v = round((n.v0 + n.v1) / 2); t.altezza = round(n.h1); t.larghezza = round(av ? n.v1 - n.v0 : n.u1 - n.u0); t.spessore = round(av ? n.u1 - n.u0 : n.v1 - n.v0); } }));
+          box: () => { const w = (Number(t.larghezza) || 0.8) / 2 + 0.05, d = (Number(t.spessore) || 0.5) / 2, a = t.orienta === 'v' ? d : w, c = t.orienta === 'v' ? w : d; return { u0: t.u - a, u1: t.u + a, v0: t.v - c, v1: t.v + c, h0: 0, h1: Number(t.altezza) || 2.75 }; },
+          apply: (o, n) => { const av = t.orienta === 'v'; t.u = round((n.u0 + n.u1) / 2); t.v = round((n.v0 + n.v1) / 2); t.altezza = round(n.h1); t.larghezza = round((av ? n.v1 - n.v0 : n.u1 - n.u0) - 0.1); t.spessore = round(av ? n.u1 - n.u0 : n.v1 - n.v0); } })); // la pedana sporge 5 cm per lato
         const RS = e.rastrelliera;
         if (RS) add({ ...b, obj: RS, percorso: P + '.rastrelliera', label: 'Rastrelliera per bici', fields: ['u', 'v', 'posti'], lock: { h0: true, h1: true },
           box: () => ({ u0: RS.u - 0.02, u1: RS.u + ((Number(RS.posti) || 3) - 1) * 0.6 + 0.02, v0: RS.v - 0.37, v1: RS.v + 0.37, h0: 0, h1: 0.8 }),
@@ -316,7 +318,7 @@
     if (E) (E.primitive || []).forEach((pr) => {
       const poly = pr.forma === 'marciapiede' || (pr.forma === 'aiuola' && pr.tipo !== 'rotonda');
       const label = pr.forma === 'oggetto' ? nomeOggetto(pr.modello) : pr.forma === 'marciapiede' ? 'Marciapiede' : pr.forma === 'aiuola' ? `Aiuola ${TIPI_AIUOLA[pr.tipo] || ''} (${TERRENI[pr.terreno] || 'prato'})` : `${FORME[pr.forma] || FORME.box} in ${pr.materiale || 'travertino'}`;
-      add({ sorgente: 'aggiunta', frameKey: pr.cornice || 'lato0', obj: pr, percorso: pr.id, nome: pr.id, label, fields: ['id', 'forma', 'materiale', 'box', 'poligono', 'base', 'altezza', 'tipo', 'terreno', 'cordolo', 'discese', 'raggio', 'raggi', 'modello', 'ruota', 'scritta', 'cornice'], primitiva: true,
+      add({ sorgente: 'aggiunta', frameKey: pr.cornice || 'lato0', obj: pr, percorso: pr.id, nome: pr.id, label, fields: ['id', 'forma', 'materiale', 'box', 'poligono', 'base', 'altezza', 'tipo', 'terreno', 'cordolo', 'discese', 'raggio', 'raggi', 'modello', 'ruota', 'scritta', 'cartello', 'logoMuseo', 'cornice'], primitiva: true,
         lock: pr.forma === 'marciapiede' || pr.forma === 'aiuola' ? { h0: true } : {},
         box: poly ? () => ({ ...bboxPts(pr.poligono), h0: Number(pr.base) || 0, h1: (Number(pr.base) || 0) + (Number(pr.altezza) || 0.15) }) : () => pr.box,
         apply: poly ? (o, n) => { pr.poligono = scalePts(pr.poligono, o, n); pr.altezza = round(Math.max(0.05, n.h1 - n.h0)); } : (o, n) => { pr.box = roundBox(n); },
@@ -500,6 +502,27 @@
     pr.ruota = ((Number(pr.ruota) || 0) + 90) % 360;
     pr.box = roundBox({ u0: cu - dv / 2, u1: cu + dv / 2, v0: cv - du / 2, v1: cv + du / 2, h0: b.h0, h1: b.h1 });
   }
+  // cartelli del totem: codice («CU» resta in grassetto), testi del cartello con la formattazione fissa di ogni voce
+  // (vuoto: la voce sparisce), spunta del logo del museo. Si salva all'uscita dal campo, non a ogni tasto.
+  const TOTEM_VOCI = [['nome', 'Nome dell’edificio (grassetto, grande, nero)', true], ['facolta', 'Facoltà (piccolo, grassetto, rosso)'],
+    ['dipartimento', 'Dipartimento (normale, nero)'], ['aula', 'Aula (sottile, rosso, con il segnaposto)'], ['polo', 'Polo museale (piccolo, grassetto, rosso)'],
+    ['museo', 'Museo (normale, nero)', true]];
+  function totemFields(obj, change) {
+    const nodes = [], code = el('input'); code.type = 'text'; code.maxLength = 12; code.value = obj.scritta != null ? obj.scritta : 'CU014';
+    code.addEventListener('change', () => change('scritta', code.value.trim().toUpperCase()));
+    nodes.push(el('label', '', 'Codice dell’edificio (es. CU014)'), code);
+    const base = C.esterni.totemCartello || {}, cur = () => Object.assign({}, base, obj.cartello || {});
+    for (const [k, lbl, multi] of TOTEM_VOCI) {
+      const inp = el(multi ? 'textarea' : 'input'); if (!multi) inp.type = 'text'; else inp.style.minHeight = '56px';
+      inp.value = cur()[k] || '';
+      inp.addEventListener('change', () => { const c = cur(); c[k] = multi ? inp.value.replace(/\r/g, '') : inp.value.trim(); change('cartello', c); });
+      nodes.push(el('label', '', lbl + (multi ? ' · Invio va a capo' : '')), inp);
+    }
+    const lab = el('label', 'ed-check'), box = el('input'); box.type = 'checkbox'; box.checked = obj.logoMuseo !== false;
+    box.addEventListener('change', () => change('logoMuseo', box.checked));
+    lab.append(box, document.createTextNode(' Logo «m» del museo accanto al Polo museale')); nodes.push(lab);
+    return nodes;
+  }
   function infoCard() {
     if (!sel || !cardWanted()) return;
     const title = sel.type === 'item' ? sel.it.label : `Pezzo: ${describe(sel.p.mesh)}`;
@@ -514,10 +537,11 @@
       const redo = (fn) => () => { fn(pr); saveItem(sel.it); rebuild('aggiunta'); };
       if (pr.forma === 'oggetto') {
         nodes.push(...pick('Oggetto', C.esterni.catalogo, pr.modello, (v) => { pr.modello = v; if (v === 'totem' || v === 'scritta') pr.scritta = v === 'totem' ? 'CU014' : 'ISTITUTO'; redo(fitNatural)(); }));
-        if (pr.modello === 'totem' || pr.modello === 'scritta') {
-          const inp = el('input'); inp.type = 'text'; inp.maxLength = pr.modello === 'totem' ? 12 : 24; inp.value = pr.scritta != null ? pr.scritta : pr.modello === 'totem' ? 'CU014' : 'ISTITUTO';
+        if (pr.modello === 'totem') nodes.push(...totemFields(pr, (k, v) => change(k, v)));
+        if (pr.modello === 'scritta') {
+          const inp = el('input'); inp.type = 'text'; inp.maxLength = 24; inp.value = pr.scritta != null ? pr.scritta : 'ISTITUTO';
           inp.addEventListener('change', () => change('scritta', inp.value.trim()));
-          nodes.push(el('label', '', pr.modello === 'totem' ? 'Scritta sulla fascia bianca' : 'Testo della scritta'), inp);
+          nodes.push(el('label', '', 'Testo della scritta'), inp);
         }
         const r2 = el('div', 'ed-row'); r2.append(button('Ruota di 90°', redo(turn90)), button('Misure originali', redo(fitNatural))); nodes.push(r2);
       } else if (pr.forma === 'aiuola') {
@@ -543,6 +567,7 @@
         nodes.push(tr);
       }
     }
+    if (sel.type === 'item' && sel.it.totem) { const it = sel.it; nodes.push(...totemFields(it.obj, (k, v) => { it.obj[k] = v; saveItem(it); rebuild(it.sorgente); })); }
     if (overrideOf()) row.append(button(sel.type === 'item' && !baseValue(sel.it) ? 'Annulla aggiunta' : 'Ripristina originale', restore));
     if (sel.type === 'item' && !['pavimento', 'portico'].includes(sel.it.percorso)) row.append(button('Duplica', duplicateSel));
     if (sel.type === 'item' && sel.it.remove) row.append(button('Elimina', removeSel));
@@ -608,6 +633,7 @@
       const m = C.esterni.misura(model, 0), turn = !!m && (m.du > m.dv) !== (b.u1 - b.u0 > b.v1 - b.v0); // orientata come l'originale
       const pr = { forma: 'oggetto', modello: model, ruota: turn ? 90 : 0, box: b };
       if (model === 'totem') pr.scritta = e.scritta != null ? e.scritta : 'CU014';
+      if (model === 'totem') { if (e.cartello) pr.cartello = clone(e.cartello); if (e.logoMuseo === false) pr.logoMuseo = false; }
       return pr;
     }
     if (/aiuole\.\d+$|\.prato$/.test(P)) return { forma: 'aiuola', tipo: 'squadrata', terreno: it.sorgente === 'cortile' ? 'foglie' : 'prato', cordolo: 0.16, poligono: [[b.u0, b.v0], [b.u1, b.v0], [b.u1, b.v1], [b.u0, b.v1]], base: b.h0, altezza: round(Math.max(0.1, b.h1 - b.h0)) };

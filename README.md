@@ -5,6 +5,17 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
 - `index.html` + `campus-3d.js`: pagina e scena
 - `cortile/chimica-esterni.json`: terrazza, aree, scale antincendio, due pergolati (elementi `pergolato`: u, v, altezza, passo, copertura 0..1 = quanto fogliame, fogliame_da = quota in m sotto cui i fianchi sono quasi spogli; solo la galleria con la vite), lampioni verdi (elementi `lampione`: u, v, altezza) (coordinate u/v sul lato della sagoma OSM)
 - `cortile/modello.json`: cortile dell'azoto liquido (`portico.piani` = piani del corpo sopra il portico oltre il piano terra, 1 = solo il primo piano, con un solo tetto piano liscio senza attico; `portico.corpoU` = impronta del ponte; `vuoti` = un unico rettangolo u 0.2→16.6 per i due cortili, azoto e interno, nel quale resta solo il ponte; il cortile interno non è più in `courtyards.json`)
+- `cu014-solido.json`: solido di CU014 ricavato da `riferimenti/cu014-vettoriale.stl` (il file STL non viene caricato dalla pagina). Contiene
+  `altezzaBase` (19 m) e `ali`: rettangoli `[u0, v0, u1, v1]` nelle coordinate del lato 0 con la quota del loro tetto (in m sopra il terreno;
+  l'ultima ala della lista vince dove si sovrappongono), usati da `cuSolidoParts` in `campus-3d.js` per estrudere la sagoma OSM
+  (meno i cortili di `courtyards.json` e i vuoti/pieni del cortile) ala per ala, con le stesse texture di facciata (i piani del corpo
+  si adattano alla quota, interpiano ≈ 3,95 m); `fondi`: cortili con il pavimento in quota (il cortile nord è a 6 m, `addCuFondi` mette la soletta);
+  `stl`: trasformazione scala/rotazione/traslazione dall'STL ai metri del lato 0 e piano del terreno. Senza il file la pagina torna alla sagoma intera
+  a 21 m. Da dove vengono le misure: l'STL è una mesh binaria di 103 594 triangoli a scala arbitraria (z in alto, 1 unità ≈ 86,2 m, 4,6 MB):
+  scala, rotazione (178,07°) e traslazione sono state trovate sovrapponendo i muri verticali dell'STL ai lati della sagoma OSM (correlazione 2D,
+  poi affinamento a passo fine; l'impronta coincide con quella OSM entro circa 1 m, quindi la sagoma non cambia); sui punti fuori sagoma
+  si è interpolato il terreno (inclinato di 2,4°: difetto della scansione, tolto), e le quote dei tetti sono la mediana alta (80°
+  percentile) delle facce rivolte in su dentro ogni rettangolo. `python3 -I tools/cu014_stl.py` rifà le misure e le confronta con il JSON.
 - `tools/`: script di verifica (playwright + Chromium) per render e misure
 - `editor.js`: pulsanti **Commenta** e **Modifica** sulla scena 3D. Il tasto **🌳 Alberi** (sempre visibile, stato ricordato nel browser) nasconde o mostra tutti gli alberi (OSM, magnolie, palme, pini, quelli del catalogo): in `campus-3d.js` sono marcati `userData.albero` e `window.campus3d.alberiVisibili(on)` li gestisce, anche dopo le ricostruzioni. I dati vivono nel db dell'artifact:
   - `segnalazioni`: commenti con punto 3D, lon/lat, coordinate u/v sul lato 0 e nel cortile, oggetto toccato e vista della camera;

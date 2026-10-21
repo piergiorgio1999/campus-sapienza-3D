@@ -452,17 +452,17 @@
     7.4,
     9.2,
     11.15,
-    13.15,
-    15.1,
-    17.1
-   ]
+    13.15
+   ],
+   "nota_stl": "Quote 15,1 e 17,1 tolte il 22/10/2026: dall'STL il tetto dell'ala sud-ovest è a circa 15 m, la scala non deve superarlo (da verificare con l'utente, il rilievo arrivava a 17,1)."
   },
   {
    "tipo": "scala",
    "nome": "Scala antincendio (facciata est)",
    "lato": 4,
    "u": 38.6,
-   "piani": 4
+   "piani": 2,
+   "nota_stl": "Piani da 4 a 2 il 22/10/2026: dall'STL la fascia est è alta circa 11,5 m (seconda soletta a 9,2 m)."
   },
   {
    "tipo": "scala",

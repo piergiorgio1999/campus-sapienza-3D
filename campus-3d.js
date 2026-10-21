@@ -1855,12 +1855,74 @@
     const props = feature.properties || {};
     const code = String(props['addr:housenumber'] || props.ref || '').trim().toUpperCase();
     const holes = (code && courtyardHoles[code]) || [];
-    const shapes = shapesFor(rings, holes);
-    if (!shapes.length) return;
+    const parts = (code === 'CU014' && cuSolidoParts(rings, holes)) || shapesFor(rings, holes).map((shape) => ({ shape }));
+    if (!parts.length) return;
     if (code && officialPlanCodes.has(code)) return;
     const b = lookup.get(code);
-    if (!b) { if (insideCampus(polygonCentroid(outer))) for (const shape of shapes) addContextPolygon(shape, props); return; } // edifici del quartiere: volumi uniti, non selezionabili
-    for (const shape of shapes) addCodedShape(shape, feature, props, code, b);
+    if (!b) { if (insideCampus(polygonCentroid(outer))) for (const { shape } of parts) addContextPolygon(shape, props); return; } // edifici del quartiere: volumi uniti, non selezionabili
+    for (const { shape, h } of parts) addCodedShape(shape, feature, props, code, b, h);
+  }
+  /* ---------- solido di CU014 dall'STL di riferimento (cu014-solido.json): ali a quote diverse e fondo del cortile nord ---------- */
+  let cuSolido = null;
+  // lato 0 della sagoma OSM di CU014: u lungo il lato, v verso l'esterno (stesse coordinate dei file del cortile e dell'editor)
+  function cuFrame() {
+    const cu = buildings.find((x) => String(x.code).toUpperCase() === 'CU014'), ring = cu && cu.rings && cu.rings[0];
+    if (!ring || ring.length < 2) return null;
+    const a = project(ring[0]), c = project(ring[1]), len = Math.hypot(c.x - a.x, c.n - a.n);
+    if (!(len > 0)) return null;
+    const tx = (c.x - a.x) / len, tn = (c.n - a.n) / len;
+    return {
+      toLocal: (q) => { const w = project(q), dx = w.x - a.x, dn = w.n - a.n; return [dx * tx + dn * tn, -dx * tn + dn * tx]; },
+      toLL: ([u, v]) => { const x = a.x + u * tx - v * tn, n = a.n + u * tn + v * tx; return [(x + mapWidth / 2) / metersPerLon + bounds.west, (n + mapDepth / 2) / metersPerLat + bounds.south]; },
+    };
+  }
+  const rectRing = ([u0, v0, u1, v1]) => [[u0, v0], [u1, v0], [u1, v1], [u0, v1], [u0, v0]];
+  // numero di piani del corpo per un'ala di altezza h: interpiano vicino a 3,95 m (come il rilievo delle scale); null = lascia a buildingPieces
+  function cuLevelsFor(h) { return h < 8.5 ? null : Math.max(1, Math.ceil((h - 5.3) / 3.95 - 0.1)) + 1; }
+  // sagoma (meno i cortili) divisa nelle ali di cu014-solido.json: [{ shape, h }]; null = dati o libreria mancanti, si torna alla sagoma intera
+  function cuSolidoParts(rings, holes) {
+    const f = cuSolido && cuFrame(), pc = window.polygonClipping;
+    if (!f || !pc || typeof pc.intersection !== 'function' || !Array.isArray(cuSolido.ali)) return null;
+    try {
+      const loc = (r) => closeRing(r).map(f.toLocal);
+      const subject = rings.map(loc).filter((r) => r.length >= 4);
+      const cuts = holes.map((h) => [loc(h)]).filter((q) => q[0].length >= 4);
+      let rest = cuts.length ? pc.difference(subject, ...cuts) : [subject];
+      const base = Number(cuSolido.altezzaBase) > 0 ? Number(cuSolido.altezzaBase) : null, out = [];
+      const push = (multi, h) => {
+        for (const poly of multi) {
+          if (!poly.length || polyArea(poly[0]) < 0.5) continue;
+          const shape = makeShape(poly.map((r) => r.map(f.toLL)));
+          if (shape) out.push({ shape, h });
+        }
+      };
+      for (const ala of cuSolido.ali.slice().reverse()) { // l'ultima ala della lista vince dove si sovrappongono
+        if (!Array.isArray(ala.rect) || !(Number(ala.altezza) > 0) || !rest.length) continue;
+        const cut = [rectRing(ala.rect)];
+        push(pc.intersection(rest, cut), Number(ala.altezza));
+        rest = pc.difference(rest, cut);
+      }
+      push(rest, base);
+      return out;
+    } catch (_) { return null; }
+  }
+  // soletta dei cortili che hanno il pavimento in quota (il cortile nord è a circa 6 m): chiude il pozzo scavato nella sagoma
+  function addCuFondi() {
+    const f = cuSolido && cuFrame();
+    if (!f || !buildingGroup || !Array.isArray(cuSolido.fondi)) return;
+    for (const fondo of cuSolido.fondi) {
+      const quota = Number(fondo.quota);
+      if (!Array.isArray(fondo.rect) || !(quota > 0.2)) continue;
+      const shape = makeShape([rectRing(fondo.rect).map(f.toLL)]);
+      if (!shape) continue;
+      const g = new THREE.ExtrudeGeometry(shape, { depth: quota, bevelEnabled: false, curveSegments: 1 });
+      g.rotateX(-Math.PI / 2); g.translate(0, 0.04, 0);
+      applyRoofUVs(g); g.computeVertexNormals();
+      const mats = [normalRoof, hiddenCapMaterial()]; // solo il piano superiore, con la stessa ortofoto dei tetti
+      const mesh = new THREE.Mesh(g, mats);
+      mesh.receiveShadow = true; mesh.userData.mats = mats; mesh.userData.cuFondo = fondo.id || true;
+      buildingGroup.add(mesh);
+    }
   }
   // Sagoma meno i cortili/pozzi di luce: differenza booleana, così ogni cortile diventa un vuoto chiuso (pareti su tutti i lati) anche se tocca il bordo.
   function shapesFor(rings, holes) {
@@ -1875,9 +1937,10 @@
       return result.map((poly) => makeShape(poly)).filter(Boolean);
     } catch (_) { return plain(); }
   }
-  function addCodedShape(shape, feature, props, code, b) {
-    const rawHeight = b?.height || props.height;
-    const rawLevels = b?.levels || props['building:levels'];
+  function addCodedShape(shape, feature, props, code, b, heightOverride) {
+    let rawHeight = b?.height || props.height;
+    let rawLevels = b?.levels || props['building:levels'];
+    if (heightOverride > 0) { rawHeight = heightOverride; rawLevels = cuLevelsFor(heightOverride); } // ala a quota propria (cu014-solido.json)
     const height = heightInfo({ height: rawHeight, levels: rawLevels }).value;
     const geometry = new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false, curveSegments: 1 });
     geometry.rotateX(-Math.PI / 2);
@@ -1959,6 +2022,7 @@
       if (geometry.type === 'Polygon') for (const r of carveCourtyard(geometry.coordinates)) addPolygon(feature, r, lookup);
       else if (geometry.type === 'MultiPolygon') for (const polygon of geometry.coordinates) for (const r of carveCourtyard(polygon)) addPolygon(feature, r, lookup);
     }
+    addCuFondi();
     flushContextBuckets();
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance', logarithmicDepthBuffer: true });
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -3779,6 +3843,7 @@
       if (latestParentContext?.plan?.features) officialPlanCodes = new Set(latestParentContext.plan.features.map((feature) => String(feature.code || '').toUpperCase()));
       courtyardFrame = await loadCourtyardFrame();
       try { const r = await fetch('courtyards.json'); if (r.ok) courtyardHoles = (await r.json()).courtyards || {}; } catch (_) { courtyardHoles = {}; }
+      try { const r = await fetch('cu014-solido.json'); if (r.ok) cuSolido = await r.json(); } catch (_) { cuSolido = null; } // senza il file CU014 resta la sagoma OSM intera
       buildScene(context);
       setView('3d');
       flyTo(focusCentroid(), 230, 0);

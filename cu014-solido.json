@@ -1,0 +1,29 @@
+{
+ "versione": 1,
+ "fonte": "riferimenti/cu014-vettoriale.stl (STL binario fornito dall'utente il 22/10/2026), registrato sulla sagoma OSM di CU014; vedi tools/cu014_stl.py e il paragrafo «Solido di CU014» del README",
+ "nota": "Quote in metri sopra il terreno attorno all'edificio (piano interpolato sui punti fuori sagoma, vedi tools/cu014_stl.py). Rettangoli [u0, v0, u1, v1] nelle coordinate del lato 0 di CU014 (u lungo il lato, v verso l'esterno). La pagina estrude la sagoma OSM, meno i cortili e i vuoti, a `altezzaBase`; dove cade un rettangolo di `ali` usa l'altezza della sua ala. Facciate e texture non cambiano.",
+ "stl": {
+  "scalaMetriPerUnita": 86.203,
+  "rotazioneDeg": 178.07,
+  "traslazione": [1.1243, 0.5481],
+  "centroSagoma": [31.5355, -63.5055],
+  "pianoTerreno": [-8.8384, -0.019477, -0.036533],
+  "nota": "u, v = scala · R(−rotazione) · ((x, y) − traslazione) + centroSagoma; quota sopra il terreno = scala · z − (pianoTerreno[0] + pianoTerreno[1]·u + pianoTerreno[2]·v). Nell'STL z è l'alto e l'unità è arbitraria (1 unità ≈ 86,2 m); il piano del terreno è inclinato di 2,4°, cioè è l'inclinazione della scansione, non quella del suolo."
+ },
+ "altezzaBase": 19,
+ "ali": [
+  { "id": "dorsale", "rect": [39.5, -60, 50, -20], "altezza": 21, "nota": "Corpo centrale, il più alto (coincide con l'altezza 21 m di OSM)." },
+  { "id": "sud-est", "rect": [50, -62, 71.5, -38], "altezza": 20, "nota": "Blocco a sud-est, accanto ai due cortili est." },
+  { "id": "sud-est-basso", "rect": [46, -86, 71.5, -62], "altezza": 20, "nota": "Prosecuzione del blocco verso sud, fino al bordo dell'ala sud." },
+  { "id": "est", "rect": [71.5, -86, 80.5, -26], "altezza": 15.5, "nota": "Ala est più bassa (15-16 m)." },
+  { "id": "bordo-est", "rect": [80.5, -86, 87, -26], "altezza": 11.5, "nota": "Fascia bassa lungo il bordo est (11-12 m)." },
+  { "id": "fascia-nord-est", "rect": [55, -26, 87, -20], "altezza": 10.5, "nota": "Corpo basso affacciato sulla terrazza (10-11 m)." },
+  { "id": "sud-ovest", "rect": [-1, -91, 41, -64.5], "altezza": 15, "nota": "Ala sud (14-16 m)." },
+  { "id": "sud-centro", "rect": [41, -91, 46, -71.5], "altezza": 15.5 },
+  { "id": "lucernario-sud", "rect": [25.5, -89, 28, -64.5], "altezza": 17.5, "nota": "Dorsale stretta sull'ala sud (17-18 m)." },
+  { "id": "basso-sud", "rect": [17, -64.5, 41, -60], "altezza": 10.5, "nota": "Corpo basso fra le due ali sud (10-11 m)." }
+ ],
+ "fondi": [
+  { "id": "cortile-nord", "rect": [14.5, -23, 40.5, -11], "quota": 6, "nota": "Il cortile nord ha il pavimento a circa 6 m (primo piano), non a terra: la pagina lo chiude con una soletta a questa quota." }
+ ]
+}

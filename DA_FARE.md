@@ -4,7 +4,25 @@
   sulla facciata dell'ingresso, ma non è certo che fosse quello (lì vicino c'è una palma a u 42.4, v 7.9).
 - Da confermare con l'utente: posizione dei due pergolati, misure del varco del cancello (commento 3), raccordo ceppo/tronco
   delle magnolie, chioma B spostata a stima (`chiomaOffset`).
-- Nuovo dall'utente (22/10): `riferimenti/cu014-vettoriale.stl`, modello vettoriale di CU014 ("vec cu14") da usare come riferimento per la sagoma.
+- Nuovo dall'utente (22/10): `riferimenti/cu014-vettoriale.stl`, modello vettoriale di CU014 ("vec cu14"): **usato** per il solido, vedi sotto.
+
+## Solido di CU014 dall'STL (22/10/2026) — fatto, da verificare con il render
+- **Cosa contiene l'STL:** mesh binaria, 103 594 triangoli, 2,02 × 2,23 × 0,36 unità (1 unità ≈ 86,2 m, z in alto, origine arbitraria). È una
+  nuvola/mesh rumorosa dell'edificio e del suo intorno (alberi, marciapiedi), non un vettoriale pulito: l'impronta c'è, i piani dei tetti si leggono bene.
+- **Trasformazione:** scala 86,203 m/unità, rotazione 178,07°, traslazione (1,124; 0,548); numeri in `cu014-solido.json` → `stl`. Registrazione sui muri
+  verticali vs sagoma OSM (nessun ribaltamento). Controllo indipendente: il vuoto del cortile dell'azoto (u −3,5→41, v −51,4→−35 nel lato 0) cade
+  proprio sul grande vuoto dell'STL. Il piano del terreno è inclinato di 2,4° (scansione): le quote sono corrette con quel piano.
+- **Impronta:** coincide con la sagoma OSM entro circa 1 m, quindi `campus-buildings.json` non cambia.
+- **Altezze diverse (sopra il terreno):** dorsale centrale 21 m (u 39,5→50, v −60→−20), corpo principale 19 m, blocco sud-est 20 m, ala sud 15–15,5 m (con una dorsale
+  stretta a 17,5), ala est 15,5 m, fascia sul bordo est 11,5 m, corpo basso sulla terrazza 10,5 m, corpo basso fra le ali sud 10,5 m. Il «21 m» di OSM è solo la dorsale. Prima tutto era a 21 m.
+- **Cortili (`courtyards.json`, CU014):** il cortile nord è rifatto dall'STL (u 14,5→40,5, v −23→−11, prima u 15,6→40,2, v −23,9→−17,9), con il pavimento a **6 m**
+  (soletta `fondi`); il vecchio buco n. 0 (u 57→75, v −29→−25) è tolto: era l'ombra di un salto di quota, nell'STL lì c'è tetto (13–19 m). Gli altri quattro buchi
+  (ora indici 0–3; i rettificati sono quelli che prima erano 4 e 5) combaciano con i vuoti dell'STL e restano. I pavimenti degli altri cortili stanno a 1,6–2,6 m sopra il terreno: ignorati.
+- **Mantenuti:** facciate e texture (stesso `facadeSetFor`), ponte di un piano sul cancello (resta a 8,3 m; l'STL lì dà circa 10 m, **da controllare**),
+  vuoto unico dei due cortili (`vuoti`/`pieni`), resto della scena.
+- **Aggiustamenti per coerenza:** toppa di facciata del muro ovest in `cortile/facciate.json` (corpo e attico da 21 a 19 m); scala antincendio est a 2 piani e scala del lato 19
+  senza le ultime due quote (altrimenti uscivano dal tetto), vedi i campi `nota_stl` in `cortile/chimica-esterni.json`. Il rilievo delle scale arrivava a 17,1 m: da confrontare con l'utente.
+- Non fatto: gli angoli smussati e le rientranze minori del tetto (sotto 1 m) restano quelli di OSM; le altre scale antincendio (OBIETTIVI.md) non sono state riverificate.
 - Regole dell'utente: niente test o render locali (li fa la pipeline GitHub), pubblicare subito quando lo chiede, non fermarsi a chiedere.
 
 # Handoff — lavori terminati il 21/10/2026 su richiesta dell'utente

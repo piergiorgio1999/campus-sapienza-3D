@@ -26,10 +26,10 @@
      "palette": "arancione",
      "kind": "body",
      "x": -122.38,
-     "y": 12.29,
+     "y": 11.29,
      "z": 66.66,
      "w": 34.81,
-     "h": 15.7,
+     "h": 13.7,
      "ang": 1.2036,
      "u0": 0.2419,
      "v0": 0.0,
@@ -42,7 +42,7 @@
      "palette": "arancione",
      "kind": "attic",
      "x": -122.38,
-     "y": 20.59,
+     "y": 18.59,
      "z": 66.66,
      "w": 34.81,
      "h": 0.9,
@@ -54,7 +54,7 @@
      "perp": 138.14
     }
    ],
-   "nota": "Muro ovest verso l'angolo nord-ovest in intonaco arancione verniciato, non mattoni (commento sul posto del 21/10/2026)."
+   "nota": "Muro ovest verso l'angolo nord-ovest in intonaco arancione verniciato, non mattoni (commento sul posto del 21/10/2026). Quote del corpo e dell'attico riportate da 21 a 19 m il 22/10/2026: l'ala nord-ovest, dall'STL, è alta circa 19 m (cu014-solido.json)."
   },
   "CU006": {
    "facciata": "travertino",

@@ -1,0 +1,196 @@
+{
+  "versione": 1,
+  "nota": "Cortile dell'azoto (Chimica), modello minimale. Coordinate locali in metri: u lungo la cancellata su strada, v verso il portico, h in alto. Misure ricavate dalla pianta della scansione Scaniverse registrata, dalle foto e da CORREZIONI_RIFERIMENTI.md. La scansione grezza non è usata nel modello.",
+  "riferimento": {
+    "scansione": "115418",
+    "angoloDeg": -47.7,
+    "origine": [
+      3.66,
+      -6.06
+    ]
+  },
+  "pavimento": {
+    "u": [
+      0.2,
+      16.6
+    ],
+    "v": [
+      0,
+      13
+    ],
+    "fasceTravertino": [
+      [
+        8.4,
+        9.0
+      ],
+      [
+        11.0,
+        11.6
+      ]
+    ]
+  },
+  "aiuole": [
+    {
+      "id": "A",
+      "u": [
+        1.5,
+        5.0
+      ],
+      "v": [
+        1.8,
+        6.8
+      ],
+      "altezza": 0.42
+    },
+    {
+      "id": "B",
+      "u": [
+        11.9,
+        15.5
+      ],
+      "v": [
+        1.1,
+        7.9
+      ],
+      "altezza": 0.42
+    }
+  ],
+  "magnolie": [
+    {
+      "id": "A",
+      "u": 3.3,
+      "v": 4.2,
+      "altezza": 12.5,
+      "raggio": 3.8
+    },
+    {
+      "id": "B",
+      "u": 13.8,
+      "v": 3.4,
+      "altezza": 13.5,
+      "raggio": 4.2
+    }
+  ],
+  "serbatoio": {
+    "u": 13.7,
+    "v": 6.4,
+    "raggio": 0.8,
+    "altezza": 4.2
+  },
+  "gabbia": {
+    "u": [
+      12.4,
+      15.2
+    ],
+    "v": [
+      5.2,
+      7.7
+    ],
+    "altezza": 2.1,
+    "porta": "u-",
+    "cartello": "v-"
+  },
+  "cancellata": {
+    "v": 0,
+    "muretto": 0.9,
+    "ringhiera": 1.15,
+    "varco": [
+      6.0,
+      10.6
+    ],
+    "apertureDeg": 70,
+    "rientro": 0.9,
+    "altezzaCancello": 2.1,
+    "nota": "Cancello a U: anta principale arretrata di \"rientro\" metri verso il cortile, collegata al muretto da due cancelletti pedonali perpendicolari."
+  },
+  "muri": [
+    {
+      "id": "sinistro",
+      "u": 0.2,
+      "v": [
+        0,
+        9.4
+      ],
+      "altezza": 4.4,
+      "tuboRosso": 2.0,
+      "condizionatori": [
+        5.5
+      ],
+      "finestre": [
+        7.4
+      ]
+    },
+    {
+      "id": "destro",
+      "u": 16.6,
+      "v": [
+        0,
+        9.4
+      ],
+      "altezza": 4.4,
+      "condizionatori": [
+        2.5,
+        6.0
+      ]
+    }
+  ],
+  "pilastri": [
+    {
+      "u": [
+        0.2,
+        1.5
+      ],
+      "v": [
+        9.3,
+        10.1
+      ],
+      "altezza": 4.5,
+      "scritta": "AULE"
+    },
+    {
+      "u": [
+        10.6,
+        11.9
+      ],
+      "v": [
+        9.3,
+        10.1
+      ],
+      "altezza": 4.5
+    }
+  ],
+  "portico": {
+    "v": [
+      9.4,
+      13.0
+    ],
+    "u": [
+      1.5,
+      10.6
+    ],
+    "soffitto": 4.5
+  },
+  "transenne": [
+    {
+      "u": 2.2,
+      "v": 0.9,
+      "lunghezza": 2.0,
+      "angoloDeg": 8
+    }
+  ],
+  "vuoti": [
+    [
+      0.0,
+      -4.0,
+      16.8,
+      9.4
+    ],
+    [
+      1.5,
+      9.4,
+      10.6,
+      13.0
+    ]
+  ],
+  "nota_vuoti": "Rettangoli [u0, v0, u1, v1] sottratti alle sagome OSM: il cortile aperto fino alla fronte del portico e il portico al piano terra (il corpo sopra viene ricostruito dal soffitto in su)."
+}

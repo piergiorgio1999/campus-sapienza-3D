@@ -288,23 +288,25 @@
    "aiuole": [
     {
      "u": [
-      36.5,
-      44.6
+      -0.1,
+      44.55
      ],
      "v": [
-      6.4,
+      6.1,
       20.6
-     ]
+     ],
+     "cordolo": 0.18
     },
     {
      "u": [
       50.6,
-      56.0
+      85.55
      ],
      "v": [
-      6.4,
+      4.9,
       20.6
-     ]
+     ],
+     "cordolo": 0.18
     }
    ],
    "ringhiere": [
@@ -416,17 +418,18 @@
    ],
    "fiori": {
     "u": [
-     38.0,
+     10.95,
      44.2
     ],
     "v": [
      18.8,
      20.3
-    ]
+    ],
+    "altezza": 0.4
    },
    "rastrelliera": {
-    "u": 43.0,
-    "v": 1.4,
+    "u": 0.45,
+    "v": 0.8,
     "posti": 3
    }
   },
@@ -467,6 +470,208 @@
    "lato": 6,
    "u": 5.7,
    "piani": 4
+  }
+ ],
+ "primitive": [
+  {
+   "id": "pmvi579i36b",
+   "box": {
+    "h0": -0.09,
+    "h1": -0.04,
+    "u0": -6.15,
+    "u1": 1.85,
+    "v0": -94.25,
+    "v1": 20.5
+   },
+   "forma": "box",
+   "materiale": "asfalto",
+   "rimosso": true
+  },
+  {
+   "id": "pmvi5eehk4w",
+   "box": {
+    "h0": -0.09,
+    "h1": -0.04,
+    "u0": 56.25,
+    "u1": 85.55,
+    "v0": 3.5,
+    "v1": 5.15
+   },
+   "forma": "box",
+   "materiale": "asfalto"
+  },
+  {
+   "id": "pmvi74yrjm4",
+   "altezza": 0.15,
+   "base": -0.04,
+   "discese": [],
+   "forma": "marciapiede",
+   "poligono": [
+    [
+     -5.15,
+     -32.7
+    ],
+    [
+     -1,
+     -32.7
+    ],
+    [
+     -1,
+     -19.55
+    ],
+    [
+     -5.15,
+     -19.55
+    ]
+   ],
+   "raggio": 0.3,
+   "rimosso": true
+  },
+  {
+   "id": "pmvi77470sy",
+   "altezza": 0.15,
+   "base": -0.09,
+   "discese": [
+    {
+     "larghezza": 1.4,
+     "lato": 0,
+     "profondita": 0.9,
+     "t": 0.39
+    }
+   ],
+   "forma": "marciapiede",
+   "poligono": [
+    [
+     -2.95,
+     -40.8
+    ],
+    [
+     0.45,
+     -40.85
+    ],
+    [
+     0.45,
+     20.75
+    ],
+    [
+     -6.25,
+     20.75
+    ],
+    [
+     -6.05,
+     -38.85
+    ],
+    [
+     -4.85,
+     -40.45
+    ]
+   ],
+   "raggio": 0.3
+  },
+  {
+   "id": "pmvi7i1ot6y",
+   "altezza": 0.3,
+   "base": -0.09,
+   "forma": "aiuola",
+   "poligono": [
+    [
+     62.05,
+     -89.25
+    ],
+    [
+     89.9,
+     -89.25
+    ],
+    [
+     89.9,
+     -63.55
+    ],
+    [
+     62.05,
+     -63.55
+    ]
+   ],
+   "terreno": "prato",
+   "tipo": "squadrata"
+  },
+  {
+   "id": "pmvi7jmdoff",
+   "altezza": 0.05,
+   "base": 11.35,
+   "forma": "aiuola",
+   "poligono": [
+    [
+     95.6,
+     -91.35
+    ],
+    [
+     104.7,
+     -91.35
+    ],
+    [
+     104.7,
+     -20.35
+    ],
+    [
+     95.6,
+     -20.35
+    ]
+   ],
+   "rimosso": true,
+   "terreno": "prato",
+   "tipo": "squadrata"
+  },
+  {
+   "id": "pmvi7k8iv1y",
+   "altezza": 0.3,
+   "base": -0.09,
+   "forma": "aiuola",
+   "poligono": [
+    [
+     92.1,
+     -88.9
+    ],
+    [
+     107.05,
+     -88.9
+    ],
+    [
+     107.05,
+     -21.35
+    ],
+    [
+     92.1,
+     -21.35
+    ]
+   ],
+   "terreno": "prato",
+   "tipo": "squadrata"
+  },
+  {
+   "id": "pmvi7mhv86q",
+   "altezza": 0.3,
+   "base": -0.09,
+   "forma": "aiuola",
+   "poligono": [
+    [
+     109.9,
+     -88.4
+    ],
+    [
+     112.9,
+     -88.4
+    ],
+    [
+     112.9,
+     -22.1
+    ],
+    [
+     109.9,
+     -22.1
+    ]
+   ],
+   "terreno": "prato",
+   "tipo": "squadrata"
   }
  ]
 }

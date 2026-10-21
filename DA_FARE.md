@@ -124,16 +124,20 @@ toccato, interno o esterno.
 - La tendina crea le toppe `texture` di `wallPatches` per quella riga.
 - Tenere eventualmente un'opzione separata «tutto l'edificio».
 
-### Modifiche nel db non ancora riportate nei file (`modifiche`, stato «da applicare»)
-L'editor le applica dal vivo; vanno riportate nei JSON e segnate «applicata»:
-- `aggiunta:pmvi5eehk4w` (asfalto) e `aggiunta:pmvi77470sy` (marciapiede ovest con discesa);
-  `aggiunta:pmvi579i36b` e `aggiunta:pmvi74yrjm4` sono già `rimosso`;
-- 10 alberi `albero:*` spostati o tolti;
-- `cortile:tombini.0`, `cortile:transenne.0`;
-- `esterni:elementi.6.aiuole.0`, `.aiuole.1`, `.fiori`, `.rastrelliera` (prati e fiori dell'ingresso ingranditi).
+### Modifiche nel db riportate nei file (`modifiche`), da segnare «applicata» dopo la pubblicazione
+Riportate nei JSON (34 documenti, verificati dalla pagina con un controllo automatico valore per valore):
+- `aggiunta:*` (8) in `primitive` di `cortile/chimica-esterni.json`: asfalto `pmvi5eehk4w`, marciapiede ovest con discesa
+  `pmvi77470sy`, aiuole `pmvi7i1ot6y`, `pmvi7k8iv1y`, `pmvi7mhv86q`; con `rimosso: true`: `pmvi579i36b`, `pmvi74yrjm4`, `pmvi7jmdoff`;
+- 15 alberi `albero:*` in `trees.json` (9 con `rimosso: true`, 6 spostati/ridimensionati; l'id di un albero spostato
+  cambia perché deriva da `p`, quindi i vecchi documenti non servono più);
+- `cortile:aiuole.1`, `cortile:pilastri.0`, `cortile:pilastri.1`, `cortile:tombini.0`, `cortile:transenne.0` in `cortile/modello.json`;
+- `esterni:elementi.6.aiuole.0`, `.aiuole.1`, `.fiori`, `.rastrelliera` in `cortile/chimica-esterni.json`;
+- `edificio:CU014` (facciata «cortina», finestre già nel file) e `edificio:CU006` (travertino) in `cortile/facciate.json`.
 
-Restano «sospese» in attesa di conferma: `cortile:pavimento`, `cortile:portico` e i pezzi
-`prim:cortile-modello.0.*`.
+Non riportate: restano «sospese» in attesa di conferma `cortile:pavimento`, `cortile:portico` e tutti i pezzi
+`prim:cortile-modello.0.*` (anche `.33`, `.34`, `.35`, `.43@2`, ancora «da applicare»). I documenti già «applicata»,
+«scartata» o «sospesa» (`esterni:elementi.6`, `prim:edifici.56`, `prim:alberi.1@*`, ecc.) non sono stati toccati;
+nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare lì.
 
 ### Commenti nella mappa
 - Commento 1 segnato «fatta».

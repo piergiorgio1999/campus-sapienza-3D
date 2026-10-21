@@ -3,7 +3,7 @@
  "nota": "Facciate degli edifici modificate dall'editor sul posto: texture ('cortina', 'giallo', 'travertino', 'ocra', 'intonaco') e celle con finestra tolta ('togli') o aggiunta ('aggiungi'), in coordinate di mondo della scena (x, y, z del centro, w × h, ang = direzione del muro).",
  "edifici": {
   "CU014": {
-   "facciata": null,
+   "facciata": "cortina",
    "finestre": [
     {
      "tipo": "texture",
@@ -55,6 +55,10 @@
     }
    ],
    "nota": "Muro ovest verso l'angolo nord-ovest in intonaco arancione verniciato, non mattoni (commento sul posto del 21/10/2026)."
+  },
+  "CU006": {
+   "facciata": "travertino",
+   "finestre": []
   }
  }
 }

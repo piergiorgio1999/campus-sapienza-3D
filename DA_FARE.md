@@ -80,9 +80,9 @@ L'utente non vuole il pergolato attuale (archi con foglie rosse e arancio). Come
 - **Foto 7–10:** mostrano anche il totem vecchio del 2015 (non più valido: vale quello della foto del 21/10) e le
   panchine in travertino.
 
-### Facciata dell'ingresso principale
+### Facciata dell'ingresso principale — FATTO
 Il rivestimento attorno al portone (oggi lastre quasi bianche, `rivestimento` in `buildEntrance`) deve essere dello
-stesso travertino del resto dell'edificio.
+stesso travertino del resto dell'edificio. Fatto: usa la texture del piano terra di CU014 (baseCanvas2, senza finestre) alla stessa scala.
 
 ### Commento 2 — corpo sopra il portico e cortile interno (`segnalazioni/4koi46r8db3vpkeooc9c`)
 «Un solo rettangolo che collega i due lati dell'edificio; il cortile interno è un rettangolo semplice, senza il

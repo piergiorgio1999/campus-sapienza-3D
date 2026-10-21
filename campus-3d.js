@@ -2770,15 +2770,13 @@
     const rect = (u0, u1, v0, v1) => [[u0, v0], [u1, v0], [u1, v1], [u0, v1]];
     const facePlane = (w, hh, u, y, v, mat) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, hh), mat); m.rotation.y = Math.PI; m.position.set(u, y, -v); g.add(m); return m; }; // rivolto verso l'esterno
     if (!R.rimosso) {
-      // lastre chiare quasi bianche, come nelle foto (il travertino fotografico è troppo scuro qui)
-      const slabs = canvasTex(256, 256, (ctx, w) => {
-        noiseFill(ctx, w, w, '#ece9e2', '#dedad1', 2600);
-        ctx.fillStyle = 'rgba(120,112,100,.35)';
-        for (let y = 0; y < w; y += 64) ctx.fillRect(0, y, w, 1.5);
-        for (let y = 0; y < w; y += 64) for (let x = (y / 64) % 2 ? 0 : 64; x < w; x += 128) ctx.fillRect(x, y, 1.5, 64);
-        const dirt = ctx.createLinearGradient(0, 200, 0, w); dirt.addColorStop(0, 'rgba(90,80,60,0)'); dirt.addColorStop(1, 'rgba(90,80,60,.18)'); ctx.fillStyle = dirt; ctx.fillRect(0, 200, w, 56);
-      }, 1 / 2.4, 1 / 2.4);
-      g.add(localSlab(rect(ra, rb, -0.02, 0.06), 0.02, H, new THREE.MeshStandardMaterial({ map: slabs, roughness: 0.85 })));
+      // stesso travertino (e stessa scala di lastre) del piano terra dell'edificio, senza finestre
+      const rivMat = courtOnce('ingresso|rivestimento', () => {
+        const t = baseCanvas2(FACADE_PALETTES[facadeNameFor('CU014')] || FACADE_PALETTES.cortina, 1, false);
+        t.repeat.set(1 / (2 * FACADE_BAY), 1 / (2 * FACADE_BAY)); // la tessera copre 2 × 2 lastre, come sulle pareti
+        return new THREE.MeshStandardMaterial({ map: t, roughness: 0.9, metalness: 0 });
+      });
+      g.add(localSlab(rect(ra, rb, -0.02, 0.06), 0.02, H, rivMat));
       g.add(localSlab(rect(ra - 0.05, rb + 0.05, -0.02, 0.14), H, H + 0.16, trav())); // cornice
       const word = (text, u) => facePlane(2.6, 0.49, u, H - 0.42, 0.065, new THREE.MeshStandardMaterial({ roughness: 0.8, transparent: true, alphaTest: 0.3, map: canvasTex(512, 96, (ctx, w, hh) => {
         ctx.clearRect(0, 0, w, hh); ctx.fillStyle = '#3f3a33'; ctx.font = 'bold 78px "Times New Roman", Times, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, w / 2, hh / 2 + 4);

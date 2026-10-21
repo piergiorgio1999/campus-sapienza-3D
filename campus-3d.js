@@ -2249,20 +2249,29 @@
     });
     tubeMesh.castShadow = true; group.add(tubeMesh);
   }
+  // libera le geometrie di un gruppo rimosso (materiali e texture sono condivisi o piccoli)
+  function disposeTree(root) { root.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); }
+  let exteriorsCfg = null;
   async function loadChemistryExteriors() {
-    let cfg;
-    try { const r = await fetch('cortile/chimica-esterni.json', { cache: 'no-store' }); if (!r.ok) return; cfg = await r.json(); } catch (_) { return; }
-    const b = buildings.find((x) => String(x.code).toUpperCase() === cfg.edificio);
+    try { const r = await fetch('cortile/chimica-esterni.json', { cache: 'no-store' }); if (!r.ok) return; exteriorsCfg = await r.json(); } catch (_) { return; }
+    buildChemistryExteriors();
+  }
+  // ricostruibile: l'editor sul posto cambia exteriorsCfg e chiama di nuovo questa funzione
+  function buildChemistryExteriors() {
+    const cfg = exteriorsCfg;
+    const b = cfg && buildings.find((x) => String(x.code).toUpperCase() === cfg.edificio);
     if (!b || !scene) return;
+    const old = scene.getObjectByName('chimica-esterni');
+    if (old) { scene.remove(old); disposeTree(old); }
     const ring = closeRing(b.rings[0]);
     const holder = new THREE.Group(); holder.name = 'chimica-esterni';
     const trav = (s = 2.4) => new THREE.MeshStandardMaterial({ map: travertinePhoto(s), normalMap: travertineNormal(s), roughness: 0.8 });
     // acciaio verniciato marrone ruggine, come nel rilievo (non ocra: niente pareti piene)
     const ocra = new THREE.MeshStandardMaterial({ color: new THREE.Color(0x86603f).convertSRGBToLinear(), roughness: 0.6, metalness: 0.35 });
     const ocraScura = new THREE.MeshStandardMaterial({ color: new THREE.Color(0x7d6a58).convertSRGBToLinear(), roughness: 0.75, metalness: 0.2 });
-    for (const el of cfg.elementi || []) {
+    for (const [index, el] of (cfg.elementi || []).entries()) {
       if (!(el.lato >= 0 && el.lato < ring.length - 1)) continue;
-      const g = sideFrame(ring, el.lato); holder.add(g);
+      const g = sideFrame(ring, el.lato); g.userData.elemento = index; holder.add(g);
       if (el.tipo === 'terrazza') {
         const h = Number(el.altezza) || 0.8;
         g.add(localSlab(el.poligono, 0, h, trav()));
@@ -2354,6 +2363,9 @@
     if (!courtyardFrame) return;
     const { geo, M } = courtyardFrame;
     if (!scene || !Array.isArray(geo.originLonLat)) return;
+    // ricostruibile: togli il modello precedente e il corpo sopra il portico
+    if (courtyardModel) { scene.remove(courtyardModel); disposeTree(courtyardModel); courtyardModel = null; }
+    if (buildingGroup) for (const m of buildingGroup.children.filter((c) => c.userData.porticoCorpo)) { buildingGroup.remove(m); m.geometry.dispose(); }
     const origin = project(geo.originLonLat);
     const holder = new THREE.Group();
     holder.name = 'cortile-modello';
@@ -2520,7 +2532,7 @@
         if (piece.kind !== 'attic') applyWallUVs(g, 0.04 + piece.y0, FACADE_BAY, piece.floorH);
         g.computeVertexNormals();
         const mats = [k === pieces.length - 1 ? normalRoof : hiddenCapMaterial(), set[piece.kind]];
-        const mesh = new THREE.Mesh(g, mats); mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.mats = mats;
+        const mesh = new THREE.Mesh(g, mats); mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.mats = mats; mesh.userData.porticoCorpo = true;
         buildingGroup.add(mesh);
       });
     }
@@ -2800,6 +2812,10 @@
     }
   }
   // accesso per verifiche automatiche e diagnosi (sola lettura della camera)
-  window.campus3d = { get camera() { return camera; }, get controls() { return controls; }, get scene() { return scene; }, bounceMinerva: () => bounceMinerva(), pdfToWorld: (x, y) => pdfToWorld(x, y) };
+  window.campus3d = { get camera() { return camera; }, get controls() { return controls; }, get scene() { return scene; }, get renderer() { return renderer; }, bounceMinerva: () => bounceMinerva(), pdfToWorld: (x, y) => pdfToWorld(x, y),
+    toLonLat: (w) => worldToLonLat(w),
+    // editor sul posto (editor.js): configurazioni vive e ricostruzione dei gruppi
+    esterni: { get cfg() { return exteriorsCfg; }, rebuild: () => buildChemistryExteriors() },
+    cortile: { get M() { return courtyardFrame ? courtyardFrame.M : null; }, rebuild: () => loadCourtyardModel() } };
   init();
 })();

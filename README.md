@@ -6,6 +6,10 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
 - `cortile/chimica-esterni.json`: terrazza, aree, scale antincendio (coordinate u/v sul lato della sagoma OSM)
 - `cortile/modello.json`: cortile dell'azoto liquido
 - `tools/`: script di verifica (playwright + Chromium) per render e misure
+- `editor.js`: pulsanti **Commenta** e **Modifica** sulla scena 3D. I dati vivono nel db dell'artifact:
+  - `segnalazioni`: commenti con punto 3D, lon/lat, coordinate u/v sul lato 0 e nel cortile, oggetto toccato e vista della camera;
+  - `modifiche`: forme cambiate con le maniglie (documento `sorgente:percorso`, es. `esterni:elementi.0.prato`), con `valore` e `originale`.
+  Claude le legge, le riporta in `cortile/*.json` e segna la modifica `stato: "applicata"` (la pagina ignora quelle applicate).
 
 Anteprima locale: `python3 -m http.server 8765` e apri `index.html?standalone`.
 Artifact pubblicato: https://claude.ai/code/artifact/b6b40dff-1e58-4b65-a386-6d4bab8d31ed

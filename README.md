@@ -8,14 +8,22 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
 - `tools/`: script di verifica (playwright + Chromium) per render e misure
 - `editor.js`: pulsanti **Commenta** e **Modifica** sulla scena 3D. I dati vivono nel db dell'artifact:
   - `segnalazioni`: commenti con punto 3D, lon/lat, coordinate u/v sul lato 0 e nel cortile, oggetto toccato e vista della camera;
+    `foto`: id degli asset dell'artifact allegati (JPEG ridotti a 2048 px, si leggono con `/_blob/<id>`);
   - `modifiche`: oggetti cambiati con la scatola di ridimensionamento. Oggetti dei JSON: documento `sorgente:percorso`
     (es. `esterni:elementi.0.prato`) con `valore` e `originale` nei campi del file. Primitive (ogni altro solido):
     documento `prim:<percorso nella scena>`, `sorgente: "primitiva"`, con la scatola `originale` e quella nuova (`valore`)
     in coordinate u/v/h della `cornice` (`esterni:<elemento>`, `cortile` o `lato0`).
     Altri documenti: `albero:<id>` (posizione `p`, raggio `r`, `rimosso`, `nuovo`), `aggiunta:<id>` (primitive con
-    `forma`, `materiale`, `box`; marciapiedi e aiuole con `poligono`, `base`, `altezza`, `discese`, `tipo`, `terreno`), `edificio:<codice>` (texture `facciata` e celle `finestre` tolte o aggiunte).
+    `forma`, `materiale`, `box`; marciapiedi e aiuole con `poligono`, `base`, `altezza`, `discese`, `tipo`, `terreno`,
+    `cordolo`, `raggio` per tutti gli angoli e `raggi` per angolo; `forma: "oggetto"` è una copia di un oggetto del catalogo
+    di `campus-3d.js` con `modello`, `ruota` (0/90/180/270), `scritta` per totem e scritte, stirata nella `box`;
+    `cornice` = `cortile` o `esterni:<elemento>` per i duplicati fatti in quelle coordinate), `edificio:<codice>`
+    (texture `facciata` e celle `finestre` tolte o aggiunte).
   Claude le legge, le riporta nei file (`cortile/*.json`, `trees.json`, `cortile/facciate.json`) e segna la modifica
   `stato: "applicata"` (la pagina ignora quelle applicate). Gli oggetti eliminati restano nei JSON con `rimosso: true`.
+
+- `cammina.js`: passeggiata in prima persona (tasto **Cammina**): W A S D o frecce, Maiuscolo corre, Spazio salta,
+  Esc esce; sull'iPad levetta e trascinamento. Collisioni con edifici, esterni, cortile e tronchi; si salgono gradini e cordoli fino a 45 cm.
 
 Anteprima locale: `python3 -m http.server 8765` e apri `index.html?standalone`.
 Artifact pubblicato: https://claude.ai/code/artifact/b6b40dff-1e58-4b65-a386-6d4bab8d31ed

@@ -1,12 +1,15 @@
 (() => {
   'use strict';
   // Editor sul posto della scena 3D.
-  // · Commenta: tocchi un punto e scrivi; il commento si salva con le coordinate (collezione "segnalazioni").
+  // · Commenta: tocchi un punto e scrivi; il commento si salva con le coordinate (collezione "segnalazioni"), con le foto
+  //   allegate (asset dell'artifact, ridotte a 2048 px in JPEG; nel commento restano gli id in "foto").
   // · Modifica: ogni solido ha una scatola di ridimensionamento a parallelepipedo, con una maniglia su ognuna delle sei
   //   facce, sugli angoli e una (rossa, in alto) per spostarlo. Gli oggetti descritti nei JSON (terrazza, panchine, scale,
   //   cortile…) cambiano i loro dati; ogni altro pezzo ("primitiva": una barra, un tubo, un edificio…) viene deformato
   //   con una trasformazione. Gli alberi si spostano, si eliminano e si aggiungono; "＋ Aggiungi" crea primitive
-  //   (parallelepipedo, cilindro, sfera) con il materiale scelto. Gli edifici non si deformano: si cambia la texture
+  //   (parallelepipedo, cilindro, sfera) con il materiale scelto, marciapiedi, aiuole e una copia di qualsiasi oggetto
+  //   già costruito nel modello (catalogo di campus-3d.js). La ✕ della scheda la nasconde senza deselezionare.
+  //   Gli edifici non si deformano: si cambia la texture
   //   della facciata e si tolgono o aggiungono finestre cella per cella.
   //   Tutto finisce nella collezione "modifiche" del db dell'artifact, che Claude riporta nei file.
   const SNAP = 0.05, MIN = 0.05, HANDLE_PX = 28;
@@ -16,10 +19,10 @@
   const snap = (x) => Math.round(x / SNAP) * SNAP;
   const clone = (o) => JSON.parse(JSON.stringify(o));
   let T = null, C = null, scene = null, camera = null, controls = null, canvas = null;
-  let db = null, myId = null, saving = false;
+  let db = null, assets = null, myId = null, saving = false;
   let mode = null; // 'commenta' | 'modifica' | null
   const base = { esterni: null, cortile: null, alberi: null, facciate: {} };
-  const FORME = { box: 'Parallelepipedo', cilindro: 'Cilindro', sfera: 'Sfera', marciapiede: 'Marciapiede', aiuola: 'Aiuola', albero: 'Albero', pino: 'Pino' };
+  const FORME = { oggetto: 'Oggetto del modello', box: 'Parallelepipedo', cilindro: 'Cilindro', sfera: 'Sfera', marciapiede: 'Marciapiede', aiuola: 'Aiuola', albero: 'Albero', pino: 'Pino' };
   const TIPI_AIUOLA = { squadrata: 'squadrata', rotonda: 'rotonda', spezzata: 'con angoli spezzati' };
   const TERRENI = { prato: 'prato', foglie: 'terra con foglie', terra: 'terra senza foglie' };
   const TEXTURE = { cortina: 'mattoni rossi', giallo: 'mattoni gialli', travertino: 'travertino', ocra: 'intonaco ocra', arancione: 'intonaco arancione', intonaco: 'intonaco chiaro' };
@@ -27,7 +30,7 @@
   let placing = null, removed = null, patchGroup = null;
   let overrides = [];
   let comments = [];
-  let sel = null, drag = null, down = null;
+  let sel = null, drag = null, down = null, sliding = false, slideTimer = 0;
   const ui = {};
   let fx = null, pins = null;
 
@@ -41,7 +44,12 @@
     .ed-btn:focus-visible{outline:3px solid #822433;outline-offset:2px}
     .ed-hint{position:absolute;z-index:20;left:12px;right:12px;top:12px;margin:auto;max-width:520px;padding:10px 12px;border-radius:10px;background:#211d1dE6;color:#fff;font:13px/1.4 Arial,Helvetica,sans-serif;text-align:center;pointer-events:none}
     .ed-card{position:absolute;z-index:21;width:min(320px,calc(100% - 24px));padding:12px;border-radius:12px;background:#fff;color:#211d1d;border:1px solid #e3ddd7;box-shadow:0 12px 32px #25191433;font:13px/1.4 Arial,Helvetica,sans-serif}
-    .ed-card h3{margin:0 0 6px;font-size:14px}
+    .ed-card h3{margin:0 0 6px;padding-right:40px;font-size:14px}
+    .ed-card .ed-x{position:absolute;top:4px;right:4px;width:40px;height:40px;border:0;border-radius:8px;background:transparent;color:#6f6866;font:600 18px/1 Arial,Helvetica,sans-serif;cursor:pointer}
+    .ed-card .ed-x:hover{background:#f3eeec;color:#211d1d}
+    .ed-card .ed-x:focus-visible{outline:3px solid #822433;outline-offset:-3px}
+    .ed-card input[type=text]{width:100%;min-height:40px;box-sizing:border-box;padding:0 8px;border:1px solid #d6cfcc;border-radius:8px;font:14px Arial,Helvetica,sans-serif}
+    .ed-card input[type=range]{width:100%;height:32px;margin:0;accent-color:#822433}
     .ed-card textarea{width:100%;min-height:84px;box-sizing:border-box;padding:8px;border:1px solid #d6cfcc;border-radius:8px;font:14px/1.4 Arial,Helvetica,sans-serif;resize:vertical}
     .ed-card .ed-row{display:flex;gap:8px;justify-content:flex-end;margin-top:8px;flex-wrap:wrap}
     .ed-card .ed-row button{min-height:40px;padding:0 12px;border-radius:8px;border:1px solid #d6cfcc;background:#fff;font:600 13px Arial,Helvetica,sans-serif;cursor:pointer}
@@ -50,7 +58,11 @@
     .ed-card p{margin:0 0 6px;white-space:pre-wrap;overflow-wrap:anywhere}
     .ed-card label{display:block;margin:6px 0 2px;font-size:12px;color:#6f6866}
     .ed-card select{width:100%;min-height:40px;box-sizing:border-box;padding:0 8px;border:1px solid #d6cfcc;border-radius:8px;background:#fff;font:14px Arial,Helvetica,sans-serif}
-    .ed-card .ed-row button[aria-pressed="true"]{background:#f6e9eb;border-color:#822433;color:#822433}`;
+    .ed-card .ed-row button[aria-pressed="true"]{background:#f6e9eb;border-color:#822433;color:#822433}
+    .ed-fotos{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+    .ed-fotos img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #e3ddd7;background:#f3eeec;cursor:zoom-in}
+    .ed-lightbox{position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:#000d;cursor:zoom-out}
+    .ed-lightbox img{max-width:96%;max-height:96%;border-radius:6px;box-shadow:0 8px 30px #0008}`;
     document.head.appendChild(st);
   }
   function el(tag, cls, text) { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
@@ -61,23 +73,45 @@
     ui.comment = el('button', 'ed-btn', '💬 Commenta'); ui.comment.type = 'button'; ui.comment.setAttribute('aria-pressed', 'false');
     ui.edit = el('button', 'ed-btn', '⤡ Modifica'); ui.edit.type = 'button'; ui.edit.setAttribute('aria-pressed', 'false');
     ui.add = el('button', 'ed-btn', '＋ Aggiungi'); ui.add.type = 'button'; ui.add.hidden = true;
-    ui.bar.append(ui.add, ui.comment, ui.edit);
+    ui.show = el('button', 'ed-btn', '▤ Scheda'); ui.show.type = 'button'; ui.show.hidden = true; ui.show.title = 'Riapri la scheda dell’oggetto selezionato';
+    ui.bar.append(ui.show, ui.add, ui.comment, ui.edit);
     ui.hint = el('div', 'ed-hint'); ui.hint.hidden = true;
     ui.card = el('div', 'ed-card'); ui.card.hidden = true;
     host.append(ui.bar, ui.hint, ui.card);
     ui.comment.addEventListener('click', () => setMode(mode === 'commenta' ? null : 'commenta'));
     ui.edit.addEventListener('click', () => setMode(mode === 'modifica' ? null : 'modifica'));
     ui.add.addEventListener('click', addCard);
+    ui.show.addEventListener('click', showCard);
   }
   function hint(text) { ui.hint.textContent = text || ''; ui.hint.hidden = !text; }
   function closeCard() { ui.card.hidden = true; ui.card.replaceChildren(); }
   function openCard(nodes, x, y) {
     ui.card.replaceChildren(...nodes); ui.card.hidden = false;
+    if (x === 'dock') { // ✕: nasconde la scheda; l'oggetto resta selezionato con le sue maniglie
+      const close = el('button', 'ed-x', '✕'); close.type = 'button'; close.setAttribute('aria-label', sel ? 'Nascondi la scheda (l’oggetto resta selezionato)' : 'Chiudi');
+      close.addEventListener('click', hideCard); ui.card.prepend(close);
+    }
     const r = ui.host.getBoundingClientRect(), w = ui.card.offsetWidth, h = ui.card.offsetHeight;
     if (x === 'dock') { ui.card.style.left = '12px'; ui.card.style.top = Math.max(12, r.height - h - 68) + 'px'; return; } // in basso a sinistra: non copre le maniglie
     const left = Math.max(12, Math.min(r.width - w - 12, (x ?? r.width / 2) - r.left - w / 2));
     const top = Math.max(12, Math.min(r.height - h - 68, (y ?? r.height / 2) - r.top + 16));
     ui.card.style.left = left + 'px'; ui.card.style.top = top + 'px';
+  }
+  function hideCard() {
+    if (!sel) { placing = null; closeCard(); return; }
+    sel.cardHidden = true; closeCard(); ui.show.hidden = false;
+    hint('Scheda nascosta: l’oggetto resta selezionato. «▤ Scheda» o un nuovo tocco sull’oggetto la riapre.');
+  }
+  function showCard() {
+    ui.show.hidden = true; hint('');
+    if (!sel) return;
+    sel.cardHidden = false;
+    if (sel.type === 'edificio') buildingCard(); else infoCard();
+  }
+  // la scheda resta nascosta finché non si riapre; true se va disegnata
+  function cardWanted() {
+    if (sel.cardHidden) { closeCard(); ui.show.hidden = false; return false; }
+    ui.show.hidden = true; return true;
   }
   function button(label, fn, primary) { const b = el('button', primary ? 'ed-primary' : '', label); b.type = 'button'; b.addEventListener('click', fn); return b; }
   function setMode(next) {
@@ -214,9 +248,10 @@
         (e.palme || []).forEach((p, k) => add({ ...b, obj: p, percorso: `${P}.palme.${k}`, label: `Palma ${k + 1}`, fields: ['u', 'v', 'altezza'], lock: { h0: true },
           box: () => ({ u0: p.u - 0.9, u1: p.u + 0.9, v0: p.v - 0.9, v1: p.v + 0.9, h0: 0, h1: Number(p.altezza) || 4 }),
           apply: (o, n) => { p.u = round((n.u0 + n.u1) / 2); p.v = round((n.v0 + n.v1) / 2); p.altezza = round(n.h1); } }));
-        (e.totem || []).forEach((t, k) => add({ ...b, obj: t, percorso: `${P}.totem.${k}`, label: `Totem ${k + 1}`, fields: ['u', 'v', 'altezza'], lock: { h0: true },
-          box: () => { const a = t.orienta === 'v' ? 0.1 : 0.25, b = t.orienta === 'v' ? 0.25 : 0.1; return { u0: t.u - a, u1: t.u + a, v0: t.v - b, v1: t.v + b, h0: 0, h1: Number(t.altezza) || 2.4 }; },
-          apply: (o, n) => { t.u = round((n.u0 + n.u1) / 2); t.v = round((n.v0 + n.v1) / 2); t.altezza = round(n.h1); } }));
+        (e.totem || []).forEach((t, k) => add({ ...b, obj: t, percorso: `${P}.totem.${k}`, label: `Totem ${k + 1}`, fields: ['u', 'v', 'altezza', 'larghezza', 'spessore'], lock: { h0: true },
+          // larghezza: lato lungo (con la scritta), spessore: lato corto; orienta 'v' li gira lungo il vialetto
+          box: () => { const w = (Number(t.larghezza) || 0.5) / 2, d = (Number(t.spessore) || 0.2) / 2, a = t.orienta === 'v' ? d : w, c = t.orienta === 'v' ? w : d; return { u0: t.u - a, u1: t.u + a, v0: t.v - c, v1: t.v + c, h0: 0, h1: Number(t.altezza) || 2.4 }; },
+          apply: (o, n) => { const av = t.orienta === 'v'; t.u = round((n.u0 + n.u1) / 2); t.v = round((n.v0 + n.v1) / 2); t.altezza = round(n.h1); t.larghezza = round(av ? n.v1 - n.v0 : n.u1 - n.u0); t.spessore = round(av ? n.u1 - n.u0 : n.v1 - n.v0); } }));
         const RS = e.rastrelliera;
         if (RS) add({ ...b, obj: RS, percorso: P + '.rastrelliera', label: 'Rastrelliera per bici', fields: ['u', 'v', 'posti'], lock: { h0: true, h1: true },
           box: () => ({ u0: RS.u - 0.02, u1: RS.u + ((Number(RS.posti) || 3) - 1) * 0.6 + 0.02, v0: RS.v - 0.37, v1: RS.v + 0.37, h0: 0, h1: 0.8 }),
@@ -280,8 +315,8 @@
     // primitive aggiunte: scatola nelle coordinate del lato 0
     if (E) (E.primitive || []).forEach((pr) => {
       const poly = pr.forma === 'marciapiede' || (pr.forma === 'aiuola' && pr.tipo !== 'rotonda');
-      const label = pr.forma === 'marciapiede' ? 'Marciapiede' : pr.forma === 'aiuola' ? `Aiuola ${TIPI_AIUOLA[pr.tipo] || ''} (${TERRENI[pr.terreno] || 'prato'})` : `${FORME[pr.forma] || FORME.box} in ${pr.materiale || 'travertino'}`;
-      add({ sorgente: 'aggiunta', frameKey: 'lato0', obj: pr, percorso: pr.id, nome: pr.id, label, fields: ['id', 'forma', 'materiale', 'box', 'poligono', 'base', 'altezza', 'tipo', 'terreno', 'discese', 'raggio'], primitiva: true,
+      const label = pr.forma === 'oggetto' ? nomeOggetto(pr.modello) : pr.forma === 'marciapiede' ? 'Marciapiede' : pr.forma === 'aiuola' ? `Aiuola ${TIPI_AIUOLA[pr.tipo] || ''} (${TERRENI[pr.terreno] || 'prato'})` : `${FORME[pr.forma] || FORME.box} in ${pr.materiale || 'travertino'}`;
+      add({ sorgente: 'aggiunta', frameKey: pr.cornice || 'lato0', obj: pr, percorso: pr.id, nome: pr.id, label, fields: ['id', 'forma', 'materiale', 'box', 'poligono', 'base', 'altezza', 'tipo', 'terreno', 'cordolo', 'discese', 'raggio', 'raggi', 'modello', 'ruota', 'scritta', 'cornice'], primitiva: true,
         lock: pr.forma === 'marciapiede' || pr.forma === 'aiuola' ? { h0: true } : {},
         box: poly ? () => ({ ...bboxPts(pr.poligono), h0: Number(pr.base) || 0, h1: (Number(pr.base) || 0) + (Number(pr.altezza) || 0.15) }) : () => pr.box,
         apply: poly ? (o, n) => { pr.poligono = scalePts(pr.poligono, o, n); pr.altezza = round(Math.max(0.05, n.h1 - n.h0)); } : (o, n) => { pr.box = roundBox(n); },
@@ -289,6 +324,7 @@
     });
     return out;
   }
+  const nomeOggetto = (m) => (C.esterni.catalogo.find(([k]) => k === m) || [m, 'Oggetto'])[1];
   const liveItems = () => items(C.esterni.cfg, C.cortile.M, C.alberi.list);
   const findItem = (key) => liveItems().find((it) => it.key === key) || null;
   function baseValue(it) { const twin = items(base.esterni, base.cortile, base.alberi).find((x) => x.key === it.key); return twin ? clone(twin.get()) : null; }
@@ -370,14 +406,18 @@
     if (p.inst != null) { const s = m.userData.edI0 && m.userData.edI0[p.inst]; if (s) { m.setMatrixAt(p.inst, s); m.instanceMatrix.needsUpdate = true; delete m.userData.edI0[p.inst]; } }
     else if (m.userData.edL0) { m.matrix.copy(m.userData.edL0); m.matrix.decompose(m.position, m.quaternion, m.scale); m.matrixAutoUpdate = true; delete m.userData.edL0; m.matrixWorldNeedsUpdate = true; }
   }
+  let primsFromDb = new Map(); // id della modifica → pezzo deformato
   function reapplyPrims() {
+    const live = new Set(overrides.filter((o) => o.sorgente === 'primitiva' && (!o.stato || o.stato === 'da applicare')).map((o) => o.id));
+    for (const [id, p] of primsFromDb) if (!live.has(id) && p.mesh.parent) primRestore(p);
+    primsFromDb = new Map();
     for (const o of overrides) {
       if (o.sorgente !== 'primitiva' || (o.stato && o.stato !== 'da applicare') || !o.valore || !o.originale) continue;
       const mesh = byPath(o.percorso); if (!mesh || !mesh.isMesh) continue;
       const p = { mesh, inst: o.istanza != null ? o.istanza : null, path: o.percorso, frameKey: o.cornice || frameKeyOf(mesh) };
       if (!frameBy(p.frameKey)) continue;
       const b0 = primBox(p, true); // il pezzo deve essere ancora quello misurato (i dati possono essere cambiati)
-      if (KEYS.every((k) => Math.abs(b0[k] - o.originale[k]) < 0.06)) primApply(p, o.originale, o.valore);
+      if (KEYS.every((k) => Math.abs(b0[k] - o.originale[k]) < 0.06)) { primApply(p, o.originale, o.valore); primsFromDb.set(o.id, p); }
     }
   }
 
@@ -387,7 +427,7 @@
   function deselect() {
     if (!sel) return;
     fx.remove(sel.vis); sel.vis.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
-    sel = null; closeCard();
+    sel = null; closeCard(); ui.show.hidden = true;
   }
   function select(t) {
     deselect();
@@ -418,7 +458,7 @@
     if (sel.type === 'item' && sel.it.verts) sel.it.verts.get().forEach((q, k) => hs.push({ role: 'vertex', k, u: q[0], v: q[1], h: b.h1 }));
     for (const h of hs) {
       const geo = h.role === 'vertex' ? new T.SphereGeometry(0.5, 12, 8) : new T.BoxGeometry(1, 1, 1);
-      const m = new T.Mesh(geo, new T.MeshBasicMaterial({ color: h.role === 'move' ? 0x822433 : h.role === 'vertex' ? 0xf2c84b : 0xffffff, depthTest: false, transparent: true }));
+      const m = new T.Mesh(geo, new T.MeshBasicMaterial({ color: h.role === 'move' ? 0x822433 : h.role === 'vertex' ? (sel.corner === h.k ? 0x2f7de1 : 0xf2c84b) : 0xffffff, depthTest: false, transparent: true }));
       if (h.role !== 'vertex') { const ed = new T.LineSegments(new T.EdgesGeometry(geo), new T.LineBasicMaterial({ color: 0x822433, depthTest: false, transparent: true })); ed.renderOrder = 1000; m.add(ed); }
       m.position.copy(h.role === 'corner' ? toWorld(f, h.pu, h.pv, h.ph) : toWorld(f, h.u, h.v, h.h)); m.renderOrder = 999; m.userData.handle = h;
       sel.vis.add(m); sel.handles.push(m);
@@ -435,14 +475,33 @@
     for (const m of sel.handles) {
       const q = m.position.clone().project(camera); if (q.z > 1) continue;
       const d = Math.hypot(r.left + ((q.x + 1) / 2) * r.width - e.clientX, r.top + ((1 - q.y) / 2) * r.height - e.clientY);
-      if (d < HANDLE_PX && (!best || d < best.d)) best = { m, d };
+      const pri = m.userData.handle.role === 'vertex' ? d - 10 : d; // un vertice sopra l'angolo della scatola vince: si sceglie il suo raggio
+      if (d < HANDLE_PX && (!best || pri < best.d)) best = { m, d: pri };
     }
     return best ? best.m : null;
   }
   const dims = (b) => `${round(b.u1 - b.u0)} × ${round(b.v1 - b.v0)} × ${round(b.h1 - b.h0)} m · u ${b.u0} → ${b.u1} · v ${b.v0} → ${b.v1} · h ${b.h0} → ${b.h1}`;
   const overrideOf = () => sel && overrides.find((o) => o.id === (sel.type === 'item' ? docId(sel.it.key) : primId(sel.p)));
+  // cursore in metri: durante il trascinamento ricostruisce senza ridisegnare la scheda, al rilascio salva
+  function slider(label, value, max, onInput) {
+    const l = el('label'), r = el('input'); r.type = 'range'; r.min = '0'; r.max = String(max); r.step = '0.05'; r.value = String(value);
+    const show = () => { l.textContent = `${label}: ${Number(r.value).toFixed(2)} m`; }; show();
+    r.addEventListener('input', () => { sliding = true; show(); onInput(Number(r.value)); if (!slideTimer) slideTimer = setTimeout(() => { slideTimer = 0; rebuild('aggiunta'); }, 90); });
+    r.addEventListener('change', () => { sliding = false; clearTimeout(slideTimer); slideTimer = 0; if (sel && sel.type === 'item') { saveItem(sel.it); rebuild('aggiunta'); } });
+    return [l, r];
+  }
+  // scatola con le misure naturali dell'oggetto (e la sua rotazione), stesso centro e stessa base
+  function fitNatural(pr) {
+    const m = C.esterni.misura(pr.modello, Number(pr.ruota) || 0) || { du: 1, dv: 1, dh: 1 }, b = pr.box, cu = (b.u0 + b.u1) / 2, cv = (b.v0 + b.v1) / 2;
+    pr.box = roundBox({ u0: cu - m.du / 2, u1: cu + m.du / 2, v0: cv - m.dv / 2, v1: cv + m.dv / 2, h0: b.h0, h1: b.h0 + m.dh });
+  }
+  function turn90(pr) {
+    const b = pr.box, cu = (b.u0 + b.u1) / 2, cv = (b.v0 + b.v1) / 2, du = b.u1 - b.u0, dv = b.v1 - b.v0;
+    pr.ruota = ((Number(pr.ruota) || 0) + 90) % 360;
+    pr.box = roundBox({ u0: cu - dv / 2, u1: cu + dv / 2, v0: cv - du / 2, v1: cv + du / 2, h0: b.h0, h1: b.h1 });
+  }
   function infoCard() {
-    if (!sel) return;
+    if (!sel || !cardWanted()) return;
     const title = sel.type === 'item' ? sel.it.label : `Pezzo: ${describe(sel.p.mesh)}`;
     const nodes = [el('h3', '', title), el('p', 'ed-meta', dims(sel.box)),
       el('p', 'ed-meta', 'Facce: un lato · angoli: due lati · rossa in alto: sposta' + (sel.type === 'item' && sel.it.verts ? ' · gialle: vertici' : '') + (sel.type === 'item' && sel.it.lock.h0 ? ' · la base resta ferma' : '') + '.')];
@@ -452,14 +511,32 @@
       const pr = sel.it.obj, pick = (lbl, opts, val, fn) => { const l = el('label', '', lbl), sl = el('select'); for (const [k, t] of opts) { const o = el('option', '', t); o.value = k; o.selected = k === val; sl.append(o); } sl.addEventListener('change', () => fn(sl.value)); return [l, sl]; };
       const change = (k, v) => { pr[k] = v; saveItem(sel.it); rebuild('aggiunta'); };
       const tool = (k, label) => { const b = button(label, () => { sel.tool = sel.tool === k ? null : k; infoCard(); hint(sel.tool ? TOOL_HINT[k] : ''); }); b.setAttribute('aria-pressed', String(sel.tool === k)); return b; };
-      if (pr.forma === 'aiuola') {
+      const redo = (fn) => () => { fn(pr); saveItem(sel.it); rebuild('aggiunta'); };
+      if (pr.forma === 'oggetto') {
+        nodes.push(...pick('Oggetto', C.esterni.catalogo, pr.modello, (v) => { pr.modello = v; if (v === 'totem' || v === 'scritta') pr.scritta = v === 'totem' ? 'CU014' : 'ISTITUTO'; redo(fitNatural)(); }));
+        if (pr.modello === 'totem' || pr.modello === 'scritta') {
+          const inp = el('input'); inp.type = 'text'; inp.maxLength = pr.modello === 'totem' ? 12 : 24; inp.value = pr.scritta != null ? pr.scritta : pr.modello === 'totem' ? 'CU014' : 'ISTITUTO';
+          inp.addEventListener('change', () => change('scritta', inp.value.trim()));
+          nodes.push(el('label', '', pr.modello === 'totem' ? 'Scritta sulla fascia bianca' : 'Testo della scritta'), inp);
+        }
+        const r2 = el('div', 'ed-row'); r2.append(button('Ruota di 90°', redo(turn90)), button('Misure originali', redo(fitNatural))); nodes.push(r2);
+      } else if (pr.forma === 'aiuola') {
         nodes.push(...pick('Forma dell’aiuola', Object.entries(TIPI_AIUOLA), pr.tipo || 'squadrata', (v) => { reshapeBed(pr, v); saveItem(sel.it); rebuild('aggiunta'); }));
         nodes.push(...pick('Terreno', Object.entries(TERRENI), pr.terreno || 'prato', (v) => change('terreno', v)));
       } else if (pr.forma !== 'marciapiede') {
         nodes.push(...pick('Forma', [['box', FORME.box], ['cilindro', FORME.cilindro], ['sfera', FORME.sfera]], pr.forma || 'box', (v) => change('forma', v)));
         nodes.push(...pick('Materiale', C.esterni.materiali.map((m) => [m, m]), pr.materiale || 'travertino', (v) => change('materiale', v)));
       }
-      if (sel.it.verts) {
+      if (sel.it.verts) { // raggio degli angoli arrotondati: tutti insieme o solo quello scelto toccando la sua maniglia gialla
+        const P = pr.poligono, all = pr.raggio != null ? Number(pr.raggio) : pr.forma === 'marciapiede' ? 0.3 : 0;
+        nodes.push(...slider('Raggio di tutti gli angoli', all, 3, (v) => { pr.raggio = v; delete pr.raggi; }));
+        if (sel.corner != null && sel.corner < P.length) {
+          const own = Array.isArray(pr.raggi) ? pr.raggi[sel.corner] : null;
+          nodes.push(...slider(`Raggio dell’angolo ${sel.corner + 1} (maniglia blu)`, own != null ? own : all, 3, (v) => {
+            if (!Array.isArray(pr.raggi) || pr.raggi.length !== P.length) pr.raggi = P.map((_, i) => (Array.isArray(pr.raggi) && pr.raggi[i] != null ? pr.raggi[i] : null));
+            pr.raggi[sel.corner] = v;
+          }));
+        } else nodes.push(el('p', 'ed-meta', 'Tocca una maniglia gialla (senza trascinarla) per cambiare il raggio di un solo angolo.'));
         const tr = el('div', 'ed-row');
         if (pr.forma === 'marciapiede') tr.append(tool('discesa', 'Discese'));
         tr.append(tool('angolo+', 'Aggiungi angolo'), tool('angolo-', 'Togli angolo'));
@@ -467,6 +544,7 @@
       }
     }
     if (overrideOf()) row.append(button(sel.type === 'item' && !baseValue(sel.it) ? 'Annulla aggiunta' : 'Ripristina originale', restore));
+    if (sel.type === 'item' && !['pavimento', 'portico'].includes(sel.it.percorso)) row.append(button('Duplica', duplicateSel));
     if (sel.type === 'item' && sel.it.remove) row.append(button('Elimina', removeSel));
     row.append(button('Fine', () => deselect(), true));
     nodes.push(row); openCard(nodes, 'dock');
@@ -477,7 +555,7 @@
   // aiuola: squadrata, rotonda (ellisse nella scatola) o con angoli spezzati (smussi di 1/5 del lato corto)
   function reshapeBed(pr, tipo) {
     const b = pr.tipo === 'rotonda' ? pr.box : { ...bboxPts(pr.poligono), h0: Number(pr.base) || 0, h1: (Number(pr.base) || 0) + (Number(pr.altezza) || 0.3) };
-    pr.tipo = tipo;
+    pr.tipo = tipo; delete pr.raggi; // nuovi vertici: i raggi per angolo non valgono più
     if (tipo === 'rotonda') { pr.box = roundBox(b); delete pr.poligono; return; }
     const c = round(Math.min(b.u1 - b.u0, b.v1 - b.v0) / 5);
     pr.poligono = tipo === 'spezzata'
@@ -491,6 +569,8 @@
     if (sel.tool === 'angolo+') {
       const e = nearestEdge(P, q), a = P[e.i], b = P[(e.i + 1) % P.length];
       P.splice(e.i + 1, 0, [round(a[0] + (b[0] - a[0]) * e.t), round(a[1] + (b[1] - a[1]) * e.t)]);
+      if (Array.isArray(pr.raggi)) pr.raggi.splice(e.i + 1, 0, null);
+      sel.corner = null;
       for (const d of pr.discese || []) { if (d.lato > e.i) d.lato += 1; else if (d.lato === e.i) { if (d.t > e.t) { d.lato += 1; d.t = round((d.t - e.t) / (1 - e.t || 1)); } else d.t = round(d.t / (e.t || 1)); } }
       hint('Angolo aggiunto: trascina la nuova maniglia gialla.');
     } else if (sel.tool === 'angolo-') {
@@ -498,6 +578,8 @@
       if (k < 0) { hint('Tocca più vicino a un angolo.'); return; }
       if (P.length <= 3) { hint('Servono almeno tre angoli.'); return; }
       P.splice(k, 1);
+      if (Array.isArray(pr.raggi)) pr.raggi.splice(k, 1);
+      sel.corner = null;
       const n = P.length + 1;
       pr.discese = (pr.discese || []).filter((d) => d.lato !== k && d.lato !== (k - 1 + n) % n).map((d) => Object.assign(d, { lato: d.lato > k ? d.lato - 1 : d.lato }));
       hint('Angolo tolto.');
@@ -508,6 +590,42 @@
       if (k >= 0) { list.splice(k, 1); hint('Discesa tolta.'); } else { list.push({ lato: e.i, t: round(e.t), larghezza: 1.4, profondita: 0.9 }); hint('Discesa aggiunta verso la strada.'); }
     }
     saveItem(sel.it); rebuild('aggiunta');
+  }
+  // «Duplica»: una copia accanto all'originale (spostata della sua larghezza più 50 cm), come oggetto aggiunto nella stessa
+  // cornice; gli oggetti del modello diventano la voce del catalogo corrispondente, le aiuole aiuole, il resto travertino
+  const COPIE = [[/\.panchine\.\d+$/, 'panchina'], [/\.palme\.\d+$/, 'palma'], [/\.totem\.\d+$/, 'totem'], [/\.rastrelliera$/, 'rastrelliera'], [/\.porta$/, 'portone'], [/\.fiori$/, 'fiori'],
+    [/\.ringhiere\.\d+$/, 'ringhiera'], [/^magnolie\.\d+$/, 'magnolia'], [/^serbatoio$/, 'silos'], [/^gabbia$/, 'gabbia'], [/^tombini\.\d+$/, 'tombino'], [/^transenne\.\d+$/, 'transenna']];
+  function copyOf(it, b, shift) {
+    const P = it.percorso, e = it.obj;
+    if (it.sorgente === 'aggiunta') {
+      const pr = clone(e);
+      if (pr.box) pr.box = { ...pr.box, u0: round(pr.box.u0 + shift), u1: round(pr.box.u1 + shift) };
+      if (Array.isArray(pr.poligono)) pr.poligono = pr.poligono.map(([u, v]) => [round(u + shift), v]);
+      return pr;
+    }
+    const model = (COPIE.find(([re]) => re.test(P)) || [])[1] || (it.sorgente === 'esterni' && /^elementi\.\d+$/.test(P) && ['scala', 'palo'].includes(e.tipo) ? e.tipo : null);
+    if (model) {
+      const m = C.esterni.misura(model, 0), turn = !!m && (m.du > m.dv) !== (b.u1 - b.u0 > b.v1 - b.v0); // orientata come l'originale
+      const pr = { forma: 'oggetto', modello: model, ruota: turn ? 90 : 0, box: b };
+      if (model === 'totem') pr.scritta = e.scritta != null ? e.scritta : 'CU014';
+      return pr;
+    }
+    if (/aiuole\.\d+$|\.prato$/.test(P)) return { forma: 'aiuola', tipo: 'squadrata', terreno: it.sorgente === 'cortile' ? 'foglie' : 'prato', cordolo: 0.16, poligono: [[b.u0, b.v0], [b.u1, b.v0], [b.u1, b.v1], [b.u0, b.v1]], base: b.h0, altezza: round(Math.max(0.1, b.h1 - b.h0)) };
+    return { forma: 'box', materiale: it.sorgente === 'cortile' ? 'travertino a lastre' : 'travertino', box: b };
+  }
+  function duplicateSel() {
+    const it = sel.it, b = roundBox(it.box()), shift = round(b.u1 - b.u0 + 0.5), done = (n) => { if (!n) return; saveItem(n); select({ type: 'item', it: n }); hint('Copia creata accanto all’originale: spostala con la maniglia rossa.'); };
+    if (it.sorgente === 'albero') {
+      const t = it.obj, f = frameBy('lato0'), q = toLocal(f, C.project(t.p)), ll = C.toLonLat(toWorld(f, q.u + shift, q.v, 0));
+      const copy = { id: newId('n'), p: [Number(ll[0].toFixed(7)), Number(ll[1].toFixed(7))], r: t.r, g: t.g || null, nuovo: true };
+      C.alberi.list.push(copy); C.alberi.rebuild(); done(findItem('albero:' + copy.id));
+      return;
+    }
+    const pr = Object.assign(copyOf(it, { ...b, u0: round(b.u0 + shift), u1: round(b.u1 + shift) }, shift), { id: newId('p') });
+    delete pr.rimosso;
+    if (it.frameKey === 'lato0') delete pr.cornice; else pr.cornice = it.frameKey;
+    const E = C.esterni.cfg; (E.primitive = E.primitive || []).push(pr);
+    rebuild('aggiunta'); done(findItem('aggiunta:' + pr.id));
   }
   // elimina l'oggetto selezionato (resta nel file con rimosso: true) e offre di annullare
   function removeSel() {
@@ -543,9 +661,12 @@
     hint((sel.type === 'item' ? sel.it.label : 'Pezzo') + ': ' + dims(sel.box));
   }
   function endDrag() {
-    const h = drag.h, changed = h.role === 'vertex' ? !!drag.vNew : KEYS.some((k) => sel.box[k] !== drag.box0[k]);
+    const h = drag.h, changed = h.role === 'vertex' ? !!drag.vNew && JSON.stringify(drag.vNew) !== JSON.stringify(drag.verts) : KEYS.some((k) => sel.box[k] !== drag.box0[k]);
     const box0 = drag.box0, vNew = drag.vNew; drag = null; controls.enabled = true;
-    if (!changed) { infoCard(); return; }
+    if (!changed) {
+      if (h.role === 'vertex' && sel.type === 'item' && sel.it.primitiva) { sel.corner = sel.corner === h.k ? null : h.k; sel.cardHidden = false; sel.box = selBox(); drawSel(); } // la scheda torna col raggio di quell'angolo
+      infoCard(); return;
+    }
     if (sel.type === 'item') {
       const it = sel.it;
       if (h.role === 'vertex') it.verts.set(vNew); else it.apply(box0, sel.box);
@@ -559,16 +680,18 @@
     if (mode !== 'modifica') return;
     deselect();
     const shape = el('select'), mat = el('select'), matLbl = el('label', '', 'Materiale'), tipo = el('select'), tipoLbl = el('label', '', 'Forma dell’aiuola'), terr = el('select'), terrLbl = el('label', '', 'Terreno');
+    const obj = el('select'), objLbl = el('label', '', 'Quale oggetto');
     const fill = (sl, entries) => { for (const [k, t] of entries) { const o = el('option', '', t); o.value = k; sl.append(o); } };
-    fill(shape, Object.entries(FORME)); fill(mat, C.esterni.materiali.map((m) => [m, m])); fill(tipo, Object.entries(TIPI_AIUOLA)); fill(terr, Object.entries(TERRENI));
-    const sync = () => { const f = shape.value, solid = ['box', 'cilindro', 'sfera'].includes(f); mat.hidden = matLbl.hidden = !solid; tipo.hidden = tipoLbl.hidden = terr.hidden = terrLbl.hidden = f !== 'aiuola'; };
+    fill(shape, Object.entries(FORME)); fill(mat, C.esterni.materiali.map((m) => [m, m])); fill(tipo, Object.entries(TIPI_AIUOLA)); fill(terr, Object.entries(TERRENI)); fill(obj, C.esterni.catalogo);
+    const sync = () => { const f = shape.value, solid = ['box', 'cilindro', 'sfera'].includes(f); mat.hidden = matLbl.hidden = !solid; tipo.hidden = tipoLbl.hidden = terr.hidden = terrLbl.hidden = f !== 'aiuola'; obj.hidden = objLbl.hidden = f !== 'oggetto'; };
     shape.addEventListener('change', sync); sync();
     const row = el('div', 'ed-row');
     row.append(button('Annulla', () => { placing = null; closeCard(); setMode('modifica'); }), button('Tocca dove metterlo', () => {
-      placing = { forma: shape.value, materiale: mat.value, tipo: tipo.value, terreno: terr.value }; closeCard();
-      hint('Tocca il punto della scena dove mettere: ' + FORME[placing.forma].toLowerCase() + (['box', 'cilindro', 'sfera'].includes(placing.forma) ? ' in ' + placing.materiale : '') + '.');
+      placing = { forma: shape.value, materiale: mat.value, tipo: tipo.value, terreno: terr.value, modello: obj.value }; closeCard();
+      const what = placing.forma === 'oggetto' ? nomeOggetto(placing.modello) : FORME[placing.forma] + (['box', 'cilindro', 'sfera'].includes(placing.forma) ? ' in ' + placing.materiale : '');
+      hint('Tocca il punto della scena dove mettere: ' + what.toLowerCase() + '.');
     }, true));
-    openCard([el('h3', '', 'Aggiungi'), el('label', '', 'Oggetto'), shape, matLbl, mat, tipoLbl, tipo, terrLbl, terr, row], 'dock');
+    openCard([el('h3', '', 'Aggiungi'), el('label', '', 'Cosa aggiungere'), shape, objLbl, obj, matLbl, mat, tipoLbl, tipo, terrLbl, terr, row], 'dock');
   }
   const newId = (p) => p + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
   function placeAt(hit) {
@@ -580,10 +703,16 @@
       const it = findItem('albero:' + t.id); if (it) { saveItem(it); select({ type: 'item', it }); }
       return;
     }
-    const q = toLocal(frameBy('lato0'), hit.point), u = snap(q.u), v = snap(q.v), h = round(q.h);
+    const q = toLocal(frameBy('lato0'), hit.point), u = snap(q.u), v = snap(q.v), h = rootOf(hit.object) ? round(q.h) : 0; // sul terreno: a quota 0, non sotto il piano
     let pr = { id: newId('p'), forma: what.forma, materiale: what.materiale, box: { u0: round(u - 0.5), u1: round(u + 0.5), v0: round(v - 0.5), v1: round(v + 0.5), h0: h, h1: round(h + 1) } };
     if (what.forma === 'marciapiede') pr = { id: pr.id, forma: 'marciapiede', poligono: [[u - 3, v - 0.9], [u + 3, v - 0.9], [u + 3, v + 0.9], [u - 3, v + 0.9]].map(([a, b]) => [round(a), round(b)]), base: h, altezza: 0.15, raggio: 0.3, discese: [] };
-    if (what.forma === 'aiuola') { pr = { id: pr.id, forma: 'aiuola', terreno: what.terreno || 'prato', cordolo: 0.15, poligono: [[u - 1.5, v - 1], [u + 1.5, v - 1], [u + 1.5, v + 1], [u - 1.5, v + 1]].map(([a, b]) => [round(a), round(b)]), base: h, altezza: 0.3 }; reshapeBed(pr, what.tipo || 'squadrata'); }
+    if (what.forma === 'aiuola') { pr = { id: pr.id, forma: 'aiuola', terreno: what.terreno || 'prato', cordolo: 0.16, poligono: [[u - 1.5, v - 1], [u + 1.5, v - 1], [u + 1.5, v + 1], [u - 1.5, v + 1]].map(([a, b]) => [round(a), round(b)]), base: h, altezza: 0.42 }; reshapeBed(pr, what.tipo || 'squadrata'); }
+    if (what.forma === 'oggetto') { // copia di un oggetto del modello con le sue misure naturali, appoggiata dove hai toccato
+      pr = { id: pr.id, forma: 'oggetto', modello: what.modello, ruota: 0, box: { u0: u, u1: u, v0: v, v1: v, h0: h, h1: h } };
+      if (what.modello === 'totem') pr.scritta = 'CU014';
+      if (what.modello === 'scritta') pr.scritta = 'ISTITUTO';
+      fitNatural(pr);
+    }
     const E = C.esterni.cfg; (E.primitive = E.primitive || []).push(pr); C.esterni.rebuild();
     const it = findItem('aggiunta:' + pr.id); if (it) { saveItem(it); select({ type: 'item', it }); }
   }
@@ -682,7 +811,7 @@
     fx.add(sel.vis); buildingCard();
   }
   function buildingCard() {
-    if (!sel || sel.type !== 'edificio') return;
+    if (!sel || sel.type !== 'edificio' || !cardWanted()) return;
     const code = sel.code, st = facadeOf(code), sl = el('select');
     for (const k of C.facciate.nomi) { const o = el('option', '', TEXTURE[k] || k); o.value = k; o.selected = k === C.facciate.nomeDi(code); sl.append(o); }
     sl.addEventListener('change', () => { st.facciata = sl.value; applyFacade(code); saveFacade(code); });
@@ -699,10 +828,18 @@
 
   /* ---------- salvataggio ---------- */
   const docId = (key) => String(key).replace(/[^A-Za-z0-9_\-.~:@+]/g, '_');
+  // una scrittura alla volta per documento: un «Ripristina» subito dopo un trascinamento non deve arrivare prima del salvataggio
+  const writes = new Map();
+  function queued(id, fn) { const p = (writes.get(id) || Promise.resolve()).catch(() => {}).then(fn); writes.set(id, p); return p; }
   async function saveDoc(id, data) {
     if (!db) { hint('Modifica applicata solo su questo schermo: per salvarla apri la pagina da claude.ai.'); return; }
-    try { await db.collection('modifiche').doc(id).set(data); hint('Modifica salvata: ' + data.oggetto + '. Claude la vede e la riporta nei file.'); }
+    try { await queued(id, () => db.collection('modifiche').doc(id).set(data)); hint('Modifica salvata: ' + data.oggetto + '. Claude la vede e la riporta nei file.'); }
     catch (e) { hint('Non sono riuscito a salvare (' + ((e && e.code) || 'errore') + ').'); }
+  }
+  async function dropDoc(id) {
+    if (!db) return;
+    try { await queued(id, () => db.collection('modifiche').doc(id).delete()); hint('Ripristinato com’era nel file.'); }
+    catch (e) { hint('Non sono riuscito a ripristinare (' + ((e && e.code) || 'errore') + '): riprova.'); }
   }
   function saveItem(it) {
     return saveDoc(docId(it.key), { sorgente: it.sorgente, percorso: it.percorso, nome: it.nome || '', oggetto: it.label, tipo: 'oggetto', valore: it.get(), originale: baseValue(it), scatola: roundBox(it.box()), stato: 'da applicare', autore: myId, aggiornato: new Date().toISOString() });
@@ -718,10 +855,10 @@
       const it = sel.it, orig = baseValue(it);
       if (!orig) { if (it.remove) { it.remove(); rebuild(it.sorgente); } } // aggiunto sul posto: annullare vuol dire toglierlo
       else { it.set(orig); rebuild(it.sorgente); }
-      if (db) { try { await db.collection('modifiche').doc(docId(it.key)).delete(); } catch (_) { /* resta in elenco */ } }
+      await dropDoc(docId(it.key));
     } else {
       primRestore(sel.p); sel.box = primBox(sel.p); drawSel();
-      if (db) { try { await db.collection('modifiche').doc(primId(sel.p)).delete(); } catch (_) { /* resta in elenco */ } }
+      await dropDoc(primId(sel.p));
     }
     infoCard();
   }
@@ -729,18 +866,23 @@
     if (!sel || !boxed()) return;
     if (sel.type === 'item') { const it = findItem(sel.it.key); if (!it) { deselect(); return; } sel.it = it; }
     else if (!rootOf(sel.p.mesh) || !scene.getObjectById(sel.p.mesh.id)) { deselect(); return; }
-    if (!drag) { sel.box = selBox(); drawSel(); infoCard(); }
+    if (!drag) { sel.box = selBox(); drawSel(); if (!sliding) infoCard(); } // il cursore del raggio non va ridisegnato mentre lo trascini
   }
   function rebuild(sorgente) {
-    const r = sorgente === 'cortile' ? C.cortile.rebuild() : sorgente === 'albero' ? C.alberi.rebuild() : C.esterni.rebuild();
+    const court = sorgente === 'aggiunta' && (C.esterni.cfg.primitive || []).some((p) => p.cornice === 'cortile'); // aggiunte nel cortile
+    const r = sorgente === 'cortile' ? C.cortile.rebuild() : sorgente === 'albero' ? C.alberi.rebuild() : court ? Promise.all([C.esterni.rebuild(), C.cortile.rebuild()]) : C.esterni.rebuild();
     Promise.resolve(r).then(() => { reapplyPrims(); refreshSel(); });
   }
+  // chiavi degli oggetti cambiati dal db: se la loro modifica sparisce (ripristinata, scartata, cancellata da un altro
+  // schermo o da Claude) tornano subito come nel file, senza ricaricare la pagina
+  let fromDb = new Set();
   function applyOverrides() {
-    const touched = new Set();
+    const touched = new Set(), live = new Set();
     for (const o of overrides) {
       if ((o.stato && o.stato !== 'da applicare') || o.sorgente === 'primitiva') continue;
       if (o.sorgente === 'edificio') { applyFacadeDoc(o); continue; }
       if (!o.valore) continue;
+      live.add(`${o.sorgente}:${o.percorso}`);
       let it = findItem(`${o.sorgente}:${o.percorso}`);
       if (!it && o.sorgente === 'aggiunta') { const E = C.esterni.cfg; (E.primitive = E.primitive || []).push(Object.assign({ id: o.percorso }, clone(o.valore))); touched.add('aggiunta'); continue; }
       if (!it && o.sorgente === 'albero' && C.alberi.list) { C.alberi.list.push(Object.assign({ id: o.percorso }, clone(o.valore))); touched.add('albero'); continue; }
@@ -748,6 +890,16 @@
       if (JSON.stringify(it.get()) === JSON.stringify(o.valore)) continue;
       it.set(o.valore); touched.add(it.sorgente);
     }
+    for (const key of fromDb) {
+      if (live.has(key) || (drag && sel && sel.it && sel.it.key === key)) continue;
+      const it = findItem(key); if (!it) continue;
+      const orig = baseValue(it);
+      if (orig) it.set(orig);
+      else if (it.sorgente === 'aggiunta') { const E = C.esterni.cfg; E.primitive = (E.primitive || []).filter((p) => p !== it.obj); }
+      else if (it.sorgente === 'albero') { const L = C.alberi.list; const k = L.indexOf(it.obj); if (k >= 0) L.splice(k, 1); }
+      touched.add(it.sorgente);
+    }
+    fromDb = live;
     if (touched.size) for (const s of touched) rebuild(s);
     else { reapplyPrims(); refreshSel(); }
   }
@@ -770,19 +922,66 @@
       const p = c.data.punto; s.position.set(p.x, p.y, p.z); s.userData.comment = c; pins.add(s);
     });
   }
+  // foto: ridotte a 2048 px e salvate in JPEG (anche le HEIC dell'iPad); se il browser non le decodifica, il file così com'è
+  async function photoBlob(file) {
+    try {
+      const bmp = await createImageBitmap(file), k = Math.min(1, 2048 / Math.max(bmp.width, bmp.height)), c = document.createElement('canvas');
+      c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+      c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height); if (bmp.close) bmp.close();
+      const b = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.86));
+      if (b) return b;
+    } catch (_) { /* non decodificabile qui */ }
+    return file;
+  }
+  async function uploadPhotos(files) {
+    const ids = [];
+    for (const [i, f] of files.entries()) { hint(`Carico la foto ${i + 1} di ${files.length}…`); ids.push((await assets.upload(await photoBlob(f))).id); }
+    return ids;
+  }
+  const photoError = (err) => ({ too_large: 'foto troppo grande', unsupported_type: 'formato non supportato', quota_or_state: 'spazio dell’artifact esaurito', rate_limited: 'troppi caricamenti, riprova tra poco', not_granted: 'serve il permesso di modifica' }[err && err.code] || (err && err.code) || 'errore');
+  // scelta delle foto (sull'iPad: fotocamera o libreria); onPick riceve i file scelti
+  function photoInput(onPick) {
+    const input = el('input'); input.type = 'file'; input.accept = 'image/*'; input.multiple = true; input.hidden = true;
+    input.addEventListener('change', () => { const files = [...input.files]; input.value = ''; if (files.length) onPick(files); });
+    return input;
+  }
+  function lightbox(src) {
+    const box = el('div', 'ed-lightbox'), im = el('img'); im.src = src; im.alt = 'Foto del commento, ingrandita';
+    box.append(im); box.addEventListener('click', () => box.remove()); ui.host.append(box);
+  }
+  function thumbs(srcs) {
+    const g = el('div', 'ed-fotos');
+    for (const src of srcs) {
+      const im = el('img'); im.src = src; im.alt = 'Foto allegata'; im.loading = 'lazy';
+      im.addEventListener('click', () => lightbox(src));
+      im.addEventListener('error', () => im.replaceWith(el('span', 'ed-meta', 'foto non disponibile')));
+      g.append(im);
+    }
+    return g;
+  }
   function newComment(hit, e) {
     const ta = el('textarea'); ta.placeholder = 'Cosa va cambiato qui?'; ta.setAttribute('aria-label', 'Testo del commento');
     const meta = el('p', 'ed-meta', describe(hit.object));
-    const row = el('div', 'ed-row');
+    const row = el('div', 'ed-row'), files = [], shots = el('div');
+    const nodes = [el('h3', '', 'Nuovo commento'), meta, ta, shots];
+    if (assets) {
+      const input = photoInput((fs) => { files.push(...fs); shots.replaceChildren(thumbs(files.map((f) => URL.createObjectURL(f)))); });
+      nodes.push(input); row.append(button('📷 Foto', () => input.click()));
+    }
     row.append(button('Annulla', closeCard), button('Salva', async () => {
-      const testo = ta.value.trim(); if (!testo) { ta.focus(); return; }
+      const testo = ta.value.trim(); if (!testo && !files.length) { ta.focus(); return; }
       if (!db) { hint('Per salvare i commenti apri la pagina da claude.ai.'); return; }
       if (saving) return; saving = true;
-      try { await db.collection('segnalazioni').add(commentDoc(hit, testo)); closeCard(); hint('Commento salvato. Claude lo legge con le coordinate.'); }
-      catch (err) { hint('Non sono riuscito a salvare (' + (err && err.code || 'errore') + ').'); }
+      try {
+        let foto = [];
+        if (files.length) { try { foto = await uploadPhotos(files); } catch (err) { hint('Foto non caricate (' + photoError(err) + '): il commento non è stato salvato.'); return; } }
+        const doc = commentDoc(hit, testo); if (foto.length) doc.foto = foto;
+        await db.collection('segnalazioni').add(doc); closeCard(); hint('Commento salvato' + (foto.length ? ` con ${foto.length} foto` : '') + '. Claude lo legge con le coordinate.');
+      } catch (err) { hint('Non sono riuscito a salvare (' + (err && err.code || 'errore') + ').'); }
       finally { saving = false; }
     }, true));
-    openCard([el('h3', '', 'Nuovo commento'), meta, ta, row], e.clientX, e.clientY);
+    nodes.push(row);
+    openCard(nodes, e.clientX, e.clientY);
     setTimeout(() => ta.focus(), 30);
   }
   function commentDoc(hit, testo) {
@@ -804,7 +1003,18 @@
   }
   function showComment(c, e) {
     const d = c.data, nodes = [el('h3', '', 'Commento'), el('p', '', d.testo || ''), el('p', 'ed-meta', `${d.oggetto || ''}${d.creato ? ' · ' + new Date(d.creato).toLocaleString('it-IT') : ''}`)];
+    const foto = Array.isArray(d.foto) ? d.foto.filter((id) => /^[0-9a-f]{32}$/.test(id)) : [];
+    if (foto.length) nodes.push(thumbs(foto.map((id) => '/_blob/' + id)));
     const row = el('div', 'ed-row');
+    if (db && assets) { // altre foto su un commento già salvato
+      const input = photoInput(async (fs) => {
+        if (saving) return; saving = true;
+        try { const ids = await uploadPhotos(fs), all = foto.concat(ids); await db.collection('segnalazioni').doc(c.id).update({ foto: all }); c.data = Object.assign({}, d, { foto: all }); hint(`${ids.length} foto aggiunte al commento.`); showComment(c, e); }
+        catch (err) { hint('Foto non aggiunte (' + photoError(err) + ').'); }
+        finally { saving = false; }
+      });
+      nodes.push(input); row.append(button('📷 Foto', () => input.click()));
+    }
     if (db) {
       row.append(button('Elimina', async () => { try { await db.collection('segnalazioni').doc(c.id).delete(); closeCard(); } catch (_) { hint('Non riesco a eliminarlo.'); } }));
       row.append(button('Fatto', async () => { try { await db.collection('segnalazioni').doc(c.id).update({ stato: 'fatta', chiuso: new Date().toISOString() }); closeCard(); } catch (_) { hint('Non riesco ad aggiornarlo.'); } }));
@@ -873,8 +1083,8 @@
     const cl = window.claude;
     if (!cl || typeof cl.use !== 'function') return;
     try {
-      const [d, u] = await Promise.all([cl.use('db'), cl.use('user')]);
-      db = d; myId = u ? await u.id() : null;
+      const [d, u, a] = await Promise.all([cl.use('db'), cl.use('user'), cl.use('assets').catch(() => null)]);
+      db = d; assets = a; myId = u ? await u.id() : null; // assets: null per chi non può modificare l'artifact (niente tasto foto)
     } catch (_) { db = null; }
     if (!db) return;
     db.collection('segnalazioni').onSnapshot((snap) => { comments = snap.docs.filter((x) => x.exists).map((x) => ({ id: x.id, data: x.data() })).sort((a, b) => String(a.data.creato).localeCompare(String(b.data.creato))); drawPins(); }, () => {});

@@ -2200,16 +2200,53 @@
     const m = new THREE.Mesh(g, material); m.castShadow = true; m.receiveShadow = true;
     return m;
   }
+  // vite americana / edera: foglie verdi fitte in più toni, a lobi, su fondo trasparente; si ripete senza giunte (ogni foglia vicina al bordo è disegnata anche dall'altra parte)
   function leafTex() {
-    return canvasTex(256, 256, (ctx, w) => {
+    const t = canvasTex(256, 256, (ctx, w) => {
       ctx.clearRect(0, 0, w, w);
-      for (let i = 0; i < 520; i += 1) { // vite americana in ottobre: verde con foglie rosse e arancio
-        const t = hash01(i, 51);
-        ctx.fillStyle = t > 0.72 ? '#9e2a22' : t > 0.55 ? '#c4552b' : t > 0.3 ? '#3d5a2a' : '#2c4421';
-        ctx.save(); ctx.translate(hash01(i, 52) * w, hash01(i, 53) * w); ctx.rotate(hash01(i, 54) * Math.PI * 2);
-        ctx.beginPath(); ctx.moveTo(0, -13); ctx.lineTo(11, -2); ctx.lineTo(6, 11); ctx.lineTo(-6, 11); ctx.lineTo(-11, -2); ctx.closePath(); ctx.fill(); ctx.restore();
+      const tones = ['#2b5527', '#386a2f', '#467a37', '#234a22', '#52853f', '#305f2c', '#6a9a48', '#5d8f3f'];
+      for (let i = 0; i < 640; i += 1) {
+        const x = hash01(i, 52) * w, y = hash01(i, 53) * w, ang = hash01(i, 54) * Math.PI * 2, r = 11 + 7 * hash01(i, 55);
+        ctx.fillStyle = tones[Math.floor(hash01(i, 51) * tones.length)];
+        for (const dx of [-w, 0, w]) for (const dy of [-w, 0, w]) {
+          if (x + dx < -r || x + dx > w + r || y + dy < -r || y + dy > w + r) continue;
+          ctx.save(); ctx.translate(x + dx, y + dy); ctx.rotate(ang);
+          ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(r * 0.55, -r * 0.35); ctx.lineTo(r, 0); ctx.lineTo(r * 0.6, r * 0.5); ctx.lineTo(0, r * 0.9); ctx.lineTo(-r * 0.6, r * 0.5); ctx.lineTo(-r, 0); ctx.lineTo(-r * 0.55, -r * 0.35); ctx.closePath(); ctx.fill(); ctx.restore();
+        }
       }
-    }, 3, 3, true);
+    }, 1, 1, true);
+    t.encoding = THREE.sRGBEncoding;
+    return t;
+  }
+  // lastre irregolari di pietra grigia (opus incertum): celle di Voronoi con giunti scuri, senza giunte ai bordi della texture
+  function opusTex() {
+    return canvasTex(256, 256, (ctx, w) => {
+      const N = 7, seeds = [];
+      for (let j = 0; j < N; j += 1) for (let i = 0; i < N; i += 1) seeds.push([(i + 0.15 + 0.7 * hash01(j * N + i, 61)) * w / N, (j + 0.15 + 0.7 * hash01(j * N + i, 62)) * w / N, 112 + 46 * hash01(j * N + i, 63)]);
+      const img = ctx.createImageData(w, w);
+      for (let y = 0; y < w; y += 1) for (let x = 0; x < w; x += 1) {
+        let d1 = 1e9, d2 = 1e9, k = 0;
+        for (let s = 0; s < seeds.length; s += 1) {
+          let dx = Math.abs(x - seeds[s][0]), dy = Math.abs(y - seeds[s][1]);
+          if (dx > w / 2) dx = w - dx;
+          if (dy > w / 2) dy = w - dy;
+          const d = Math.hypot(dx, dy);
+          if (d < d1) { d2 = d1; d1 = d; k = s; } else if (d < d2) d2 = d;
+        }
+        const joint = d2 - d1 < 2.6, g = joint ? 70 : seeds[k][2] + 8 * Math.sin(x * 0.31 + y * 0.17) * hash01(x + y * w, 65), o = (y * w + x) * 4;
+        img.data[o] = g; img.data[o + 1] = g + (joint ? 0 : 2); img.data[o + 2] = g + (joint ? 1 : 5); img.data[o + 3] = 255;
+      }
+      ctx.putImageData(img, 0, 0);
+    });
+  }
+  // aiuola di begonie: fogliame scuro e fiori fitti del colore dato
+  function begoniaMat(kind) {
+    const C = { rosse: ['#d4301f', '#e8512b', '#b8221a'], rosa: ['#e8789c', '#d94f7e', '#f19bb5'], bianche: ['#f4f4ef', '#e6e8e0', '#ffffff'] }[kind] || ['#d4301f', '#e8512b', '#b8221a'];
+    return courtOnce('begonie|' + kind, () => new THREE.MeshStandardMaterial({ roughness: 1, map: canvasTex(128, 128, (ctx, w) => {
+      ctx.fillStyle = '#3a2b20'; ctx.fillRect(0, 0, w, w);
+      for (let i = 0; i < 110; i += 1) { ctx.fillStyle = hash01(i, 71) > 0.5 ? '#2f5a2c' : '#3d6a33'; ctx.beginPath(); ctx.arc(hash01(i, 72) * w, hash01(i, 73) * w, 6 + 5 * hash01(i, 74), 0, Math.PI * 2); ctx.fill(); }
+      for (let i = 0; i < 260; i += 1) { ctx.fillStyle = C[Math.floor(hash01(i, 75) * C.length)]; ctx.beginPath(); ctx.arc(hash01(i, 76) * w, hash01(i, 77) * w, 3 + 4 * hash01(i, 78), 0, Math.PI * 2); ctx.fill(); }
+    }, 0.5, 0.5) }));
   }
   function addFireStair(group, uc, floors, mat, opts = {}) {
     // scala metallica aperta (rilievo Scaniverse del 16/10/2026, facciata ovest): rampe a forbice parallele al muro,
@@ -2358,21 +2395,96 @@
     part(new THREE.SphereGeometry(0.09, 12, 8), H + 0.05);
     return pv;
   }
-  // pergolato: archi in ferro scuro coperti dalla vite americana
-  function addPergola(g, el) {
-    const [u0, u1] = el.u, [v0, v1] = el.v, r = (v1 - v0) / 2, vm = (v0 + v1) / 2, base = Number(el.imposta) || 1.4;
-    const iron = plainMat(0x3a3f3a, 0.6, 0.5);
-    for (let u = u0; u <= u1 + 0.01; u += 2.5) {
-      const arch = new THREE.Mesh(new THREE.TorusGeometry(r, 0.04, 6, 24, Math.PI), iron);
-      arch.rotation.y = Math.PI / 2; arch.position.set(u, base, -vm); g.add(arch);
-      for (const v of [v0, v1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.06, base, 0.06), iron); p.position.set(u, base / 2, -v); g.add(p); }
+  // asta cilindrica fra due punti locali (x, y, z)
+  function rodMesh(pa, pb, r, mat) {
+    const a = new THREE.Vector3(...pa), b = new THREE.Vector3(...pb), d = b.clone().sub(a);
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, d.length(), 6), mat);
+    m.position.copy(a).add(b).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); m.castShadow = true;
+    return m;
+  }
+  // galleria a sezione "a stadio" (pareti verticali + semicerchio) lungo u: la superficie sporge di off dal profilo di raggio R,
+  // con un'ondulazione lenta per farla sembrare una siepe; aperta alle estremità
+  function tunnelGeom(u0, u1, vm, R, imp, off, wob, seed) {
+    const prof = [], nW = 3, nA = 20;
+    for (let k = 0; k <= nW; k += 1) prof.push([-R, imp * k / nW, -1, 0]);
+    for (let k = 1; k < nA; k += 1) { const th = Math.PI - Math.PI * k / nA; prof.push([R * Math.cos(th), imp + R * Math.sin(th), Math.cos(th), Math.sin(th)]); }
+    for (let k = nW; k >= 0; k -= 1) prof.push([R, imp * k / nW, 1, 0]);
+    const nu = Math.max(2, Math.round((u1 - u0) / 0.45)), pos = [], uv = [], idx = [], arc = [0];
+    for (let j = 1; j < prof.length; j += 1) arc.push(arc[j - 1] + Math.hypot(prof[j][0] - prof[j - 1][0], prof[j][1] - prof[j - 1][1]));
+    for (let i = 0; i <= nu; i += 1) {
+      const u = u0 + (u1 - u0) * i / nu;
+      for (let j = 0; j < prof.length; j += 1) {
+        const [pv, ph, nv, nh] = prof[j], e = off + wob * (Math.sin(u * 1.9 + j * 0.7 + seed) + 0.6 * Math.sin(u * 0.8 - j * 1.3 + seed * 2));
+        pos.push(u, Math.max(0.02, ph + nh * e), -(vm + pv + nv * e));
+        uv.push(u / 1.3 + seed, arc[j] / 1.3);
+      }
     }
-    const leaves = new THREE.MeshStandardMaterial({ map: leafTex(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.8 });
-    leaves.map.repeat.set((u1 - u0) / 4, Math.PI * r / 4);
-    const canopy = new THREE.Mesh(new THREE.CylinderGeometry(r + 0.08, r + 0.08, u1 - u0, 24, 1, true, 0, Math.PI), leaves);
-    canopy.rotation.z = Math.PI / 2; canopy.position.set((u0 + u1) / 2, base, -vm); canopy.castShadow = true; g.add(canopy);
-    const sideMat = leaves.clone(); sideMat.map = leafTex(); sideMat.map.repeat.set((u1 - u0) / 4, base / 4);
-    for (const v of [v0, v1]) { const s = new THREE.Mesh(new THREE.PlaneGeometry(u1 - u0, base * 0.8), sideMat); s.position.set((u0 + u1) / 2, base * 0.6, -v); g.add(s); }
+    for (let i = 0; i < nu; i += 1) for (let j = 0; j < prof.length - 1; j += 1) {
+      const a = i * prof.length + j, b = (i + 1) * prof.length + j, c = a + 1, d = b + 1;
+      idx.push(a, b, c, c, b, d);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+    return g;
+  }
+  // pergolato come nelle foto Street View del 2015: galleria di archi a tutto sesto in tondino di ferro scuro, uno ogni `passo`,
+  // sui cordoli di travertino ai due lati di un vialetto a lastre irregolari; vite fitta su tetto e fianchi (da fuori una siepe
+  // lunga e arrotondata, aperta ad arco alle estremità, l'interno resta percorribile); verso l'edificio una ringhiera in ferro a
+  // montanti con saettoni, verso la strada prato con aiuole di begonie, cordolo di travertino e lampioni verdi.
+  // u, v: arco e vialetto (da asse a asse dei cordoli); altezza: cima dell'arco; prato: [v verso l'edificio, v verso la strada]
+  function addPergola(g, el) {
+    const [u0, u1] = el.u, [v0, v1] = el.v, R = (v1 - v0) / 2, vm = (v0 + v1) / 2, H = Number(el.altezza) || 3.0, imp = Math.max(0.5, H - R);
+    const passo = Math.max(0.8, Number(el.passo) || 1.8), trav = travPhoto(1.2);
+    const iron = courtOnce('pergolato|ferro', () => plainMat(0x34383a, 0.55, 0.55));
+    // vialetto e cordoli
+    const stone = courtOnce('pergolato|lastre', () => { const t = opusTex(); t.repeat.set(1 / 2.4, 1 / 2.4); return new THREE.MeshStandardMaterial({ map: t, roughness: 0.95 }); });
+    const path = localSlab(rectPts(u0 - 0.2, u1 + 0.2, v0 + 0.14, v1 - 0.14), 0, 0.04, stone); path.castShadow = false; g.add(path);
+    for (const v of [v0, v1]) g.add(localSlab(rectPts(u0 - 0.2, u1 + 0.2, v - 0.14, v + 0.14), 0, 0.2, trav));
+    // archi e correnti
+    const n = Math.max(1, Math.round((u1 - u0) / passo));
+    for (let k = 0; k <= n; k += 1) {
+      const u = u0 + (u1 - u0) * k / n;
+      const arch = new THREE.Mesh(new THREE.TorusGeometry(R, 0.022, 5, 28, Math.PI), iron);
+      arch.rotation.y = Math.PI / 2; arch.position.set(u, imp, -vm); arch.castShadow = true; g.add(arch);
+      for (const v of [v0, v1]) g.add(rodMesh([u, 0.2, -v], [u, imp, -v], 0.022, iron));
+    }
+    for (const a of [Math.PI / 2, Math.PI / 4, 3 * Math.PI / 4]) g.add(rodMesh([u0, imp + R * Math.sin(a), -(vm + R * Math.cos(a))], [u1, imp + R * Math.sin(a), -(vm + R * Math.cos(a))], 0.012, iron));
+    // vite: due gusci di foglie (esterno fitto, interno più rado) e un fondo verde scuro visibile solo da fuori
+    const leaves = courtOnce('pergolato|foglie', () => new THREE.MeshStandardMaterial({ map: leafTex(), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.85 }));
+    const back = courtOnce('pergolato|fondo', () => new THREE.MeshStandardMaterial({ color: new THREE.Color(0x1f3d1c).convertSRGBToLinear(), roughness: 1, side: THREE.FrontSide }));
+    for (const [off, wob, seed, mat] of [[0.32, 0.07, 0.3, leaves], [0.2, 0.04, 0.1, back], [0.1, 0.02, 0.6, leaves]]) {
+      const m = new THREE.Mesh(tunnelGeom(u0 - 0.1, u1 + 0.1, vm, R, imp, off, wob, seed), mat); m.castShadow = mat === leaves; m.receiveShadow = true; g.add(m);
+    }
+    // ringhiera verso l'edificio: montanti, tre correnti tondi e saettoni diagonali verso la strada
+    const RG = el.ringhiera;
+    if (RG && Number.isFinite(Number(RG.v))) {
+      const rv = Number(RG.v), RH = Number(RG.altezza) || 1.0, step = Number(RG.passo) || 3.0, ra = u0 - 1.5, rb = u1 + 1.5, nr = Math.max(1, Math.round((rb - ra) / step));
+      for (let k = 0; k <= nr; k += 1) {
+        const u = ra + (rb - ra) * k / nr;
+        g.add(rodMesh([u, 0, -rv], [u, RH, -rv], 0.022, iron));
+        g.add(rodMesh([u, RH * 0.8, -rv], [u, 0, -(rv + 0.9)], 0.014, iron)); // saettone
+      }
+      for (const h of [0.3, 0.65, RH]) g.add(rodMesh([ra, h, -rv], [rb, h, -rv], 0.013, iron));
+    }
+    // prato verso la strada (e verso l'edificio), cordolo di travertino sul lato strada, aiuole di begonie
+    if (Array.isArray(el.prato)) {
+      const [pa, pb] = el.prato, lawn = courtOnce('pergolato|prato', () => stdMat({ color: 0x5f8a3e, roughness: 1 }));
+      const l = localSlab(rectPts(u0 - 1.5, u1 + 1.5, pa, pb), 0, 0.035, lawn); l.castShadow = false; g.add(l);
+      g.add(localSlab(rectPts(u0 - 1.5, u1 + 1.5, pb, pb + 0.26), 0, 0.2, trav));
+    }
+    for (const a of el.aiuole || []) {
+      const cu = (a.u[0] + a.u[1]) / 2, cv = (a.v[0] + a.v[1]) / 2, ru = (a.u[1] - a.u[0]) / 2, rv2 = (a.v[1] - a.v[0]) / 2;
+      const pts = Array.from({ length: 28 }, (_, i) => [cu + ru * Math.cos(i / 28 * Math.PI * 2), cv + rv2 * Math.sin(i / 28 * Math.PI * 2)]);
+      const bed = localSlab(pts, 0, 0.24, begoniaMat(a.fiori)); bed.castShadow = false; g.add(bed);
+    }
+    // lampioni verdi: palo, braccio verso la strada e globo
+    const green = courtOnce('pergolato|lampione', () => plainMat('#2f5c3e', 0.5, 0.35)), globe = courtOnce('pergolato|globo', () => new THREE.MeshStandardMaterial({ color: 0xf2f0e6, roughness: 0.4, emissive: 0x2a2a24 }));
+    for (const L of el.lampioni || []) {
+      const LH = Number(L.altezza) || 4.6;
+      g.add(rodMesh([L.u, 0, -L.v], [L.u, LH, -L.v], 0.05, green));
+      g.add(rodMesh([L.u, LH, -L.v], [L.u, LH + 0.1, -(L.v + 0.7)], 0.03, green));
+      const gl = new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 8), globe); gl.position.set(L.u, LH, -(L.v + 0.75)); g.add(gl);
+    }
   }
   function buildChemistryExteriors() {
     const cfg = exteriorsCfg;
@@ -2604,7 +2716,7 @@
       const m = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.55, 0.3), [white, white, white, white, white, grille]); m.position.y = 0.275; m.castShadow = true; g.add(m);
     }) },
     fiori: { nome: 'Cespuglio fiorito', crea: () => group((g) => g.add(localSlab(rectPts(-0.75, 0.75, -0.4, 0.4), 0, 0.4, flowerMaterial()))) },
-    pergolato: { nome: 'Pergolato con vite americana', crea: () => group((g) => addPergola(g, { u: [0, 5], v: [0, 2.6], imposta: 1.4 })) },
+    pergolato: { nome: 'Pergolato con vite americana', crea: () => group((g) => addPergola(g, { u: [0, 6], v: [0, 2.6], altezza: 3.0 })) },
     transennaStrisce: { nome: 'Transenna a strisce bianche e rosse', crea: () => group((g) => { // barre inclinate di 35° in senso orario
       const metal = courtOnce('transenna strisce|telaio', () => stdMat({ color: 0xc9ccce, roughness: 0.45, metalness: 0.5 }));
       const stripes = courtOnce('transenna strisce', () => new THREE.MeshStandardMaterial({ roughness: 0.6, map: canvasTex(512, 160, (ctx, w, h) => {

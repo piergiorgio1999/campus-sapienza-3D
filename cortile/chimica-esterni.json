@@ -470,6 +470,24 @@
    "lato": 6,
    "u": 5.7,
    "piani": 4
+  },
+  {
+   "tipo": "pergolato",
+   "nome": "Pergolato con vite lungo il viale (Street View 2015)",
+   "lato": 0,
+   "u": [16.5, 43],
+   "v": [12.1, 14.7],
+   "altezza": 3,
+   "passo": 1.8,
+   "prato": [6.4, 19.2],
+   "ringhiera": { "v": 7.4, "altezza": 1, "passo": 3 },
+   "aiuole": [
+    { "u": [18.5, 26], "v": [15.6, 17.8], "fiori": "rosse" },
+    { "u": [26.8, 31.6], "v": [15.6, 17.8], "fiori": "rosa" },
+    { "u": [32, 35.2], "v": [15.6, 17.8], "fiori": "bianche" },
+    { "u": [38.6, 42.4], "v": [15.6, 17.8], "fiori": "rosse" }
+   ],
+   "lampioni": [{ "u": 24, "v": 18.7 }, { "u": 40, "v": 18.7 }]
   }
  ],
  "primitive": [

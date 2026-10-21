@@ -283,6 +283,18 @@
         if (RS) add({ ...b, obj: RS, percorso: P + '.rastrelliera', label: 'Rastrelliera per bici', fields: ['u', 'v', 'posti'], lock: { h0: true, h1: true },
           box: () => ({ u0: RS.u - 0.02, u1: RS.u + ((Number(RS.posti) || 3) - 1) * 0.6 + 0.02, v0: RS.v - 0.37, v1: RS.v + 0.37, h0: 0, h1: 0.8 }),
           apply: (o, n) => { RS.u = round(n.u0 + 0.02); RS.posti = Math.max(1, Math.round((n.u1 - n.u0 - 0.04) / 0.6) + 1); RS.v = round((n.v0 + n.v1) / 2); } });
+      } else if (e.tipo === 'pergolato') {
+        // scatola = galleria con la vite (0,4 m oltre gli archi per lato); prato, ringhiera, aiuole e lampioni seguono lo spostamento
+        add({ ...b, percorso: P, label: b.nome, fields: ['u', 'v', 'altezza', 'prato', 'ringhiera', 'aiuole', 'lampioni'], lock: { h0: true },
+          box: () => ({ u0: e.u[0], u1: e.u[1], v0: e.v[0] - 0.4, v1: e.v[1] + 0.4, h0: 0, h1: Number(e.altezza) || 3 }),
+          apply: (o, n) => {
+            const du = n.u0 - o.u0, dv = n.v0 - o.v0;
+            e.u = [round(n.u0), round(n.u1)]; e.v = [round(n.v0 + 0.4), round(n.v1 - 0.4)]; e.altezza = round(n.h1);
+            if (Array.isArray(e.prato)) e.prato = e.prato.map((x) => round(x + dv));
+            if (e.ringhiera && e.ringhiera.v != null) e.ringhiera.v = round(e.ringhiera.v + dv);
+            for (const a of e.aiuole || []) { a.u = a.u.map((x) => round(x + du)); a.v = a.v.map((x) => round(x + dv)); }
+            for (const l of e.lampioni || []) { l.u = round(l.u + du); l.v = round(l.v + dv); }
+          } });
       } else if (e.tipo === 'palo') {
         add({ ...b, percorso: P, label: b.nome, fields: ['u', 'v', 'altezza'], lock: { h0: true },
           box: () => ({ u0: e.u - 0.2, u1: e.u + 0.2, v0: e.v - 0.2, v1: e.v + 0.2, h0: 0, h1: Number(e.altezza) || 11 }),

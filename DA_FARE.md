@@ -66,7 +66,16 @@
 - Guide: blu allineamenti, magenta misure, arancio spaziature; l'aggancio è scritto anche nel suggerimento in alto.
 - Alt (computer) o un secondo dito (iPad) sospendono la calamita.
 
-### Pergolato da rifare (foto `riferimenti/pergolato-1.png` … `pergolato-10.png`, Street View 2015)
+### Pergolato da rifare (foto `riferimenti/pergolato-1.png` … `pergolato-10.png`, Street View 2015) — fatto
+**Fatto (v110, `addPergola` in `campus-3d.js`, elemento `pergolato` in `cortile/chimica-esterni.json`):** galleria di 15
+archi a tutto sesto in tondino di ferro (passo 1,8 m, alta 3 m) su cordoli di travertino, vialetto a lastre irregolari
+(texture `opusTex`), vite verde fitta in due gusci + fondo scuro (da fuori una siepe arrotondata, aperta alle estremità;
+verificato con la passeggiata: si attraversa da capo a capo), ringhiera a montanti con saettoni verso l'edificio, prato
+con aiuole di begonie rosse/rosa/bianche, cordolo e due lampioni verdi verso la strada; pini già nel modello. Nel modello
+non c'era nessun pergolato posato (solo il pezzo del catalogo, ora riscritto): posizione scelta sul lato 0, u 16,5–43,
+v 12,1–14,7, tra la scala antincendio ovest e il vialetto dell'ingresso, evitando i tronchi esistenti. Nell'editor è un
+oggetto selezionabile (u, v, altezza); prato, ringhiera, aiuole e lampioni si spostano con lui. Da confermare con l'utente
+posizione e lunghezza (26,5 m).
 L'utente non vuole il pergolato attuale (archi con foglie rosse e arancio). Come nelle foto:
 - **Struttura:** galleria lunga e stretta parallela alla facciata, lungo il viale. Archi a tutto sesto di tondino di
   ferro scuro, uno ogni ~1,5–2 m, che partono dai cordoli in travertino ai due lati del vialetto.

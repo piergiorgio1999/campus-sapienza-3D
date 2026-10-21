@@ -3,7 +3,7 @@
 Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edifici entro 50 m.
 
 - `index.html` + `campus-3d.js`: pagina e scena
-- `cortile/chimica-esterni.json`: terrazza, aree, scale antincendio (coordinate u/v sul lato della sagoma OSM)
+- `cortile/chimica-esterni.json`: terrazza, aree, scale antincendio, pergolato (u, v, altezza, passo, prato, ringhiera, aiuole, lampioni) (coordinate u/v sul lato della sagoma OSM)
 - `cortile/modello.json`: cortile dell'azoto liquido
 - `tools/`: script di verifica (playwright + Chromium) per render e misure
 - `editor.js`: pulsanti **Commenta** e **Modifica** sulla scena 3D. I dati vivono nel db dell'artifact:

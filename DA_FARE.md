@@ -137,13 +137,16 @@ Bordo a cornice in blocchi di travertino bianco.
 - Giunti scuri ogni ~0,9 m lungo il contorno (InstancedMesh di listelli sul piano e sulla faccia esterna).
 - Le discese restano a filo.
 
-### Texture di facciata per singolo lato (richiesta in chat)
+### Texture di facciata per singolo lato (richiesta in chat) — fatta
 La tendina «Texture della facciata» della scheda edificio cambia tutto l'edificio; deve cambiare solo il lato
 toccato, interno o esterno.
 - Piano: alla selezione dell'edificio memorizzare la riga di muro toccata (`cellFromHit` → riga intera, come
   «Texture di un muro»).
 - La tendina crea le toppe `texture` di `wallPatches` per quella riga.
 - Tenere eventualmente un'opzione separata «tutto l'edificio».
+- Fatto: la riga toccata si memorizza in `selectBuilding`; la tendina crea le toppe `texture` di `wallPatches` per quella
+  riga (sostituendo quelle già presenti sulla stessa riga); la spunta «Tutto l'edificio» dà il vecchio comportamento
+  (campo `facciata`); sul tetto la spunta è obbligata. Le toppe di un lato restano sopra la texture di tutto l'edificio.
 
 ### Modifiche nel db riportate nei file (`modifiche`), da segnare «applicata» dopo la pubblicazione
 Riportate nei JSON (34 documenti, verificati dalla pagina con un controllo automatico valore per valore):

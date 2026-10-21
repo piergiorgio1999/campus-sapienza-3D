@@ -19,7 +19,7 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
     `cordolo`, `raggio` per tutti gli angoli e `raggi` per angolo; `forma: "oggetto"` è una copia di un oggetto del catalogo
     di `campus-3d.js` con `modello`, `ruota` (0/90/180/270), `scritta` per totem e scritte, stirata nella `box`;
     `cornice` = `cortile` o `esterni:<elemento>` per i duplicati fatti in quelle coordinate), `edificio:<codice>`
-    (texture `facciata` e celle `finestre` tolte o aggiunte).
+    (texture `facciata` e celle `finestre` tolte o aggiunte; la texture di un solo lato è una toppa `tipo: "texture"` in `finestre`, come «Texture di un muro»).
   Nel trascinamento c'è la calamita (allineamenti, misure, spaziature, con le guide colorate; Alt la sospende).
   Claude le legge, le riporta nei file (`cortile/*.json`, `trees.json`, `cortile/facciate.json`) e segna la modifica
   `stato: "applicata"` (la pagina ignora quelle applicate). Gli oggetti eliminati restano nei JSON con `rimosso: true`.

@@ -981,14 +981,28 @@
     const code = h.object.userData.facadeCode;
     if (!code) { deselect(); hint('Edificio del quartiere: non si modifica.'); return; }
     deselect();
-    sel = { type: 'edificio', code, tool: null, vis: new T.Group(), handles: [] };
+    // il lato toccato (riga di muro, interno o esterno): la tendina della texture cambia solo quello; sul tetto resta null → tutto l'edificio
+    const wall = cellFromHit(h), onSide = wall && wall.code === code ? wall : null;
+    sel = { type: 'edificio', code, tool: null, vis: new T.Group(), handles: [], wall: onSide, tutto: !onSide };
     fx.add(sel.vis); buildingCard();
+    hint(onSide ? 'La texture cambia solo il lato toccato. Spunta «Tutto l’edificio» per cambiarli tutti.' : 'Toccato il tetto: la texture cambia tutto l’edificio.');
   }
   function buildingCard() {
     if (!sel || sel.type !== 'edificio' || !cardWanted()) return;
     const code = sel.code, st = facadeOf(code), sl = el('select');
     for (const k of C.facciate.nomi) { const o = el('option', '', TEXTURE[k] || k); o.value = k; o.selected = k === C.facciate.nomeDi(code); sl.append(o); }
-    sl.addEventListener('change', () => { st.facciata = sl.value; applyFacade(code); saveFacade(code); });
+    const w = sel.wall, onLine = (f) => w && f.tipo === 'texture' && Math.abs(f.ang - w.ang) < 1e-3 && Math.abs(f.perp - w.line.perp) < 0.1;
+    const sideTex = (st.finestre || []).find(onLine); // texture già data a questo lato
+    if (!sel.tutto && sideTex) for (const o of sl.options) o.selected = o.value === sideTex.palette;
+    sl.addEventListener('change', () => {
+      if (sel.tutto || !w) { st.facciata = sl.value; applyFacade(code); saveFacade(code); return; }
+      const ws = wallPatches(w, sl.value); if (!ws.length) { hint('Non trovo il muro sotto il dito.'); return; }
+      st.finestre = (st.finestre || []).filter((f) => !onLine(f)).concat(ws);
+      drawPatches(code); saveFacade(code); buildingCard(); hint('Lato in ' + (TEXTURE[sl.value] || sl.value) + '.');
+    });
+    const all = el('input'); all.type = 'checkbox'; all.checked = sel.tutto; all.disabled = !w;
+    all.addEventListener('change', () => { sel.tutto = all.checked; buildingCard(); });
+    const allLabel = el('label', '', ''); allLabel.append(all, document.createTextNode(w ? ' Tutto l’edificio (non solo il lato toccato)' : ' Tutto l’edificio (lato non determinabile)'));
     const tool = (k, label) => { const b = button(label, () => { sel.tool = sel.tool === k ? null : k; buildingCard(); hint(sel.tool ? 'Tocca una cella della facciata. Toccala di nuovo per rimetterla com’era.' : ''); }); b.setAttribute('aria-pressed', String(sel.tool === k)); return b; };
     const row = el('div', 'ed-row'), n = (st.finestre || []).length, wl = el('select');
     for (const k of C.facciate.nomi) { const o = el('option', '', TEXTURE[k] || k); o.value = k; o.selected = k === (sel.palette || 'arancione'); wl.append(o); }
@@ -997,7 +1011,7 @@
     row.append(tool('togli', 'Togli finestre'), tool('aggiungi', 'Aggiungi finestre'), tool('muro', 'Texture di un muro'));
     if (st.facciata || n) row.append(button('Ripristina originale', () => { facadeState.set(code, clone(base.facciate[code] || { facciata: null, finestre: [] })); applyFacade(code); saveFacade(code); buildingCard(); }));
     row.append(button('Fine', () => deselect(), true));
-    openCard([el('h3', '', 'Edificio ' + code), el('p', 'ed-meta', 'L’edificio non si deforma: si cambiano la texture e le finestre.' + (n ? ` Celle modificate: ${n}.` : '')), el('label', '', 'Texture della facciata'), sl, el('label', '', 'Texture per «Texture di un muro»'), wl, row], 'dock');
+    openCard([el('h3', '', 'Edificio ' + code), el('p', 'ed-meta', 'L’edificio non si deforma: si cambiano la texture e le finestre.' + (n ? ` Celle modificate: ${n}.` : '')), el('label', '', sel.tutto || !w ? 'Texture della facciata (tutto l’edificio)' : 'Texture del lato toccato'), sl, allLabel, el('label', '', 'Texture per «Texture di un muro»'), wl, row], 'dock');
   }
 
   /* ---------- salvataggio ---------- */

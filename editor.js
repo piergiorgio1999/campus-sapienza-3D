@@ -32,7 +32,7 @@
   let comments = [];
   let sel = null, drag = null, down = null, sliding = false, slideTimer = 0;
   const ui = {};
-  let fx = null, pins = null;
+  let fx = null, pins = null, guides = null;
 
   /* ---------- interfaccia ---------- */
   function css() {
@@ -680,13 +680,123 @@
     else if (h.role === 'corner') { setSide('u', h.u); setSide('v', h.v); }
     else if (h.role === 'move') { const du = snap(d.u), dv = snap(d.v); b.u0 += du; b.u1 += du; b.v0 += dv; b.v1 += dv; }
     else if (h.role === 'vertex') { drag.vNew = clone(drag.verts); drag.vNew[h.k] = [round(snap(q.u)), round(snap(q.v))]; }
+    const caught = magnet(h, b);
     sel.box = roundBox(b);
     if (sel.type === 'prim') primApply(sel.p, sel.orig, sel.box); // le primitive si deformano subito
     if (h.role === 'vertex') { const vb = bboxPts(drag.vNew); Object.assign(sel.box, roundBox({ ...vb, h0: b.h0, h1: b.h1 })); }
-    drawSel();
-    hint((sel.type === 'item' ? sel.it.label : 'Pezzo') + ': ' + dims(sel.box));
+    drawSel(); drawGuides(caught);
+    hint((sel.type === 'item' ? sel.it.label : 'Pezzo') + ': ' + dims(sel.box) + caught.map((g) => ' · ' + g.text).join('') + (caught.length ? ' (Alt sospende la calamita)' : ''));
   }
+  /* ---------- calamita: allineamenti e proporzioni con gli oggetti vicini ---------- */
+  // Mentre si sposta o si ridimensiona una scatola, bordi, centro e quota si agganciano a quelli degli oggetti vicini
+  // (entro 15 m, stessa cornice); le misure a quelle di un vicino o ai rapporti 1:1 e 1:2 fra i lati della scatola; la
+  // posizione alla stessa spaziatura di due vicini in fila. Mentre aggancia, una linea guida colorata attraversa gli oggetti.
+  // Alt (da computer) o un secondo dito sullo schermo la sospendono.
+  const MAG_RANGE = 15, GUIDE_COLOR = { bordo: 0x1e88e5, misura: 0xd81b60, spazio: 0xf39c12 };
+  const AXIS_NAME = { u: 'larghezza', v: 'profondità', h: 'altezza' };
+  let magnetOff = false;
+  const touches = new Set();
+  const mid = (b, a) => (b[a + '0'] + b[a + '1']) / 2;
+  function neighbours() {
+    const me = sel.type === 'item' ? sel.it.key : null, b = drag.box0, out = [];
+    for (const it of liveItems()) {
+      if (it.key === me || it.frameKey !== sel.frameKey || it.gone()) continue;
+      let nb = null; try { nb = it.box(); } catch (_) { /* scatola non calcolabile */ }
+      if (!nb || !KEYS.every((k) => Number.isFinite(nb[k]))) continue;
+      if (Math.hypot(mid(nb, 'u') - mid(b, 'u'), mid(nb, 'v') - mid(b, 'v')) > MAG_RANGE) continue;
+      out.push({ b: nb, label: it.label });
+    }
+    return out;
+  }
+  // soglia: circa 10 px sullo schermo alla distanza della scatola, almeno 15 cm
+  function magnetThreshold(b) {
+    const w = toWorld(frameBy(sel.frameKey), mid(b, 'u'), mid(b, 'v'), mid(b, 'h'));
+    const px = (2 * Math.tan((camera.fov * Math.PI) / 360) * camera.position.distanceTo(w)) / (canvas.clientHeight || 800);
+    return Math.min(0.6, Math.max(0.15, 10 * px));
+  }
+  const closest = (cands, thr) => { let best = null; for (const c of cands) { const d = Math.abs(c.delta); if (d <= thr && (!best || d < Math.abs(best.delta))) best = c; } return best; };
+  // candidati per un bordo che si muove (side '0' o '1' sull'asse a), con il bordo opposto fermo
+  function edgeCands(a, side, b, near) {
+    const x = b[a + side], o = b[a + (side === '0' ? '1' : '0')], dir = side === '1' ? 1 : -1, out = [];
+    for (const n of near) {
+      for (const [t, what] of [[n.b[a + '0'], 'al bordo di'], [n.b[a + '1'], 'al bordo di'], [mid(n.b, a), 'al centro di']]) out.push({ kind: 'bordo', a, t, n, delta: t - x, text: `allineato ${what} ${n.label}` });
+      const size = n.b[a + '1'] - n.b[a + '0'];
+      if (size > MIN) out.push({ kind: 'misura', a, n, delta: o + dir * size - x, text: `stessa ${AXIS_NAME[a]} di ${n.label}` });
+    }
+    for (const a2 of ['u', 'v', 'h']) {
+      if (a2 === a) continue;
+      const s2 = b[a2 + '1'] - b[a2 + '0']; if (s2 <= MIN) continue;
+      for (const [k, r] of [[1, '1:1'], [2, '2:1'], [0.5, '1:2']]) out.push({ kind: 'misura', a, a2, ratio: r, delta: o + dir * k * s2 - x, text: `${AXIS_NAME[a]} e ${AXIS_NAME[a2]} ${r}` });
+    }
+    return out;
+  }
+  // candidati per uno spostamento sull'asse a: bordi e centro contro quelli dei vicini, e spaziature uguali
+  function moveCands(a, b, near) {
+    const out = [], refs = [b[a + '0'], b[a + '1'], mid(b, a)];
+    for (const n of near) for (const t of [n.b[a + '0'], n.b[a + '1'], mid(n.b, a)]) for (const r of refs) out.push({ kind: 'bordo', a, t, n, delta: t - r, text: `allineato a ${n.label}` });
+    const size = b[a + '1'] - b[a + '0'], row = near.slice().sort((p, q) => p.b[a + '0'] - q.b[a + '0']);
+    for (let i = 0; i + 1 < row.length; i += 1) {
+      const A = row[i], B = row[i + 1], g = B.b[a + '0'] - A.b[a + '1'];
+      if (g <= 0.05) continue;
+      out.push({ kind: 'spazio', a, A, B, gap: g, delta: B.b[a + '1'] + g - b[a + '0'], text: `stessa spaziatura di ${A.label} e ${B.label}` });
+      out.push({ kind: 'spazio', a, A, B, gap: g, delta: A.b[a + '0'] - g - size - b[a + '0'], text: `stessa spaziatura di ${A.label} e ${B.label}` });
+    }
+    return out;
+  }
+  // corregge b (e il vertice trascinato) e restituisce gli agganci per le guide
+  function magnet(h, b) {
+    if (magnetOff || touches.size > 1) return [];
+    const near = drag.near || (drag.near = neighbours()); if (!near.length) return [];
+    const thr = magnetThreshold(b), caught = [];
+    const take = (c) => { if (c) caught.push(c); return c; };
+    if (h.role === 'face') { const c = take(closest(edgeCands(h.axis, h.side, b, near), thr)); if (c) b[h.axis + h.side] += c.delta; }
+    else if (h.role === 'corner') for (const [a, side] of [['u', h.u], ['v', h.v]]) { const c = take(closest(edgeCands(a, side, b, near), thr)); if (c) b[a + side] += c.delta; }
+    else if (h.role === 'move') for (const a of ['u', 'v']) { const c = take(closest(moveCands(a, b, near), thr)); if (c) { b[a + '0'] += c.delta; b[a + '1'] += c.delta; } }
+    else if (h.role === 'vertex' && drag.vNew) {
+      const q = drag.vNew[h.k];
+      ['u', 'v'].forEach((a, i) => {
+        const cands = []; for (const n of near) for (const t of [n.b[a + '0'], n.b[a + '1'], mid(n.b, a)]) cands.push({ kind: 'bordo', a, t, n, delta: t - q[i], text: `allineato a ${n.label}` });
+        const c = take(closest(cands, thr)); if (c) q[i] = round(q[i] + c.delta);
+      });
+    }
+    for (const c of caught) c.box = b;
+    return caught;
+  }
+  function drawGuides(caught) {
+    if (!guides) return;
+    guides.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); guides.clear();
+    const f = sel && frameBy(sel.frameKey); if (!f || !caught.length) return;
+    const P = (u, v, h) => toWorld(f, u, v, h);
+    for (const c of caught) {
+      const b = c.box, pts = [], h0 = Math.min(b.h0, c.n ? c.n.b.h0 : b.h0) + 0.03;
+      const span = (x, y, other, z) => { // linea sull'asse "other" alla coordinata x dell'asse c.a
+        const lo = Math.min(...y) - 0.6, hi = Math.max(...y) + 0.6;
+        if (c.a === 'u') pts.push(P(x, lo, z), P(x, hi, z)); else if (c.a === 'v') pts.push(P(lo, x, z), P(hi, x, z));
+        else pts.push(P(other[0], other[1], x), P(other[2], other[3], x));
+      };
+      const dim = (bb, a) => { // misura di una scatola lungo l'asse a, appena fuori dal suo bordo
+        if (a === 'u') pts.push(P(bb.u0, bb.v0 - 0.15, bb.h0 + 0.03), P(bb.u1, bb.v0 - 0.15, bb.h0 + 0.03));
+        else if (a === 'v') pts.push(P(bb.u0 - 0.15, bb.v0, bb.h0 + 0.03), P(bb.u0 - 0.15, bb.v1, bb.h0 + 0.03));
+        else pts.push(P(bb.u0 - 0.15, bb.v0 - 0.15, bb.h0), P(bb.u0 - 0.15, bb.v0 - 0.15, bb.h1));
+      };
+      if (c.kind === 'bordo') {
+        const o = c.a === 'u' ? 'v' : 'u';
+        if (c.a === 'h') span(c.t, [], [mid(b, 'u'), mid(b, 'v'), mid(c.n.b, 'u'), mid(c.n.b, 'v')]);
+        else span(c.t, [b[o + '0'], b[o + '1'], c.n.b[o + '0'], c.n.b[o + '1']], null, h0);
+      } else if (c.kind === 'misura') { dim(b, c.a); if (c.n) dim(c.n.b, c.a); else dim(b, c.a2); }
+      else if (c.kind === 'spazio') {
+        const o = c.a === 'u' ? 'v' : 'u', at = (bb) => mid(bb, o), seg = (x0, x1, y) => { if (c.a === 'u') pts.push(P(x0, y, h0), P(x1, y, h0)); else pts.push(P(y, x0, h0), P(y, x1, h0)); };
+        seg(c.A.b[c.a + '1'], c.B.b[c.a + '0'], (at(c.A.b) + at(c.B.b)) / 2);
+        if (b[c.a + '0'] >= c.B.b[c.a + '1']) seg(c.B.b[c.a + '1'], b[c.a + '0'], (at(c.B.b) + at(b)) / 2);
+        else seg(b[c.a + '1'], c.A.b[c.a + '0'], (at(b) + at(c.A.b)) / 2);
+      }
+      const line = new T.LineSegments(new T.BufferGeometry().setFromPoints(pts), new T.LineBasicMaterial({ color: GUIDE_COLOR[c.kind], depthTest: false, transparent: true }));
+      line.renderOrder = 1001; guides.add(line);
+    }
+  }
+
   function endDrag() {
+    drawGuides([]);
     const h = drag.h, changed = h.role === 'vertex' ? !!drag.vNew && JSON.stringify(drag.vNew) !== JSON.stringify(drag.verts) : KEYS.some((k) => sel.box[k] !== drag.box0[k]);
     const box0 = drag.box0, vNew = drag.vNew; drag = null; freeView();
     if (!changed) {
@@ -1074,7 +1184,7 @@
     down = null;
     if (!drag || (e && e.pointerId !== drag.pointerId)) return;
     sel.box = drag.box0; if (sel.type === 'prim') primApply(sel.p, sel.orig, sel.box);
-    drag = null; freeView(); drawSel(); infoCard();
+    drag = null; freeView(); drawGuides([]); drawSel(); infoCard();
   }
   function onUp(e) {
     if (drag && e.pointerId !== drag.pointerId) return;
@@ -1127,6 +1237,7 @@
     C = window.campus3d; T = window.THREE; scene = C.scene; camera = C.camera; controls = C.controls; canvas = C.renderer.domElement;
     base.esterni = clone(C.esterni.cfg); base.cortile = clone(C.cortile.M); base.alberi = C.alberi.list ? clone(C.alberi.list) : [];
     fx = new T.Group(); fx.name = 'editor-maniglie'; pins = new T.Group(); pins.name = 'editor-commenti'; patchGroup = new T.Group(); patchGroup.name = 'editor-facciate';
+    guides = new T.Group(); guides.name = 'editor-guide'; fx.add(guides);
     scene.add(fx, pins, patchGroup);
     // facciate già riportate nei file da Claude (texture e finestre per edificio)
     fetch('cortile/facciate.json', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((f) => {
@@ -1134,6 +1245,10 @@
       for (const code of Object.keys(base.facciate)) if (!facadeState.has(code)) applyFacade(code);
     }).catch(() => {});
     css(); buildUi();
+    for (const t of ['keydown', 'keyup']) window.addEventListener(t, (e) => { if (e.key === 'Alt') magnetOff = e.type === 'keydown'; });
+    window.addEventListener('blur', () => { magnetOff = false; touches.clear(); });
+    canvas.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') touches.add(e.pointerId); }, { capture: true });
+    for (const t of ['pointerup', 'pointercancel']) window.addEventListener(t, (e) => touches.delete(e.pointerId), { capture: true });
     canvas.addEventListener('pointerdown', onDown, { capture: true });
     canvas.addEventListener('pointermove', onMove, { capture: true });
     canvas.addEventListener('pointerup', onUp, { capture: true });

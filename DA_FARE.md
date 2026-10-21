@@ -59,17 +59,12 @@
   passeggiata va in pausa finché la scheda è aperta.
 - Da verificare sull'artifact pubblicato: che l'iframe di claude.ai permetta la cattura del mouse.
 
-### Editor: effetto magnetico (allineamenti e proporzioni, come nell'impaginazione)
-Quando si sposta o si ridimensiona un solido con la scatola:
-- **Calamita sugli allineamenti:** i bordi, il centro e la quota della scatola si agganciano a quelli degli
-  oggetti vicini nella stessa cornice (u0/u1/centro u, v0/v1/centro v, h0/h1). Soglia piccola, circa 10 px sullo
-  schermo o 0,15 m. Mentre aggancia si disegna una linea guida sottile colorata attraverso i due oggetti.
-- **Calamita sulle proporzioni:** larghezza, profondità e altezza uguali a quelle di un vicino; spaziature uguali
-  fra tre oggetti in fila; rapporti semplici (1:1, 1:2) fra i lati.
-- **Dove intervenire:** in `editor.js`, in `moveDrag` dopo `snap()`. Si raccolgono le scatole degli oggetti entro
-  ~15 m (`liveItems()` nella stessa `frameKey`, escluso quello selezionato), si cerca il valore più vicino entro la
-  soglia, si corregge `b` e si disegnano le guide in `fx`. Con un dito in più sull'iPad (o un tasto da computer)
-  la calamita si sospende.
+### Editor: effetto magnetico — fatto nella v35
+- Spostando o ridimensionando una scatola (e i vertici di aiuole e marciapiedi) bordi, centro e quota si agganciano a
+  quelli degli oggetti entro 15 m nella stessa cornice; misure uguali a un vicino, rapporti 1:1, 1:2, 2:1 fra i lati;
+  spaziatura uguale a due vicini in fila. Soglia: ~10 px sullo schermo, almeno 0,15 m.
+- Guide: blu allineamenti, magenta misure, arancio spaziature; l'aggancio è scritto anche nel suggerimento in alto.
+- Alt (computer) o un secondo dito (iPad) sospendono la calamita.
 
 ### Pergolato da rifare (foto `riferimenti/pergolato-1.png` … `pergolato-10.png`, Street View 2015)
 L'utente non vuole il pergolato attuale (archi con foglie rosse e arancio). Come nelle foto:

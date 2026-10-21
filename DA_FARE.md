@@ -47,6 +47,32 @@
 
 ## Rimasto da fare
 
+### Navigazione in prima persona: richieste del 21/10 (dopo la v32)
+Nella v32 (`cammina.js`) ci sono già:
+- W A S D e frecce (sinistra e destra girano);
+- Spazio per saltare;
+- levetta in basso a sinistra e tasti «Corri» e «Salta».
+
+Da cambiare:
+- **Velocità regolabile con i tasti 1–9:** 1 lentissimo … 9 velocissimo, al posto o in aggiunta a Maiuscolo che corre;
+  mostrare la velocità scelta per un attimo a schermo.
+- **Comandi a schermo solo da telefono e iPad:** joypad (levetta) e tasto «Salta» solo quando il dispositivo è
+  touch, cioè `matchMedia('(pointer: coarse)')` o `navigator.maxTouchPoints > 0` senza puntatore fine. Da computer
+  niente levetta né tasti, solo tastiera e trascinamento del mouse. Oggi la levetta resta visibile anche da computer,
+  semitrasparente.
+
+### Editor: effetto magnetico (allineamenti e proporzioni, come nell'impaginazione)
+Quando si sposta o si ridimensiona un solido con la scatola:
+- **Calamita sugli allineamenti:** i bordi, il centro e la quota della scatola si agganciano a quelli degli
+  oggetti vicini nella stessa cornice (u0/u1/centro u, v0/v1/centro v, h0/h1). Soglia piccola, circa 10 px sullo
+  schermo o 0,15 m. Mentre aggancia si disegna una linea guida sottile colorata attraverso i due oggetti.
+- **Calamita sulle proporzioni:** larghezza, profondità e altezza uguali a quelle di un vicino; spaziature uguali
+  fra tre oggetti in fila; rapporti semplici (1:1, 1:2) fra i lati.
+- **Dove intervenire:** in `editor.js`, in `moveDrag` dopo `snap()`. Si raccolgono le scatole degli oggetti entro
+  ~15 m (`liveItems()` nella stessa `frameKey`, escluso quello selezionato), si cerca il valore più vicino entro la
+  soglia, si corregge `b` e si disegnano le guide in `fx`. Con un dito in più sull'iPad (o un tasto da computer)
+  la calamita si sospende.
+
 ### Pergolato da rifare (foto `riferimenti/pergolato-1.png` … `pergolato-10.png`, Street View 2015)
 L'utente non vuole il pergolato attuale (archi con foglie rosse e arancio). Come nelle foto:
 - **Struttura:** galleria lunga e stretta parallela alla facciata, lungo il viale. Archi a tutto sesto di tondino di

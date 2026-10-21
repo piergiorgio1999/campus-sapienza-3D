@@ -3370,12 +3370,14 @@
     // portico: pilastri in travertino e soffitto scuro
     for (const p of live(M.pilastri)) box(p.u[0], p.u[1], 0, p.altezza, p.v[0], p.v[1], travMat(0.6, 1.8));
     const PO = M.portico;
-    box(PO.u[0], PO.u[1], PO.soffitto, PO.soffitto + 0.35, PO.v[0], PO.v[1], std({ color: 0x6a4535, roughness: 0.9 }));
+    // il ponte (soffitto, fondo, corpo sopra) occupa tutta la larghezza fra le due ali, come il vuoto dei cortili (u 0.2 -> 16.6)
+    const [pu0, pu1] = PO.corpoU || PO.u;
+    box(pu0, pu1, PO.soffitto, PO.soffitto + 0.35, PO.v[0], PO.v[1], std({ color: 0x6a4535, roughness: 0.9 }));
     // fondo del portico (rilievo 132517 e commenti sul posto): parete piena in travertino fino al soffitto, con il cancello a barre
     // solo nel varco [u0, u1] (alto fin sotto il soffitto); dietro il cancello il cortile interno illuminato si vede attraverso le grate
     const FD = M.fondo || {}, fv = Number(FD.v) || PO.v[1] - 0.12, gH = PO.soffitto - 0.02, wt = Number(FD.spessore) || 0.24;
-    const [vA, vB] = Array.isArray(FD.varco) && FD.varco.length === 2 ? [Math.max(PO.u[0], Math.min(...FD.varco)), Math.min(PO.u[1], Math.max(...FD.varco))] : PO.u, fw = vB - vA;
-    for (const [w0, w1] of [[PO.u[0], vA], [vB, PO.u[1]]]) if (w1 > w0 + 0.01) box(w0, w1, 0, PO.soffitto, fv - wt / 2, fv + wt / 2, travMat((w1 - w0) / 2.4, PO.soffitto / 2.4)); // pareti ai lati del varco
+    const [vA, vB] = Array.isArray(FD.varco) && FD.varco.length === 2 ? [Math.max(pu0, Math.min(...FD.varco)), Math.min(pu1, Math.max(...FD.varco))] : [pu0, pu1], fw = vB - vA;
+    for (const [w0, w1] of [[pu0, vA], [vB, pu1]]) if (w1 > w0 + 0.01) box(w0, w1, 0, PO.soffitto, fv - wt / 2, fv + wt / 2, travMat((w1 - w0) / 2.4, PO.soffitto / 2.4)); // pareti ai lati del varco
     add(new THREE.PlaneGeometry(fw, PO.soffitto), new THREE.MeshBasicMaterial({ map: canvasTex(512, 160, (ctx, w, h) => {
       const g = ctx.createLinearGradient(0, 0, 0, h);
       g.addColorStop(0, '#f3ecdc'); g.addColorStop(0.55, '#dccfb6'); g.addColorStop(0.57, '#b9ae9c'); g.addColorStop(1, '#9b9182');
@@ -3391,9 +3393,9 @@
     box(vA, vB, gH - 0.06, gH, fv - 0.03, fv + 0.03, rust);
     const nLeaf = Math.max(1, Math.round(fw / 2.5)); // montanti delle ante
     for (let i = 0; i <= nLeaf; i += 1) { const u = vA + (fw * i) / nLeaf; box(u - 0.04, u + 0.04, 0, gH, fv - 0.04, fv + 0.04, rust); }
-    // corpo dell'edificio sopra il portico (le sagome sono svuotate fino al cielo): stessi pezzi dell'edificio
-    // (corpo, attico) con le stesse quote delle texture, così piani e finestre continuano senza giunte.
-    // Alto solo PO.piani piani (1 = il primo piano) sopra il piano terra, chiuso da un tetto piano con l'attico sottile.
+    // ponte sopra il portico/cancello (le sagome sono svuotate fino al cielo: i due cortili sono un unico vuoto u 0.2 -> 16.6):
+    // un solo volume, stessa fascia del corpo dell'edificio con le stesse quote delle texture, così piani e finestre continuano senza giunte.
+    // Alto solo PO.piani piani (1 = il primo piano) sopra il piano terra, chiuso da un unico tetto piano liscio (niente attico né cornice).
     const cu = buildings.find((x) => String(x.code).toUpperCase() === 'CU014') || {};
     const topH = heightInfo({ height: cu.height, levels: cu.levels }).value, baseH = PO.soffitto + 0.35; // stessa altezza e piani dell'edificio
     const [cu0, cu1] = PO.corpoU || PO.u; // il corpo si stende su tutta la larghezza fra le due ali (come il cortile), anche sopra i pilastri
@@ -3406,9 +3408,8 @@
       const set = facadeSetFor('CU014'), full = buildingPieces(topH, Number(cu.levels));
       const bodyP = full.find((q) => q.kind === 'body'), atticP = full.find((q) => q.kind === 'attic');
       const nFloors = Math.max(1, Math.round(Number(PO.piani) || 1));
-      const bodyTop = Math.min(topH - (atticP ? atticP.h : 0), bodyP.y0 + nFloors * bodyP.floorH); // quota del solaio sotto il tetto
-      const pieces = [{ ...bodyP, h: bodyTop - bodyP.y0 }];
-      if (atticP) pieces.push({ ...atticP, y0: bodyTop });
+      const bodyTop = Math.min(topH - (atticP ? atticP.h : 0), bodyP.y0 + nFloors * bodyP.floorH); // quota del tetto del ponte
+      const pieces = [{ ...bodyP, h: bodyTop - bodyP.y0 }]; // un solo pezzo: un solo tetto a una sola quota
       pieces.forEach((piece, k) => {
         const y0 = Math.max(piece.y0, baseH), y1 = piece.y0 + piece.h;
         if (y1 <= y0 + 0.01) return;

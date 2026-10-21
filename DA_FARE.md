@@ -37,6 +37,7 @@
 - **Foto:** `riferimenti/totem-cu014.jpg`.
 
 ## Cortile dell'azoto: corpo sopra il portico e aiuole speculari (21/10) — fatto
+- **Ponte sopra il cancello (fix, 21/10):** i due cortili sono un solo vuoto (`vuoti` = [0.2, -4, 16.6, 40.3], buco del cortile interno tolto da `courtyards.json`), ali dritte su u 0.2 e 16.6 (`pieni` a u 0.2); dentro resta solo il ponte di un piano con un unico tetto piano senza attico, soffitto/fondo su `corpoU`. Cause dei pezzi spezzati: striscia u 0.2→1.5 piena a tutta altezza, ali a u 0 / 16.8 / 1.5 invece di 0.2 / 16.6, buco interno coincidente col bordo (scarto di cm) che lasciava lame di facciata, attico sul ponte.
 - **Corpo sopra il portico:** alto un solo piano (`portico.piani: 1` in `cortile/modello.json`), dal solaio (soffitto + 0,35)
   fino a `y0 del corpo + piani × altezza del piano`, con le stesse fasce/finestre della facciata e chiuso da tetto piano con
   l'attico sottile; poggia sui pilastri. Le sagome OSM sono già svuotate (`vuoti`) a tutta altezza, quindi sopra si vede il cielo

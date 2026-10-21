@@ -192,7 +192,7 @@
     ],
     "soffitto": 4.5,
     "piani": 1,
-    "nota_piani": "Piani del corpo sopra il portico oltre il piano terra (1 = solo il primo piano, chiuso da tetto piano e attico)."
+    "nota_piani": "Piani del corpo sopra il portico oltre il piano terra (1 = solo il primo piano, chiuso da un solo tetto piano liscio, senza attico: il ponte sopra il cancello fra i due cortili)."
   },
   "transenne": [
     {
@@ -204,28 +204,22 @@
   ],
   "vuoti": [
     [
-      0.0,
+      0.2,
       -4.0,
-      16.8,
-      9.4
-    ],
-    [
-      1.5,
-      9.4,
       16.6,
-      13.0
+      40.3
     ]
   ],
-  "nota_vuoti": "Rettangoli [u0, v0, u1, v1] sottratti alle sagome OSM: il cortile aperto fino alla fronte dell'area coperta e l'area coperta al piano terra su tutta la larghezza (aperta, senza pareti, fino alla cancellata di fondo; il corpo sopra viene ricostruito dal soffitto in su).",
+  "nota_vuoti": "Rettangolo [u0, v0, u1, v1] sottratto alle sagome OSM a tutte le quote: i due cortili (azoto e interno) sono un unico vuoto largo quanto il cortile (u 0.2 -> 16.6, dalla cancellata al fondo del cortile interno), con le ali alte ai lati diritte e continue sulla stessa u. Dentro il vuoto resta solo il ponte di un piano sopra il portico, costruito a parte (portico.corpoU, portico.piani).",
   "pieni": [
     [
       -1.3,
       -0.4,
-      0.0,
+      0.2,
       9.4
     ]
   ],
-  "nota_pieni": "Rettangoli [u0, v0, u1, v1] uniti alle sagome OSM che li toccano: la facciata dell'ala sinistra portata a filo del cortile (u 0), senza il gradino con il fondo.",
+  "nota_pieni": "Rettangoli [u0, v0, u1, v1] uniti alle sagome OSM che li toccano: la facciata dell'ala sinistra portata a filo del cortile (u 0.2, come i muri e il vuoto), senza il gradino con il fondo.",
   "tombini": [
     {
       "u": 7.65,

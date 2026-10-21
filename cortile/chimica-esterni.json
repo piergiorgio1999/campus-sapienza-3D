@@ -5,7 +5,7 @@
  "elementi": [
   {
    "tipo": "terrazza",
-   "nome": "Terrazza rialzata (area blu)",
+   "nome": "Terrazza rialzata accanto al Museo \"Primo Levi\"",
    "lato": 0,
    "poligono": [
     [
@@ -13,82 +13,114 @@
      -20.4
     ],
     [
-     78.3,
+     69.7,
      -20.4
     ],
     [
-     78.3,
-     9.6
+     69.7,
+     -15.5
+    ],
+    [
+     82.0,
+     -15.5
+    ],
+    [
+     82.0,
+     1.5
     ],
     [
      56.3,
-     9.6
+     1.5
     ]
    ],
    "altezza": 0.8,
    "prato": [
-    59.8,
-    -5.2,
-    66.7,
-    8.8
+    68.5,
+    -13.5,
+    80.0,
+    -8.8
    ],
    "panchine": [
     {
-     "u": 67.5,
-     "v": 0.2,
+     "u": 74.0,
+     "v": -8.25,
      "lunghezza": 2.8,
      "profondita": 0.5,
      "altezza": 0.45,
-     "rientro": 0.3,
-     "orienta": "v"
+     "rientro": 0.3
     },
     {
-     "u": 67.5,
-     "v": 4.8,
+     "u": 78.4,
+     "v": -8.25,
      "lunghezza": 2.8,
      "profondita": 0.5,
      "altezza": 0.45,
-     "rientro": 0.3,
-     "orienta": "v"
+     "rientro": 0.3
     }
    ],
    "gradini": [
     {
+     "nota": "scalinata interna: dalla rientranza a livello terra sale verso ovest",
      "lungo": "u",
-     "da": -7.0,
-     "a": -2.0,
-     "bordo": 56.3,
-     "verso": -1
+     "da": -20.4,
+     "a": -15.5,
+     "bordo": 69.7,
+     "verso": 1,
+     "pedata": 0.36
     },
     {
-     "lungo": "u",
-     "da": -19.5,
-     "a": -14.5,
-     "bordo": 78.3,
+     "nota": "bordo nord, verso la scala antincendio",
+     "lungo": "v",
+     "da": 57.5,
+     "a": 62.5,
+     "bordo": 1.5,
      "verso": 1
     }
    ]
   },
   {
    "tipo": "area",
-   "nome": "Area bianca a livello terra (area gialla)",
+   "nome": "Pavimento in travertino davanti all'ingresso principale",
    "lato": 0,
    "poligono": [
     [
      17.0,
-     -20.4
+     0.0
     ],
     [
      56.3,
-     -20.4
+     0.0
     ],
     [
      56.3,
-     9.6
+     6.0
     ],
     [
      17.0,
-     9.6
+     6.0
+    ]
+   ]
+  },
+  {
+   "tipo": "area",
+   "nome": "Rientranza a livello terra (angolo sud-est della terrazza)",
+   "lato": 0,
+   "poligono": [
+    [
+     69.7,
+     -20.4
+    ],
+    [
+     82.0,
+     -20.4
+    ],
+    [
+     82.0,
+     -15.5
+    ],
+    [
+     69.7,
+     -15.5
     ]
    ]
   },

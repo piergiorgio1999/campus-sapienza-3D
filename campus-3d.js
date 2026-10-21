@@ -2243,8 +2243,9 @@
           if (alongV) for (const lv of [bv0 + inset, bv1 - inset - T]) g.add(localSlab([[bu0 + 0.03, lv], [bu1 - 0.03, lv], [bu1 - 0.03, lv + T], [bu0 + 0.03, lv + T]], h, h + seatY - T, trav(1.2)));
           else for (const lu of [bu0 + inset, bu1 - inset - T]) g.add(localSlab([[lu, bv0 + 0.03], [lu + T, bv0 + 0.03], [lu + T, bv1 - 0.03], [lu, bv1 - 0.03]], h, h + seatY - T, trav(1.2)));
         }
-        const n = Math.max(3, Math.round(h / 0.16)), rise = h / n, run = 0.32;
+        const n = Math.max(3, Math.round(h / 0.16)), rise = h / n;
         for (const s of el.gradini || []) for (let i = 0; i < n; i += 1) {
+          const run = Number(s.pedata) || 0.32;
           const top = h - rise * (i + 1) + rise, o0 = s.bordo + s.verso * run * i, o1 = o0 + s.verso * run;
           const pts = s.lungo === 'v'
             ? [[s.da, Math.min(o0, o1)], [s.a, Math.min(o0, o1)], [s.a, Math.max(o0, o1)], [s.da, Math.max(o0, o1)]]

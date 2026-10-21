@@ -20,7 +20,7 @@
   let mode = null; // 'commenta' | 'modifica' | null
   const base = { esterni: null, cortile: null, alberi: null, facciate: {} };
   const FORME = { box: 'Parallelepipedo', cilindro: 'Cilindro', sfera: 'Sfera', albero: 'Albero', pino: 'Pino' };
-  const TEXTURE = { cortina: 'mattoni rossi', giallo: 'mattoni gialli', travertino: 'travertino', ocra: 'intonaco ocra', intonaco: 'intonaco chiaro' };
+  const TEXTURE = { cortina: 'mattoni rossi', giallo: 'mattoni gialli', travertino: 'travertino', ocra: 'intonaco ocra', arancione: 'intonaco arancione', intonaco: 'intonaco chiaro' };
   const facadeState = new Map(); // codice edificio → { facciata, finestre: [riquadri] }
   let placing = null, removed = null, patchGroup = null;
   let overrides = [];
@@ -363,7 +363,7 @@
   }
   function reapplyPrims() {
     for (const o of overrides) {
-      if (o.sorgente !== 'primitiva' || o.stato === 'applicata' || !o.valore || !o.originale) continue;
+      if (o.sorgente !== 'primitiva' || (o.stato && o.stato !== 'da applicare') || !o.valore || !o.originale) continue;
       const mesh = byPath(o.percorso); if (!mesh || !mesh.isMesh) continue;
       const p = { mesh, inst: o.istanza != null ? o.istanza : null, path: o.percorso, frameKey: o.cornice || frameKeyOf(mesh) };
       if (!frameBy(p.frameKey)) continue;
@@ -534,10 +534,11 @@
   function drawPatches(code) {
     for (const m of patchGroup.children.filter((c) => c.userData.codice === code)) { patchGroup.remove(m); m.geometry.dispose(); }
     const st = facadeOf(code), name = C.facciate.nomeDi(code);
-    for (const f of st.finestre || []) {
+    // prima i muri con un'altra texture, poi finestre tolte o aggiunte (un po' più in fuori)
+    for (const f of (st.finestre || []).slice().sort((a, b) => (a.tipo === 'texture' ? 0 : 1) - (b.tipo === 'texture' ? 0 : 1))) {
       const g = new T.PlaneGeometry(f.w, f.h), uv = g.attributes.uv;
-      if (f.tipo === 'togli') for (let i = 0; i < uv.count; i += 1) uv.setXY(i, f.u0 + uv.getX(i) * f.du, f.v0 + uv.getY(i) * f.dv); // stesse coordinate del muro: i mattoni combaciano
-      const m = new T.Mesh(g, C.facciate.materiale(name, f.kind, f.tipo === 'togli' ? 'muro' : 'finestra'));
+      if (f.tipo !== 'aggiungi') for (let i = 0; i < uv.count; i += 1) uv.setXY(i, f.u0 + uv.getX(i) * f.du, f.v0 + uv.getY(i) * f.dv); // stesse coordinate del muro: mattoni e finestre combaciano
+      const m = new T.Mesh(g, C.facciate.materiale(f.palette || name, f.kind, f.tipo === 'togli' ? 'muro' : f.tipo === 'texture' ? 'facciata' : 'finestra'));
       const x = new T.Vector3(Math.cos(f.ang), 0, Math.sin(f.ang)), y = new T.Vector3(0, 1, 0), z = new T.Vector3().crossVectors(x, y);
       m.matrixAutoUpdate = false; m.matrix.makeBasis(x, y, z).setPosition(f.x, f.y, f.z); m.matrixWorldNeedsUpdate = true;
       m.userData.codice = code; m.receiveShadow = true; patchGroup.add(m);
@@ -572,16 +573,44 @@
     const s0 = Math.max(i * bay, Math.min(...sa)), s1 = Math.min((i + 1) * bay, Math.max(...sa)), ya = Math.max(y0 + j * fh, Math.min(...ys)), yb = Math.min(y0 + (j + 1) * fh, Math.max(...ys));
     if (s1 - s0 < 0.3 || yb - ya < 0.3) return null;
     const c = h.point.clone().addScaledVector(new T.Vector3(dx, 0, dz), (s0 + s1) / 2 - sHit).addScaledVector(new T.Vector3(n.x, 0, n.z).normalize(), 0.025);
-    return { code: ud.facadeCode, kind: ud.kind, x: round(c.x), y: round((ya + yb) / 2), z: round(c.z), w: round(s1 - s0), h: round(yb - ya), ang: Math.round(Math.atan2(dz, dx) * 1e4) / 1e4, u0: s0 / bay, v0: (ya - y0) / fh, du: (s1 - s0) / bay, dv: (yb - ya) / fh };
+    return { line: { dx, dz, nx: n.x, nz: n.z, perp: h.point.z * dx - h.point.x * dz }, code: ud.facadeCode, kind: ud.kind, x: round(c.x), y: round((ya + yb) / 2), z: round(c.z), w: round(s1 - s0), h: round(yb - ya), ang: Math.round(Math.atan2(dz, dx) * 1e4) / 1e4, u0: s0 / bay, v0: (ya - y0) / fh, du: (s1 - s0) / bay, dv: (yb - ya) / fh };
+  }
+  // tutto il muro su cui si è toccato (ogni pezzo dell'edificio, dal piano terra all'attico) con un'altra texture
+  function wallPatches(c, palette) {
+    const { dx, dz, nx, nz, perp } = c.line, out = [], bay = C.facciate.campata, nrm = new T.Vector3(nx, 0, nz).normalize();
+    for (const m of C.scene.getObjectByName('edifici').children) {
+      const ud = m.userData; if (ud.facadeCode !== c.code || !ud.kind || !m.geometry) continue;
+      const pos = m.geometry.attributes.position; m.updateWorldMatrix(true, false);
+      let s0 = Infinity, s1 = -Infinity, ya = Infinity, yb = -Infinity;
+      for (let i = 0; i + 2 < pos.count; i += 3) {
+        const vs = [0, 1, 2].map((k) => new T.Vector3().fromBufferAttribute(pos, i + k).applyMatrix4(m.matrixWorld));
+        if (!vs.every((v) => Math.abs(v.z * dx - v.x * dz - perp) < 0.05)) continue; // non sta sulla linea del muro
+        const ys = vs.map((v) => v.y); if (Math.max(...ys) - Math.min(...ys) < 0.05) continue; // tetto o pavimento
+        for (const v of vs) { const s = v.x * dx + v.z * dz; s0 = Math.min(s0, s); s1 = Math.max(s1, s); ya = Math.min(ya, v.y); yb = Math.max(yb, v.y); }
+      }
+      if (!(s1 - s0 > 0.3 && yb - ya > 0.3)) continue;
+      const sm = (s0 + s1) / 2, ctr = new T.Vector3(dx * sm - dz * perp, 0, dz * sm + dx * perp).addScaledVector(nrm, 0.012);
+      out.push({ tipo: 'texture', palette, kind: ud.kind, x: round(ctr.x), y: round((ya + yb) / 2), z: round(ctr.z), w: round(s1 - s0), h: round(yb - ya), ang: c.ang, u0: s0 / bay, v0: (ya - ud.y0) / ud.floorH, du: (s1 - s0) / bay, dv: (yb - ya) / ud.floorH, perp: round(perp) });
+    }
+    return out;
   }
   function togglePatch(h) {
     const c = cellFromHit(h);
     if (!c || c.code !== sel.code) { hint(c ? 'Questa è la facciata di un altro edificio: selezionalo prima.' : 'Qui non c’è una cella di facciata (tetto o muro troppo stretto).'); return; }
     const st = facadeOf(c.code), list = st.finestre || (st.finestre = []);
-    const k = list.findIndex((f) => Math.hypot(f.x - c.x, f.y - c.y, f.z - c.z) < 0.3);
+    const onLine = (f) => f.tipo === 'texture' && Math.abs(f.ang - c.ang) < 1e-3 && Math.abs(f.perp - c.line.perp) < 0.1;
+    if (sel.tool === 'muro') {
+      if (list.some(onLine)) { st.finestre = list.filter((f) => !onLine(f)); hint('Il muro torna alla texture dell’edificio.'); }
+      else { const ws = wallPatches(c, sel.palette || 'arancione'); if (!ws.length) { hint('Non trovo il muro sotto il dito.'); return; } list.push(...ws); hint('Muro in ' + (TEXTURE[sel.palette] || sel.palette) + '.'); }
+      drawPatches(c.code); saveFacade(c.code); return;
+    }
+    const k = list.findIndex((f) => f.tipo !== 'texture' && Math.hypot(f.x - c.x, f.y - c.y, f.z - c.z) < 0.3);
     if (k >= 0) { list.splice(k, 1); hint('Cella ripristinata com’era.'); }
     else if (sel.tool === 'togli' && c.kind === 'attic') { hint('Nell’attico non ci sono finestre da togliere.'); return; }
-    else { list.push(Object.assign({ tipo: sel.tool }, c)); delete list[list.length - 1].code; hint(sel.tool === 'togli' ? 'Finestra tolta.' : 'Finestra aggiunta.'); }
+    else {
+      const wall = list.find(onLine), f = Object.assign({ tipo: sel.tool, palette: wall ? wall.palette : undefined }, c);
+      delete f.code; delete f.line; list.push(f); hint(sel.tool === 'togli' ? 'Finestra tolta.' : 'Finestra aggiunta.');
+    }
     drawPatches(c.code); saveFacade(c.code);
   }
   function selectBuilding(h) {
@@ -597,11 +626,14 @@
     for (const k of C.facciate.nomi) { const o = el('option', '', TEXTURE[k] || k); o.value = k; o.selected = k === C.facciate.nomeDi(code); sl.append(o); }
     sl.addEventListener('change', () => { st.facciata = sl.value; applyFacade(code); saveFacade(code); });
     const tool = (k, label) => { const b = button(label, () => { sel.tool = sel.tool === k ? null : k; buildingCard(); hint(sel.tool ? 'Tocca una cella della facciata. Toccala di nuovo per rimetterla com’era.' : ''); }); b.setAttribute('aria-pressed', String(sel.tool === k)); return b; };
-    const row = el('div', 'ed-row'), n = (st.finestre || []).length;
-    row.append(tool('togli', 'Togli finestre'), tool('aggiungi', 'Aggiungi finestre'));
+    const row = el('div', 'ed-row'), n = (st.finestre || []).length, wl = el('select');
+    for (const k of C.facciate.nomi) { const o = el('option', '', TEXTURE[k] || k); o.value = k; o.selected = k === (sel.palette || 'arancione'); wl.append(o); }
+    wl.addEventListener('change', () => { sel.palette = wl.value; });
+    sel.palette = sel.palette || 'arancione';
+    row.append(tool('togli', 'Togli finestre'), tool('aggiungi', 'Aggiungi finestre'), tool('muro', 'Texture di un muro'));
     if (st.facciata || n) row.append(button('Ripristina originale', () => { facadeState.set(code, clone(base.facciate[code] || { facciata: null, finestre: [] })); applyFacade(code); saveFacade(code); buildingCard(); }));
     row.append(button('Fine', () => deselect(), true));
-    openCard([el('h3', '', 'Edificio ' + code), el('p', 'ed-meta', 'L’edificio non si deforma: si cambiano la texture e le finestre.' + (n ? ` Celle modificate: ${n}.` : '')), el('label', '', 'Texture della facciata'), sl, row], 'dock');
+    openCard([el('h3', '', 'Edificio ' + code), el('p', 'ed-meta', 'L’edificio non si deforma: si cambiano la texture e le finestre.' + (n ? ` Celle modificate: ${n}.` : '')), el('label', '', 'Texture della facciata'), sl, el('label', '', 'Texture per «Texture di un muro»'), wl, row], 'dock');
   }
 
   /* ---------- salvataggio ---------- */
@@ -645,7 +677,7 @@
   function applyOverrides() {
     const touched = new Set();
     for (const o of overrides) {
-      if (o.stato === 'applicata' || o.sorgente === 'primitiva') continue;
+      if ((o.stato && o.stato !== 'da applicare') || o.sorgente === 'primitiva') continue;
       if (o.sorgente === 'edificio') { applyFacadeDoc(o); continue; }
       if (!o.valore) continue;
       let it = findItem(`${o.sorgente}:${o.percorso}`);
@@ -805,6 +837,7 @@
     canvas.addEventListener('lostpointercapture', (e) => { if (drag && e.pointerId === drag.pointerId) setTimeout(() => { if (drag && drag.pointerId === e.pointerId) onCancel(e); }, 0); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (ui.card.hidden) setMode(null); else closeCard(); } });
     loop(); connect();
+    window.campus3dEditor = { facciate: () => clone(Object.fromEntries(facadeState)) }; // sola lettura, per riportare le facciate nei file
   }
   // aspetta la scena, le due configurazioni (esterni di Chimica e cortile) e gli alberi
   let tries = 0;

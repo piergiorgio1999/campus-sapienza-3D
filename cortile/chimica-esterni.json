@@ -1,7 +1,7 @@
 {
  "versione": 1,
  "edificio": "CU014",
- "nota": "Elementi esterni del Vecchio Edificio di Chimica. Ogni elemento usa un lato della sagoma OSM (indice del segmento): u = metri lungo il lato dal suo primo vertice, v = metri verso l'esterno. Lato 0 = facciata nord dell'ala ovest (verso il viale), lato 19 = facciata ovest (cortile dell'azoto). Scale antincendio: scala metallica aperta a forbice (lunghezza 8.4 m, larghezza 4.3 m, a 0.5 m dal muro), centrata in u e parallela al lato; misure e quote dal rilievo della scala ovest, posizioni delle altre dalla vista satellitare.",
+ "nota": "Elementi esterni del Vecchio Edificio di Chimica. Ogni elemento usa un lato della sagoma OSM (indice del segmento): u = metri lungo il lato dal suo primo vertice, v = metri verso l'esterno. Lato 0 = facciata nord dell'ala ovest (verso il viale), lato 19 = facciata ovest (cortile dell'azoto). Scale antincendio (fino al quarto piano, 17,1 m): scala metallica aperta a forbice (lunghezza 8.4 m, larghezza 4.3 m, a 0.5 m dal muro), centrata in u e parallela al lato; misure e quote dal rilievo della scala ovest, posizioni delle altre dalla vista satellitare.",
  "elementi": [
   {
    "tipo": "terrazza",
@@ -436,19 +436,23 @@
    "nome": "Scala antincendio (facciata nord, ala ovest)",
    "lato": 0,
    "u": 12.9,
-   "piani": 2
+   "piani": 4
   },
   {
    "tipo": "scala",
    "nome": "Scala antincendio (facciata ovest, cortile azoto) — rilievo Scaniverse 16/10/2026",
    "lato": 19,
    "u": 15.8,
-   "piani": 2,
+   "piani": 4,
    "quote": [
     2.85,
     5.25,
     7.4,
-    9.2
+    9.2,
+    11.15,
+    13.15,
+    15.1,
+    17.1
    ]
   },
   {
@@ -456,14 +460,14 @@
    "nome": "Scala antincendio (facciata est)",
    "lato": 4,
    "u": 38.6,
-   "piani": 2
+   "piani": 4
   },
   {
    "tipo": "scala",
    "nome": "Scala antincendio (facciata sud, accanto all'anfiteatro)",
    "lato": 6,
    "u": 5.7,
-   "piani": 2
+   "piani": 4
   }
  ]
 }

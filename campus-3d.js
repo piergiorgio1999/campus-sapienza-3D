@@ -844,6 +844,7 @@
     travertino: { wall: '#ddd3bf', wall2: '#cfc3ab', mortar: 'rgba(120,105,85,.28)', frame: '#ece5d7', base: '#cfc3ab', attic: 0xe6decd, slabs: true },
     ocra: { wall: '#d8b083', wall2: '#cba172', mortar: 'rgba(0,0,0,0)', frame: '#ece2cf', base: '#d4c7ae', attic: 0xe5d9c3 },
     giallo: { wall: '#d6a66b', wall2: '#c7955c', mortar: 'rgba(242,226,200,.55)', frame: '#e6dccb', base: '#e2dccf', attic: 0xe2d9c8, brick: true },
+    arancione: { wall: '#c98a5c', wall2: '#be7f52', mortar: 'rgba(0,0,0,0)', frame: '#e2d8c5', base: '#d4c8b2', attic: 0xddd3c0 },
     intonaco: { wall: '#e0c9a6', wall2: '#d3ba95', mortar: 'rgba(0,0,0,0)', frame: '#efe7d8', base: '#cdbfa5', attic: 0xe9dfcd },
   };
   const TRAVERTINE_CODES = new Set(['CU001', 'CU002', 'CU003']);
@@ -1009,6 +1010,7 @@
     const p = FACADE_PALETTES[name] || FACADE_PALETTES.cortina;
     const common = { roughness: 0.88, metalness: 0, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 };
     const mat = tipo === 'finestra' ? new THREE.MeshStandardMaterial(Object.assign({ map: singleWindowTex(p, kind), transparent: true, alphaTest: 0.4 }, common))
+      : tipo === 'facciata' && kind !== 'attic' ? new THREE.MeshStandardMaterial(Object.assign({ map: kind === 'base' ? baseCanvas2(p, 1) : windowCanvas(p, 1) }, common)) // un muro con un'altra texture, finestre comprese
       : kind === 'attic' ? new THREE.MeshStandardMaterial(Object.assign({ color: new THREE.Color(p.attic).convertSRGBToLinear() }, common))
       : new THREE.MeshStandardMaterial(Object.assign({ map: kind === 'base' ? baseCanvas2(p, 1, false) : windowCanvas(p, 1, false) }, common));
     patchMats.set(key, mat);
@@ -2747,14 +2749,15 @@
     for (let i = 0; i <= nLeaf; i += 1) { const u = PO.u[0] + (fw * i) / nLeaf; box(u - 0.04, u + 0.04, 0, gH, fv - 0.04, fv + 0.04, rust); }
     // corpo dell'edificio sopra il portico (le sagome sono svuotate fino al soffitto): stessi pezzi dell'edificio
     // (basamento, corpo, attico) con le stesse quote delle texture, così piani e finestre continuano senza giunte
-    const topH = heightInfo({}).value, baseH = PO.soffitto + 0.35;
+    const cu = buildings.find((x) => String(x.code).toUpperCase() === 'CU014') || {};
+    const topH = heightInfo({ height: cu.height, levels: cu.levels }).value, baseH = PO.soffitto + 0.35; // stessa altezza e piani dell'edificio
     const ringLL = [[PO.u[0], PO.v[0]], [PO.u[1], PO.v[0]], [PO.u[1], PO.v[1]], [PO.u[0], PO.v[1]], [PO.u[0], PO.v[0]]].map((q) => {
       const [x, n] = courtyardFrame.toMap(q);
       return [(x + mapWidth / 2) / metersPerLon + bounds.west, (n + mapDepth / 2) / metersPerLat + bounds.south];
     });
     const shp = makeShape([ringLL]);
     if (shp && topH > baseH + 1 && buildingGroup) {
-      const set = facadeSetFor('CU014'), pieces = buildingPieces(topH, NaN);
+      const set = facadeSetFor('CU014'), pieces = buildingPieces(topH, Number(cu.levels));
       pieces.forEach((piece, k) => {
         const y0 = Math.max(piece.y0, baseH), y1 = piece.y0 + piece.h;
         if (y1 <= y0 + 0.01) return;

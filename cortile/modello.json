@@ -45,12 +45,12 @@
     {
       "id": "B",
       "u": [
-        11.9,
-        15.5
+        10.65,
+        14.25
       ],
       "v": [
-        1.1,
-        8.5
+        1.45,
+        8.3
       ],
       "altezza": 0.42,
       "varco": {
@@ -78,19 +78,19 @@
     }
   ],
   "serbatoio": {
-    "u": 13.0,
-    "v": 7.0,
+    "u": 11.95,
+    "v": 7.1,
     "raggio": 0.8,
     "altezza": 4.2
   },
   "gabbia": {
     "u": [
-      11.9,
-      15.2
+      10.65,
+      13.95
     ],
     "v": [
-      5.5,
-      8.45
+      5.3,
+      8.25
     ],
     "altezza": 1.63,
     "porta": {
@@ -229,40 +229,40 @@
     "raggio": 0.08,
     "percorso": [
       [
-        13.02,
-        7.17,
+        11.37,
+        7.37,
         0.68
       ],
       [
-        13.02,
-        6.0,
+        11.37,
+        5.95,
         0.68
       ],
       [
-        11.78,
-        6.0,
+        10.48,
+        5.95,
         0.68
       ],
       [
-        11.78,
-        6.0,
+        10.48,
+        5.95,
         0.02
       ]
     ],
     "canaletta": {
-      "u": 11.8,
+      "u": 10.5,
       "v": [
-        4.55,
-        6.1
+        4.5,
+        6.05
       ],
       "larghezza": 0.16
     },
     "nota": "Tubo di scarico del silos, metallico (foto del 19/10/2026): dal basamento del serbatoio corre a 0.68 m lungo il lato del cartello, scavalca il cordolo vicino alla porticina, scende e scarica in una fossetta scoperta lungo la base del cordolo, che prosegue fino alla cancellata su strada; nella fossetta è adagiato un mezzo tubo bianco.",
     "fossetta": {
-      "u": 11.8,
+      "u": 10.5,
       "v": [
-        0.15,
-        6.2
+        0.9,
+        6.15
       ],
       "larghezza": 0.22
     }

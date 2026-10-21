@@ -240,3 +240,11 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
 - **Cancellata:** `cancellata.sporgenza` = 0.4 in `cortile/modello.json`: muretto e ringhiera si prolungano di 0.4 m oltre i muri (u −0.2 e 17.0), con 3 barre in più per lato (u −0.13, 0, 0.13 a sinistra; 16.64, 16.77, 16.9 a destra), stesso passo 0.13, sezione e materiale. Il lato destro aveva già la barra a 0.09 dal muro, ma ora è simmetrico.
 - **Ponte:** `portico.v` = [8.0, 13.0] (prima 9.4): soffitto e corpo di un piano arrivano a filo delle due colonne (v 8.05→8.95) con 5 cm oltre. Le colonne (`pilastri`) sono alte 4.85 (solaio del ponte) invece di 5.75. Tetto piano liscio come prima.
 - **Tombino 1:** u 8.4 (asse), v 4.875 (centro delle aiuole v 1.45–8.3), lato 0.6 invariato.
+### Commenti su marciapiedi e cortili CU014 (21/10/2026)
+- **Discese dei marciapiedi:** la rampa non sporge più verso la strada ma sta dentro il marciapiede (`buildSidewalk`): piano e
+  cordolo in travertino sono ritagliati da una tasca larga `larghezza` e profonda `profondita` dal bordo esterno; la rampa scende
+  dal piano alla quota della strada a filo del bordo esterno, senza gradini. Giunti sotto la rampa omessi. `profondita` ora vale
+  come lunghezza interna della rampa (minimo spessore cordolo + 0,3 m).
+- **Cortili di CU014 rettificati** in `courtyards.json` (indici 4 e 5, quelli sotto i punti u 42,53 v −68,8 e u 12,29 v −72,32 del
+  lato 0): sostituiti dal rettangolo allineato al lato 0 con l'ingombro del poligono originale: n. 4 circa 6,2 × 9,0 m
+  (u 40,8–47,0, v −73,2…−64,2), n. 5 circa 7,8 × 7,5 m (u 10,3–18,2, v −73,9…−66,3). Gli altri poligoni sono invariati.

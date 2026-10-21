@@ -15,7 +15,7 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
     in coordinate u/v/h della `cornice` (`esterni:<elemento>`, `cortile` o `lato0`).
     Altri documenti: `albero:<id>` (posizione `p`, raggio `r`, `rimosso`, `nuovo`), `aggiunta:<id>` (primitive con
     `forma`, `materiale`, `box`, `angolo` in gradi (positivo = antiorario visto dall'alto, ruota il solido o l'oggetto attorno
-    al centro della `box`, che nel file resta dritta); marciapiedi e aiuole con `poligono`, `base`, `altezza`, `discese`, `tipo`, `terreno`,
+    al centro della `box`, che nel file resta dritta); marciapiedi e aiuole con `poligono`, `base`, `altezza`, `discese` (marciapiedi: `[{lato, t, larghezza, profondita}]`, rampa interna al marciapiede: `profondita` è la lunghezza della rampa misurata dal bordo esterno verso l'interno, dove il piano scende fino alla quota della strada a filo del bordo; piano e cordolo vi sono ritagliati), `tipo`, `terreno`,
     `cordolo` (aiuole: spessore del cordolo; marciapiedi: spessore del bordo a cornice in travertino bianco, default 0,2 m, 0 = senza bordo), `raggio` per tutti gli angoli e `raggi` per angolo; `forma: "oggetto"` è una copia di un oggetto del catalogo
     di `campus-3d.js` con `modello`, `ruota` (0/90/180/270), `scritta` per totem e scritte, stirata nella `box`;
     `cornice` = `cortile` o `esterni:<elemento>` per i duplicati fatti in quelle coordinate), `edificio:<codice>`

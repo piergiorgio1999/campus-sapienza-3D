@@ -2676,30 +2676,69 @@
     const convex = (i) => { const a = Q[(i - 1 + n) % n], b = Q[i], c = Q[(i + 1) % n]; return (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]) >= 0; };
     const inner = k >= 0.02 ? filletOutline(insetPolygon(Q, k), R.map((r, i) => (r > 0 ? (convex(i) ? Math.max(0, r - k) : r + k) : 0))) : null;
     const ring = !!inner && signedArea(inner) > 0.05 && signedArea(inner) < signedArea(outer); // cordolo possibile solo se l'interno resta un poligono sensato
-    if (!ring) grp.add(shapeSlab(shapeOf(outer), base, base + h, sidewalkMaterial(false), 0.04)); // senza cordolo: bordo arrotondato da marciapiede
-    else {
-      // asfalto (o il materiale del piano) solo dentro l'anello; cordolo a filo con il piano, in travertino bianco
-      grp.add(shapeSlab(shapeOf(inner), base, base + h, sidewalkMaterial(false)));
-      const kerb = shapeOf(outer);
-      kerb.holes.push(new THREE.Path(inner.slice().reverse().map(([u, v]) => new THREE.Vector2(u, v))));
-      grp.add(shapeSlab(kerb, base, base + h, whiteTravertineMaterial()));
-    }
-    // discese verso la strada: scivolo a cuneo sul lato esterno, dalla quota del marciapiede alla strada; sta sopra il cordolo, che lì si interrompe
-    const flip = signedArea(P) < 0, ramps = [];
+    // discese verso la strada: rampa ricavata NELLO spessore del marciapiede (non sporge sulla strada). Piano e cordolo vengono ritagliati
+    // con una tasca rettangolare larga `larghezza`, profonda `profondita` dal bordo esterno verso l'interno; la rampa scende dal piano
+    // (all'interno della tasca) alla quota della strada, a filo del bordo esterno. Nessun gradino: il cordolo lì si interrompe.
+    const flip = signedArea(P) < 0, ramps = [], cuts = [];
+    const pointAt = (poly, X) => { const p = poly[X.i], q = poly[(X.i + 1) % poly.length]; return [p[0] + (q[0] - p[0]) * X.t, p[1] + (q[1] - p[1]) * X.t]; };
+    const locate = (poly, pt) => { // segmento più vicino al punto: { i, t, dist }
+      let best = null;
+      for (let i = 0; i < poly.length; i += 1) {
+        const p = poly[i], q = poly[(i + 1) % poly.length], du = q[0] - p[0], dv = q[1] - p[1], l2 = du * du + dv * dv; if (l2 < 1e-12) continue;
+        const t = Math.max(0, Math.min(1, ((pt[0] - p[0]) * du + (pt[1] - p[1]) * dv) / l2)), dist = Math.hypot(p[0] + du * t - pt[0], p[1] + dv * t - pt[1]);
+        if (!best || dist < best.dist) best = { i, t, dist };
+      }
+      return best;
+    };
     for (const d of pr.discese || []) {
       const i = flip ? (n - 2 - d.lato + n) % n : d.lato; // il poligono è stato girato: stesso lato, indice diverso
       const a = Q[i], b = Q[(i + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 0.5) continue;
-      const eu = (b[0] - a[0]) / L, ev = (b[1] - a[1]) / L, W = Math.min(L - 0.2, Number(d.larghezza) || 1.4), D = Number(d.profondita) || 0.9;
+      const eu = (b[0] - a[0]) / L, ev = (b[1] - a[1]) / L, W = Math.min(L - 0.2, Number(d.larghezza) || 1.4), D = Math.max((ring ? k : 0) + 0.3, Number(d.profondita) || 0.9);
       const t = flip ? 1 - Number(d.t) : Number(d.t), sc = Math.min(L - W / 2 - 0.1, Math.max(W / 2 + 0.1, t * L));
-      const x0 = ring ? -k - 0.02 : -0.08; // lo scivolo copre tutto lo spessore del cordolo: nessun gradino che spunta
-      const prof = new THREE.Shape(ring ? [new THREE.Vector2(x0, h + 0.004), new THREE.Vector2(0, h + 0.004), new THREE.Vector2(D, 0.004), new THREE.Vector2(x0, 0.004)] : [new THREE.Vector2(-0.08, h + 0.002), new THREE.Vector2(D, 0.004), new THREE.Vector2(-0.08, 0.004)]);
+      const s0 = sc - W / 2, s1 = sc + W / 2, at = (s, x) => [a[0] + eu * s + ev * x, a[1] + ev * s - eu * x]; // x > 0 verso l'esterno (normale esterna = (ev, −eu))
+      const o0 = locate(outer, at(s0, 0)), o1 = locate(outer, at(s1, 0)), i0 = ring ? locate(inner, at(s0, -k)) : null, i1 = ring ? locate(inner, at(s1, -k)) : null;
+      if (o0.dist > 1e-3 || o1.dist > 1e-3 || o0.i !== o1.i || o0.t >= o1.t || (ring && (i0.dist > 1e-3 || i1.dist > 1e-3 || i0.i !== i1.i || i0.t >= i1.t))) continue; // lato troppo vicino a un raccordo: niente discesa
+      cuts.push({ o0, o1, i0, i1, f0: at(s0, -D), f1: at(s1, -D) });
+      const prof = new THREE.Shape([new THREE.Vector2(-D, h), new THREE.Vector2(0, 0.004), new THREE.Vector2(0, 0), new THREE.Vector2(-D, 0)]); // piano in alto all'interno, quota strada a filo del bordo esterno
       const geo = new THREE.ExtrudeGeometry(prof, { depth: W, bevelEnabled: false }); geo.computeVertexNormals(); planarUVs(geo, 1);
       const m = new THREE.Mesh(geo, sidewalkMaterial(true)); m.castShadow = true; m.receiveShadow = true;
       const o = [a[0] + eu * (sc + W / 2), a[1] + ev * (sc + W / 2)]; // asse X verso l'esterno, Z lungo il lato all'indietro: terna destrorsa
       m.matrixAutoUpdate = false;
       m.matrix.makeBasis(new THREE.Vector3(ev, 0, eu), new THREE.Vector3(0, 1, 0), new THREE.Vector3(-eu, 0, ev)).setPosition(o[0], base, -o[1]);
       grp.add(m);
-      ramps.push({ a, eu, ev, s0: sc - W / 2 - 0.02, s1: sc + W / 2 + 0.02 });
+      ramps.push({ a, eu, ev, s0: s0 - 0.02, s1: s1 + 0.02 });
+    }
+    // contorno con le tasche delle discese inserite (per ogni cut, i punti vanno dal bordo verso l'interno e di nuovo al bordo)
+    const notched = (poly, ik, start, end, floor) => {
+      const out = [];
+      poly.forEach((p, i) => {
+        out.push(p);
+        cuts.filter((c) => c[ik].i === i).sort((x, y) => x[ik].t - y[ik].t).forEach((c) => out.push(pointAt(poly, c[start]), c[floor[0]], c[floor[1]], pointAt(poly, c[end])));
+      });
+      return out;
+    };
+    if (!ring) grp.add(shapeSlab(shapeOf(notched(outer, 'o0', 'o0', 'o1', ['f0', 'f1'])), base, base + h, sidewalkMaterial(false), cuts.length ? 0 : 0.04));
+    else {
+      // asfalto (o il materiale del piano) solo dentro l'anello; cordolo a filo con il piano, in travertino bianco
+      grp.add(shapeSlab(shapeOf(notched(inner, 'i0', 'i0', 'i1', ['f0', 'f1'])), base, base + h, sidewalkMaterial(false)));
+      if (!cuts.length) {
+        const kerb = shapeOf(outer);
+        kerb.holes.push(new THREE.Path(inner.slice().reverse().map(([u, v]) => new THREE.Vector2(u, v))));
+        grp.add(shapeSlab(kerb, base, base + h, whiteTravertineMaterial()));
+      } else {
+        // il cordolo è un anello interrotto dalle tasche: un pezzo per ogni tratto fra due discese (arco esterno in avanti, arco interno all'indietro)
+        const key = (X, m) => X.i + X.t, arc = (poly, A, B) => {
+          const m = poly.length, ka = key(A), kb = key(B) < ka ? key(B) + m : key(B), out = [pointAt(poly, A)];
+          for (let j = Math.floor(ka) + 1; j < kb; j += 1) out.push(poly[j % m]);
+          out.push(pointAt(poly, B));
+          return out;
+        };
+        const ord = cuts.slice().sort((x, y) => key(x.o0) - key(y.o0));
+        ord.forEach((c, j) => {
+          const nx = ord[(j + 1) % ord.length];
+          grp.add(shapeSlab(shapeOf(arc(outer, c.o1, nx.o0).concat(arc(inner, c.i1, nx.i0).reverse())), base, base + h, whiteTravertineMaterial()));
+        });
+      }
     }
     if (ring) addKerbJoints(grp, outer, k, base, h, ramps);
     return grp;

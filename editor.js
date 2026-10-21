@@ -202,6 +202,9 @@
             const f0 = TS.percorso[TS.percorso.length - 1]; TS.percorso = scalePts(TS.percorso, inner(o), inner(n)); const f1 = TS.percorso[TS.percorso.length - 1];
             if (TS.canaletta) TS.canaletta = Object.assign({}, TS.canaletta, { u: round(TS.canaletta.u + f1[0] - f0[0]), v: TS.canaletta.v.map((x) => round(x + f1[1] - f0[1])) });
           } });
+        if (TS.fossetta) add({ ...b, obj: TS, percorso: 'tuboScarico.fossetta', label: 'Fossetta di scarico', fields: ['fossetta'], lock: { h0: true, h1: true },
+          box: () => { const F = TS.fossetta, w = (Number(F.larghezza) || 0.2) / 2; return { u0: F.u - w, u1: F.u + w, v0: F.v[0], v1: F.v[1], h0: 0, h1: 0.04 }; },
+          apply: (o, n) => { TS.fossetta = Object.assign({}, TS.fossetta, { u: round((n.u0 + n.u1) / 2), larghezza: round(n.u1 - n.u0), v: [round(n.v0), round(n.v1)] }); } });
       }
     }
     return out;

@@ -2452,8 +2452,24 @@
         seg.quaternion.setFromUnitVectors(yAxis, b.clone().sub(a).normalize());
       }
       for (const q of pts.slice(1, -1)) add(new THREE.SphereGeometry(pr, 18, 12), pipeMat, q.x, q.y, q.z); // gomiti
+      // il tubo scarica in una fossetta scoperta lungo la base del cordolo, che prosegue fino alla cancellata su strada
+      const FS = TS.fossetta;
+      if (FS) {
+        const w = Number(FS.larghezza) || 0.2, len = FS.v[1] - FS.v[0];
+        box(FS.u - w / 2, FS.u + w / 2, 0, 0.016, FS.v[0], FS.v[1], std({ map: canvasTex(64, 256, (ctx, cw, ch) => {
+          ctx.fillStyle = '#3d3b30'; ctx.fillRect(0, 0, cw, ch); // fondo bagnato con muschio e foglie
+          for (let i = 0; i < 260; i += 1) { const t = hash01(i, 71); ctx.fillStyle = t > 0.75 ? 'rgba(150,104,52,0.6)' : t > 0.45 ? 'rgba(88,108,56,0.55)' : 'rgba(22,20,16,0.5)'; ctx.fillRect(hash01(i, 72) * cw, hash01(i, 73) * ch, 3 + 6 * hash01(i, 74), 3 + 9 * hash01(i, 75)); }
+        }, 1, len / 1.2), roughness: 1 }));
+        box(FS.u - w / 2 - 0.06, FS.u - w / 2, 0, 0.035, FS.v[0], FS.v[1], std({ color: 0x6f7163, roughness: 1 })); // bordo verso il cortile
+      }
+      // mezzo tubo bianco adagiato nella fossetta, dove finisce lo scarico
       const CT = TS.canaletta;
-      if (CT) { const w = Number(CT.larghezza) || 0.18; box(CT.u - w / 2, CT.u + w / 2, 0, 0.04, CT.v[0], CT.v[1], std({ color: 0xf0efea, roughness: 0.8 })); }
+      if (CT) {
+        const r = (Number(CT.larghezza) || 0.16) / 2, half = new THREE.CylinderGeometry(r, r, CT.v[1] - CT.v[0], 16, 1, true, Math.PI / 2, Math.PI);
+        half.rotateX(-Math.PI / 2); // asse lungo v, metà aperta verso l'alto
+        const m = add(half, std({ color: 0xf0efea, roughness: 0.8, side: THREE.DoubleSide }), CT.u, r + 0.005, -(CT.v[0] + CT.v[1]) / 2);
+        m.castShadow = false;
+      }
     }
 
     // gabbia verde: montanti, rete e porticina; cartello di sicurezza sul lato verso l'albero

@@ -22,7 +22,7 @@
   let db = null, assets = null, myId = null, saving = false;
   let mode = null; // 'commenta' | 'modifica' | null
   const base = { esterni: null, cortile: null, alberi: null, facciate: {} };
-  const FORME = { oggetto: 'Oggetto del modello', box: 'Parallelepipedo', cilindro: 'Cilindro', sfera: 'Sfera', marciapiede: 'Marciapiede', strada: 'Strada asfaltata', aiuola: 'Aiuola', albero: 'Albero', pino: 'Pino', file3d: 'File 3D (glb, gltf, obj, stl, ply, fbx, dae, 3mf)' };
+  const FORME = { oggetto: 'Oggetto del modello', box: 'Parallelepipedo', cilindro: 'Cilindro', sfera: 'Sfera', prisma: 'Solido a pianta libera (vertici)', marciapiede: 'Marciapiede', strada: 'Strada asfaltata', aiuola: 'Aiuola', albero: 'Albero', pino: 'Pino', file3d: 'File 3D (glb, gltf, obj, stl, ply, fbx, dae, 3mf)' };
   const TIPI_AIUOLA = { squadrata: 'squadrata', rotonda: 'rotonda', spezzata: 'con angoli spezzati' };
   const TERRENI = { prato: 'prato', foglie: 'terra con foglie', terra: 'terra senza foglie' };
   const TEXTURE = { cortina: 'mattoni rossi', giallo: 'mattoni gialli', travertino: 'travertino', ocra: 'intonaco ocra', arancione: 'intonaco arancione', intonaco: 'intonaco chiaro' };
@@ -405,13 +405,13 @@
     });
     // primitive aggiunte: scatola nelle coordinate del lato 0
     if (E) (E.primitive || []).forEach((pr) => {
-      const road = pr.forma === 'strada', poly = road || pr.forma === 'marciapiede' || (pr.forma === 'aiuola' && pr.tipo !== 'rotonda');
-      const label = pr.forma === 'oggetto' ? nomeOggetto(pr.modello) : road ? FORME.strada : pr.forma === 'file3d' ? 'Modello 3D: ' + ((pr.modello3d && pr.modello3d.nome) || 'file') : pr.forma === 'marciapiede' ? 'Marciapiede' : pr.forma === 'aiuola' ? `Aiuola ${TIPI_AIUOLA[pr.tipo] || ''} (${TERRENI[pr.terreno] || 'prato'})` : `${FORME[pr.forma] || FORME.box} in ${pr.materiale || 'travertino'}`;
+      const road = pr.forma === 'strada', prism = pr.forma === 'prisma', poly = road || prism || pr.forma === 'marciapiede' || (pr.forma === 'aiuola' && pr.tipo !== 'rotonda');
+      const label = pr.forma === 'oggetto' ? nomeOggetto(pr.modello) : road ? FORME.strada : prism ? `Solido in ${pr.materiale || 'travertino'}` : pr.forma === 'file3d' ? 'Modello 3D: ' + ((pr.modello3d && pr.modello3d.nome) || 'file') : pr.forma === 'marciapiede' ? 'Marciapiede' : pr.forma === 'aiuola' ? `Aiuola ${TIPI_AIUOLA[pr.tipo] || ''} (${TERRENI[pr.terreno] || 'prato'})` : `${FORME[pr.forma] || FORME.box} in ${pr.materiale || 'travertino'}`;
       add({ sorgente: 'aggiunta', frameKey: pr.cornice || 'lato0', obj: pr, percorso: pr.id, nome: pr.id, label, fields: ['id', 'forma', 'materiale', 'box', 'poligono', 'base', 'altezza', 'tipo', 'terreno', 'cordolo', 'discese', 'raggio', 'raggi', 'modello', 'ruota', 'angolo', 'specchio', 'scritta', 'cartello', 'logoMuseo', 'cornice', 'modello3d'], primitiva: true,
         vincolo: pr.forma === 'marciapiede' || pr.forma === 'aiuola' ? 'suolo' : pr.forma === 'oggetto' && A_PARETE.includes(pr.modello) ? 'parete' : pr.forma === 'oggetto' && pr.modello === 'tombino' ? 'superficie' : undefined,
         lock: road ? { h1: true } : pr.forma === 'marciapiede' || pr.forma === 'aiuola' ? { h0: true } : pr.forma === 'oggetto' && (A_PARETE.includes(pr.modello) || pr.modello === 'tombino') ? { h0: true } : {},
         box: poly ? () => ({ ...bboxPts(pr.poligono), h0: Number(pr.base) || 0, h1: (Number(pr.base) || 0) + (road ? 0.05 : Number(pr.altezza) || 0.15) }) : () => pr.box, // strada: piano senza spessore, scatola sottile per le maniglie
-        apply: poly ? (o, n) => { pr.poligono = scalePts(pr.poligono, o, n); if (road) { pr.base = round(n.h0); return; } pr.altezza = round(Math.max(0.05, n.h1 - n.h0)); if (pr.forma === 'marciapiede' || pr.forma === 'aiuola') pr.base = 0; } : (o, n) => { pr.box = roundBox(angleOf(pr) ? unturnBox(n, o, angleOf(pr)) : n); }, // con un angolo la scatola è nella cornice ruotata
+        apply: poly ? (o, n) => { pr.poligono = scalePts(pr.poligono, o, n); if (road) { pr.base = round(n.h0); return; } if (prism) { pr.base = round(n.h0); pr.altezza = round(Math.max(0.02, n.h1 - n.h0)); return; } pr.altezza = round(Math.max(0.05, n.h1 - n.h0)); if (pr.forma === 'marciapiede' || pr.forma === 'aiuola') pr.base = 0; } : (o, n) => { pr.box = roundBox(angleOf(pr) ? unturnBox(n, o, angleOf(pr)) : n); }, // con un angolo la scatola è nella cornice ruotata
         verts: poly ? { get: () => pr.poligono, set: (q) => { pr.poligono = q; } } : undefined });
     });
     return out;
@@ -771,6 +771,9 @@
         }));
         const r3 = el('div', 'ed-row'); r3.append(button('Ruota di 90°', redo(turnFree)), button('Misure del file', redo(fitFile))); nodes.push(r3, ...angleSlider(pr));
         const mr = el('div', 'ed-row'); mr.append(mirrorButton('Specchia ↔', 'u'), mirrorButton('Specchia ↕', 'v')); nodes.push(mr);
+      } else if (pr.forma === 'prisma') {
+        nodes.push(...pick('Materiale', C.esterni.materiali.map((m) => [m, m]), pr.materiale || 'travertino', (v) => change('materiale', v)));
+        nodes.push(el('p', 'ed-meta', 'Solido a pianta libera: le maniglie gialle spostano i vertici, «Aggiungi angolo» e «Togli angolo» cambiano la pianta, la faccia bassa e quella alta la quota.'));
       } else if (pr.forma === 'strada') {
         nodes.push(el('p', 'ed-meta', 'Piano d’asfalto senza spessore, 2 cm sopra la base: non sfarfalla con terreno, ortofoto e lastre; marciapiedi e oggetti sopra lo coprono. La faccia bassa della scatola alza o abbassa la strada.'));
       } else if (pr.forma !== 'marciapiede') {
@@ -1171,7 +1174,7 @@
     fileIn.addEventListener('change', () => { picked = fileIn.files && fileIn.files[0] ? fileIn.files[0] : null; if (picked) fileMeta.textContent = `${picked.name} · ${(picked.size / 1048576).toFixed(1).replace('.', ',')} MB`; });
     const fill = (sl, entries) => { for (const [k, t] of entries) { const o = el('option', '', t); o.value = k; sl.append(o); } };
     fill(shape, Object.entries(FORME)); fill(mat, C.esterni.materiali.map((m) => [m, m])); fill(tipo, Object.entries(TIPI_AIUOLA)); fill(terr, Object.entries(TERRENI)); fill(obj, C.esterni.catalogo);
-    const sync = () => { const f = shape.value, solid = ['box', 'cilindro', 'sfera'].includes(f); mat.hidden = matLbl.hidden = !solid; tipo.hidden = tipoLbl.hidden = terr.hidden = terrLbl.hidden = f !== 'aiuola'; obj.hidden = objLbl.hidden = f !== 'oggetto'; fileBtn.hidden = fileMeta.hidden = f !== 'file3d'; };
+    const sync = () => { const f = shape.value, solid = ['box', 'cilindro', 'sfera', 'prisma'].includes(f); mat.hidden = matLbl.hidden = !solid; tipo.hidden = tipoLbl.hidden = terr.hidden = terrLbl.hidden = f !== 'aiuola'; obj.hidden = objLbl.hidden = f !== 'oggetto'; fileBtn.hidden = fileMeta.hidden = f !== 'file3d'; };
     shape.addEventListener('change', sync); sync();
     const row = el('div', 'ed-row');
     row.append(button('Annulla', () => { placing = null; closeCard(); setMode('modifica'); }), button('Tocca dove metterlo', async () => {
@@ -1195,7 +1198,7 @@
         return;
       }
       placing = { forma: shape.value, materiale: mat.value, tipo: tipo.value, terreno: terr.value, modello: obj.value }; closeCard();
-      const what = placing.forma === 'oggetto' ? nomeOggetto(placing.modello) : FORME[placing.forma] + (['box', 'cilindro', 'sfera'].includes(placing.forma) ? ' in ' + placing.materiale : '');
+      const what = placing.forma === 'oggetto' ? nomeOggetto(placing.modello) : FORME[placing.forma] + (['box', 'cilindro', 'sfera', 'prisma'].includes(placing.forma) ? ' in ' + placing.materiale : '');
       hint('Tocca il punto della scena dove mettere: ' + what.toLowerCase() + '.');
     }, true));
     openCard([el('h3', '', 'Aggiungi'), el('label', '', 'Cosa aggiungere'), shape, objLbl, obj, matLbl, mat, tipoLbl, tipo, terrLbl, terr, fileBtn, fileMeta, fileIn, row], 'dock');
@@ -1214,6 +1217,7 @@
     }
     const q = toLocal(frameBy('lato0'), hit.point), u = snap(q.u), v = snap(q.v), h = rootOf(hit.object) ? round(q.h) : 0; // sul terreno: a quota 0, non sotto il piano
     let pr = { id: newId('p'), forma: what.forma, materiale: what.materiale, box: { u0: round(u - 0.5), u1: round(u + 0.5), v0: round(v - 0.5), v1: round(v + 0.5), h0: h, h1: round(h + 1) } };
+    if (what.forma === 'prisma') pr = { id: pr.id, forma: 'prisma', materiale: what.materiale || 'travertino', poligono: [[u - 1, v - 1], [u + 1, v - 1], [u + 1, v + 1], [u - 1, v + 1]].map(([a, b]) => [round(a), round(b)]), base: h, altezza: 1 };
     if (what.forma === 'strada') pr = { id: pr.id, forma: 'strada', poligono: [[u - 6, v - 3], [u + 6, v - 3], [u + 6, v + 3], [u - 6, v + 3]].map(([a, b]) => [round(a), round(b)]), base: h };
     if (what.forma === 'file3d') { const m = what.modello3d.misure; pr = { id: pr.id, forma: 'file3d', modello3d: clone(what.modello3d), box: roundBox({ u0: u - m.x / 2, u1: u + m.x / 2, v0: v - m.z / 2, v1: v + m.z / 2, h0: h, h1: h + m.y }) }; }
     if (what.forma === 'marciapiede') pr = { id: pr.id, forma: 'marciapiede', poligono: [[u - 3, v - 0.9], [u + 3, v - 0.9], [u + 3, v + 0.9], [u - 3, v + 0.9]].map(([a, b]) => [round(a), round(b)]), base: h, altezza: 0.15, raggio: 0.3, discese: [] };

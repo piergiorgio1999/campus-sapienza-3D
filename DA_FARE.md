@@ -412,3 +412,14 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
   (arrivo −85,65, cancello −79,6 → −77,44, pianerottolo fino a −76,46). L'STL vede la pensilina est fino a −69°: il lato est potrebbe essere più lungo.
 - Tolta la ringhiera sopra (pianerottolo alto); la seconda rampa è dentro l'edificio, con la soletta della loggia aperta sopra di lei.
 
+## Retro della Ginestra modificabile dall'utente (22/10/2026 notte) — fatto, non provato nel browser
+- La Ginestra è l'aula magna (anfiteatro) di Chimica: il fronte sud a ventaglio è il suo retro. Su richiesta dell'utente scale, base, pianerottoli,
+  pilone, pensilina, cancello, staccionate, piloni, balaustre e porte non li costruisce più `addCuVentaglio`: sono 36 primitive dell'editor in
+  `cortile/chimica-esterni.json` con id `gin-…`, generate con le misure della v62 (script in scratchpad, logica uguale a quella della pagina).
+- Pezzi nuovi: forma `prisma` (solido a pianta libera: `poligono`, `base`, `altezza`, `materiale`, vertici e angoli arrotondati come i marciapiedi;
+  anche in «＋ Aggiungi») per pianerottoli e pensiline che seguono la curva; catalogo `rampaScala` (gradini da 32 cm contati dalla lunghezza; alzata
+  = altezza/gradini, ma oltre 19 cm la rampa parte da un plinto con alzate di 17 cm), `staccionata` (in pendenza se la scatola supera 1 m),
+  `cancelloScala`, `balaustra`, `portaVetri`; materiale `intonaco arancione` per i piloni. Scatole con `angolo` tangente alla curva.
+- `addCuVentaglio` costruisce solo la struttura (piano terra, soletta, fondo in travertino, soffitto, volume sopra la loggia) e lascia i vuoti del
+  sottoscala e della soletta dove dice `ventaglio.scale`: se l'utente sposta molto le rampe, i vuoti vanno aggiornati nel JSON.
+

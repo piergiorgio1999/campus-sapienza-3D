@@ -1970,7 +1970,8 @@
      Il primo piano è arretrato lungo tutto l'arco (loggia profonda 4 m fra loggia.rInterno e la facciata, fondo rivestito di
      travertino): sotto il piano terra con le sue finestre, sopra il volume dell'anfiteatro che sporge fino al filo della facciata.
      Al centro 4 piloni arancioni sul filo della facciata (salgono fino al tetto come lesene), 3 parapetti di travertino fra i piloni,
-     porte a vetri sul fondo. Ai lati, per ogni scala:
+     porte a vetri sul fondo. Ai lati, per ogni scala (piloni, parapetti, porte e scale sono primitive dell'editor, id gin-…; qui
+     la pagina costruisce solo la struttura e lascia i vuoti dove passano le scale):
        · prima rampa all'esterno, lungo la curva: base quadrata con uno o due gradini d'angolo, poi i gradini fino al mezzo piano;
          a fianco, verso l'edificio, un grosso pilone di travertino che regge la pensilina e finisce in faccia a metà cancello;
        · pensilina («tetto» della scala): fascia curva attaccata all'edificio dall'inizio della scala alla fine del cancello;
@@ -1983,7 +1984,6 @@
     if (!f || !buildingGroup || !cuDisegnato || !cuSolidoUsato || officialPlanCodes.has('CU014') || !vent || !Array.isArray(vent.centro) || !B || !Lg) return;
     const C0 = vent.centro, Y0 = 0.04, rad = Math.PI / 180, deg = (len, r) => len / r / rad;
     const loc = (r, a) => [C0[0] + r * Math.cos(a * rad), C0[1] + r * Math.sin(a * rad)];
-    const W = (r, a, h) => { const p = project(f.toLL(loc(r, a))); return new THREE.Vector3(p.x, Y0 + h, -p.n); };
     const tag = (m) => { m.castShadow = true; m.receiveShadow = true; Object.assign(m.userData, { facadeCode: 'CU014', code: 'CU014', cuVentaglio: true }); buildingGroup.add(m); return m; };
     const coronaShape = (r0, r1, a0, a1) => makeShape([cuCorona(C0, r0, r1, Math.min(a0, a1), Math.max(a0, a1)).map(f.toLL)]);
     // settore di corona fra i raggi r0, r1 e gli angoli a0, a1, pieno dalla quota h0 alla h1 (sopra il terreno)
@@ -2004,33 +2004,25 @@
       }
       return segs;
     };
-    const rail = (pts, r, mat) => tag(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0), pts.length * 3, r, 6, false), mat));
     const trav = primitiveMaterial('travertino'), set = facadeSetFor('CU014');
     const plaster = courtOnce('cu|lesene', () => stdMat({ color: FACADE_PALETTES.cortina.wall, roughness: 0.9 }));
-    const glass = courtOnce('cu|porte vetro', () => stdMat({ color: '#25323a', roughness: 0.12, metalness: 0.45 }));
-    const frame = courtOnce('cu|porte telaio', () => stdMat({ color: '#3b2f27', roughness: 0.7 }));
-    const metal = courtOnce('cu|ringhiera scale', () => stdMat({ color: '#2f3633', roughness: 0.45, metalness: 0.6 }));
     const F = Number(cuSolido.interpiano) > 0 ? Number(cuSolido.interpiano) : 3.425;
     const rf = Number(vent.raggioFacciata), ri = Number(Lg.rInterno) || rf - 4, q = Number(B.quota) || 4.4;
     const a0 = Math.min(Number(B.a0), Number(B.a1)), a1 = Math.max(Number(B.a0), Number(B.a1)), lo = Math.min(Number(Lg.a0), Number(Lg.a1)), hi = Math.max(Number(Lg.a0), Number(Lg.a1));
-    const col = B.colonne || {}, nc = Math.max(2, Number(col.n) || 4), cw = Number(col.larghezza) || 0.9, cd = Number(col.profondita) || 0.9, rc = rf - (Number(B.arretramento) || 0.4);
+    const col = B.colonne || {}, nc = Math.max(2, Number(col.n) || 4), cw = Number(col.larghezza) || 0.9, rc = rf - (Number(B.arretramento) || 0.4);
     const mg = deg(Number(col.margine) || 1.05, rf), ha = deg(cw / 2, rf), cols = [];
     for (let i = 0; i < nc; i += 1) cols.push(a0 + mg + ((a1 - a0 - 2 * mg) * i) / (nc - 1));
-    // scale: angoli calcolati prima, servono per il sottoscala e per l'apertura della soletta
-    const n = Math.max(4, Number(S && S.gradini) || 13), q2 = q / 2, rise = q2 / n, tread = Number(S && S.pedata) || 0.32;
-    const band = (k, d) => (S && Array.isArray(S[k]) ? S[k].map(Number) : d);
-    const [rU0, rU1] = band('sottoscala', [rf - 1.9, rf]), [rk0, rk1] = band('corsia', [rf, rf + 1.35]), [rp0, rp1] = band('pilone', [rk1, rk1 + 0.6]), [r10, r11] = band('rampa1', [rp1, rp1 + 1.4]);
-    const r1m = (r10 + r11) / 2, r2m = (rU0 + rU1) / 2, G = (S && S.cancello) || {}, rg = Number(G.raggio) || rf - 0.05, gw = Number(G.larghezza) || 1.4;
-    const nb = Math.max(1, Math.min(3, Number(S && S.base && S.base.gradini) || 2)), tb = Number(S && S.base && S.base.lato) || r11 - r10;
+    // dove passano le seconde rampe (primitive gin-…): sottoscala aperto nel piano terra e soletta della loggia aperta sopra la rampa
+    const n = Math.max(4, Number(S && S.gradini) || 13), tread = Number(S && S.pedata) || 0.32;
+    const [rU0, rU1] = S && Array.isArray(S.sottoscala) ? S.sottoscala.map(Number) : [rf - 1.9, rf];
+    const r2m = (rU0 + rU1) / 2, G = (S && S.cancello) || {}, rg = Number(G.raggio) || rf - 0.05, gw = Number(G.larghezza) || 1.4;
     const sides = [];
     for (const lato of (S && S.lati) || []) {
       const s = Number(lato.verso) < 0 ? -1 : 1, aCol = s < 0 ? cols[0] - ha : cols[nc - 1] + ha; // bordo esterno del primo pilone
       const aP = aCol + s * deg(Number(S.arrivo) || 0.3, r2m); // arrivo della seconda rampa, appena prima del pilone
       const aF2 = aP + s * deg((n - 1) * tread, r2m); // piede della seconda rampa = inizio del cancello
-      const aG1 = aF2 + s * deg(gw, rg), aL = aF2 + s * deg(gw / 2, rg); // fine del cancello; metà cancello = fine del pilone e della prima rampa
-      const aB1 = aL - s * deg((n - 1 - nb) * tread, r1m), aB0 = aB1 - s * deg(tb, r1m); // prima rampa da aB1 ad aL, base quadrata da aB0 ad aB1
-      const aE = aL + s * deg(Number(S.pianerottolo) || 1.4, (rk0 + r11) / 2); // fine del pianerottolo di mezzo (oltre la pensilina)
-      sides.push({ s, aP, aF2, aG1, aL, aB1, aB0, aE });
+      const aG1 = aF2 + s * deg(gw, rg); // fine del cancello: il sottoscala va dall'arrivo della rampa fin qui
+      sides.push({ aP, aF2, aG1 });
     }
     // piano terra sotto la loggia (finestre del basamento), senza il sottoscala aperto delle scale
     const baseBand = (r0, r1, b0, b1) => {
@@ -2073,60 +2065,8 @@
       }
     };
     upper(ri, rf, lo, cols[0] - ha); upper(ri, rc, cols[0] - ha, cols[nc - 1] + ha); upper(ri, rf, cols[nc - 1] + ha, hi); // il primo pilone è a filo con la facciata dei lati
-    // piloni arancioni, dal pavimento della loggia al tetto (sopra la loggia fanno da lesene)
-    for (const ac of cols) { const [u, v] = loc(rf - cd / 2, ac); sector(rf - cd, rf, ac - ha, ac + ha, q, cuAltezzaIn(u, v), plaster); }
-    // parapetti di travertino fra i piloni: zoccolo, balaustrini, corrimano
-    const P = B.parapetto || {}, hp = Number(P.altezza) || 1, dp = Number(P.profondita) || 0.3;
-    for (let i = 0; i + 1 < nc; i += 1) {
-      const s0 = cols[i] + ha, s1 = cols[i + 1] - ha, L = Math.abs(s1 - s0) * rad * (rf - dp / 2);
-      sector(rf - dp, rf, s0, s1, q, q + 0.14, trav);
-      sector(rf - dp, rf - 0.02, s0, s1, q + hp - 0.12, q + hp, trav);
-      const nbal = Math.max(2, Math.floor(L / 0.19)), bw = deg(0.04, rf);
-      for (let k = 0; k < nbal; k += 1) { const ab = s0 + ((s1 - s0) * (k + 0.5)) / nbal; sector(rf - dp / 2 - 0.05, rf - dp / 2 + 0.05, ab - bw, ab + bw, q + 0.14, q + hp - 0.12, trav); }
-    }
-    // porte a vetri sul fondo, una per campata (o distribuite se il numero è diverso)
-    const D = B.porte || {}, nd = Math.max(0, Number(D.n) || 0), wd = Number(D.larghezza) || 1.5, hd = Number(D.altezza) || 2.7, rd = ri + 0.05;
-    for (let k = 0; k < nd; k += 1) {
-      const ad = nd === nc - 1 ? (cols[k] + cols[k + 1]) / 2 : a0 + ((a1 - a0) * (k + 0.5)) / nd, hw = deg(wd / 2, rd), fw = deg(wd / 2 + 0.08, rd), mw = deg(0.025, rd);
-      sector(rd, rd + 0.04, ad - fw, ad + fw, q, q + hd + 0.08, frame);
-      sector(rd + 0.04, rd + 0.06, ad - hw, ad + hw, q + 0.02, q + hd, glass);
-      sector(rd + 0.06, rd + 0.08, ad - mw, ad + mw, q, q + hd, frame);
-    }
-    if (!S) return;
-    const pen = S.pensilina || {}, top = Number(pen.quota) || q + 0.05, thick = Number(pen.spessore) || 0.3, rpe = Number(pen.rEsterno) || r11 + 0.2;
-    for (const d of sides) {
-      const { s, aP, aF2, aG1, aL, aB1, aB0, aE } = d;
-      // seconda rampa sotto l'edificio, larga quanto il sottoscala: dal piede (mezzo piano) sale verso il centro fino alla loggia
-      for (let k = 1; k < n; k += 1) sector(rU0, rU1, aF2 - s * deg((k - 1) * tread, r2m), aF2 - s * deg(k * tread, r2m), 0, q2 + k * rise, trav);
-      // pianerottolo di mezzo: dentro (davanti al cancello) e fuori (corsia, pilone e fascia della prima rampa oltre la fine del pilone)
-      sector(rU0, rU1, aF2, aG1, 0, q2, trav);
-      sector(rk0, rk1, aF2, aL, 0, q2, trav);
-      sector(rk0, r11, aL, aE, 0, q2, trav);
-      // prima rampa: base quadrata, gradini d'angolo attorno ai suoi due lati liberi, poi i gradini fino al mezzo piano
-      sector(r10, r11, aB0, aB1, 0, nb * rise, trav);
-      for (let j = 1; j < nb; j += 1) { const ext = (nb - j) * tread; sector(r10, r11 + ext, aB0 - s * deg(ext, r1m), aB1, 0, j * rise, trav); }
-      for (let k = nb + 1; k < n; k += 1) sector(r10, r11, aB1 + s * deg((k - nb - 1) * tread, r1m), aB1 + s * deg((k - nb) * tread, r1m), 0, k * rise, trav);
-      // pilone di travertino lungo la rampa, fino a metà cancello; regge la pensilina
-      sector(rp0, rp1, aL - s * deg(Number(S.piloneLunghezza) || 3, (rp0 + rp1) / 2), aL, 0, top - thick, trav);
-      // pensilina: dall'inizio della scala alla fine del cancello, attaccata all'edificio, senza ringhiera sopra
-      sector(rf + 0.01, rpe, aB0 - s * deg((nb - 1) * tread + 0.1, r1m), aG1, top - thick, top, trav);
-      // cancello sul filo della facciata, sotto l'edificio
-      const gb = deg(0.012, rg), nbar = Math.max(6, Math.round((gw / 0.12)));
-      for (let k = 0; k <= nbar; k += 1) { const ab = aF2 + ((aG1 - aF2) * k) / nbar; sector(rg - 0.012, rg + 0.012, ab - gb, ab + gb, q2, q2 + 1.95, metal); }
-      for (const hb of [q2 + 0.1, q2 + 1.9]) sector(rg - 0.02, rg + 0.02, aF2, aG1, hb, hb + 0.05, metal);
-      // staccionata metallica: dopo la base lungo il bordo esterno della prima rampa e del pianerottolo, testata del pianerottolo,
-      // bordo del pianerottolo sulla corsia (dal lato del centro)
-      const hStair1 = (a) => Math.min(q2, Math.max(nb * rise, nb * rise + ((a - aB1) / (aL - aB1)) * (q2 - nb * rise)));
-      const pts = []; const m1 = Math.max(2, Math.ceil(Math.abs(aE - aB1) / 0.5));
-      for (let k = 0; k <= m1; k += 1) { const a = aB1 + ((aE - aB1) * k) / m1; pts.push([a, s * (a - aL) >= 0 ? q2 : hStair1(a)]); }
-      const ro = r11 - 0.05;
-      rail(pts.map(([a, h]) => W(ro, a, h + 1)), 0.03, metal); rail(pts.map(([a, h]) => W(ro, a, h + 0.5)), 0.015, metal);
-      const pw = deg(0.025, ro); let last = null;
-      for (const [a, h] of pts) { if (last != null && Math.abs(a - last) * rad * ro < 1.1) continue; sector(ro - 0.025, ro + 0.025, a - pw, a + pw, h, h + 1, metal); last = a; }
-      const radial = (a, r0, r1, h) => { const list = []; for (let k = 0; k <= 6; k += 1) list.push(W(r0 + ((r1 - r0) * k) / 6, a, h)); rail(list, 0.03, metal); };
-      radial(aE - s * deg(0.05, r11), r11 - 0.05, rk0 + 0.05, q2 + 1);
-      radial(aF2 + s * deg(0.05, rk1), rk0 + 0.05, rk1 - 0.05, q2 + 1);
-    }
+    // piloni, parapetti, porte, scale, pensiline, piloni di travertino, cancelli e staccionate sono primitive dell'editor
+    // (cortile/chimica-esterni.json → primitive, id gin-…): l'utente li sposta e li modifica. Qui restano i vuoti e la struttura.
   }
   // Sagoma meno i cortili/pozzi di luce: differenza booleana, così ogni cortile diventa un vuoto chiuso (pareti su tutti i lati) anche se tocca il bordo.
   function shapesFor(rings, holes) {
@@ -2838,8 +2778,8 @@
     scene.add(holder);
   }
   /* ---------- primitive aggiunte dall'editor: forma e materiale a scelta ---------- */
-  const PRIM_COLORS = { intonaco: ['#e0c9a6', 0.9, 0], cemento: ['#9a9a95', 0.95, 0], bianco: ['#f2f1ec', 0.7, 0], 'metallo rosso': ['#6b1d29', 0.55, 0.4], 'ferro verde': ['#235b42', 0.55, 0.35], acciaio: ['#b9bdc0', 0.35, 0.75], legno: ['#6b4a2f', 0.8, 0], erba: ['#5f8a3e', 1, 0], asfalto: ['#4a4d50', 0.95, 0] };
-  const PRIM_MATERIALS = ['travertino', 'travertino a lastre', 'mattoni', 'mattoni gialli', 'intonaco', 'cemento', 'bianco', 'metallo rosso', 'ferro verde', 'acciaio', 'legno', 'vetro', 'erba', 'terra', 'sanpietrini', 'asfalto'];
+  const PRIM_COLORS = { intonaco: ['#e0c9a6', 0.9, 0], cemento: ['#9a9a95', 0.95, 0], bianco: ['#f2f1ec', 0.7, 0], 'metallo rosso': ['#6b1d29', 0.55, 0.4], 'ferro verde': ['#235b42', 0.55, 0.35], acciaio: ['#b9bdc0', 0.35, 0.75], legno: ['#6b4a2f', 0.8, 0], erba: ['#5f8a3e', 1, 0], asfalto: ['#4a4d50', 0.95, 0], 'intonaco arancione': ['#c98a5c', 0.9, 0] };
+  const PRIM_MATERIALS = ['travertino', 'travertino a lastre', 'mattoni', 'mattoni gialli', 'intonaco', 'cemento', 'bianco', 'metallo rosso', 'ferro verde', 'acciaio', 'legno', 'vetro', 'erba', 'terra', 'sanpietrini', 'asfalto', 'intonaco arancione'];
   const primMats = new Map();
   function primitiveMaterial(name) {
     if (name === 'travertino a lastre') return bedKerbMaterial(); // come cordoli e pilastri del cortile dell'azoto
@@ -3151,7 +3091,44 @@
     g.rotateY(Math.PI / 4); g.rotateZ(Math.PI / 2); g.scale(Math.abs(x1 - x0), h, w); g.translate((x0 + x1) / 2, 0, 0); g.computeVertexNormals();
     return g;
   }
+  // pezzi del retro della Ginestra (aula magna di Chimica): la geometria segue la scatola, così gradini, balaustrini e sbarre restano a misura
+  const metalloScale = () => courtOnce('cu|ringhiera scale', () => stdMat({ color: '#2f3633', roughness: 0.45, metalness: 0.6 }));
+  const meshUV = (m) => { planarUVs(m.geometry, 1); return m; };
+  const CATALOGO_GINESTRA = {
+    // gradini lungo x, quanti ne entrano a 32 cm; alzata = altezza / gradini, ma se viene oltre 19 cm la rampa parte da un plinto con alzate di 17 cm
+    rampaScala: { nome: 'Rampa di scale in travertino', crea: (pr) => group((g) => {
+      const [L, W, H] = ductDims(pr, 3.84, 1.4, 2.2), m = Math.max(1, Math.round(L / 0.32)), r = H / m <= 0.19 ? H / m : 0.17, t = L / m, { box } = partAdder(g), mat = primitiveMaterial('travertino');
+      for (let j = 1; j <= m; j += 1) meshUV(box(-L / 2 + (j - 1) * t, -L / 2 + j * t, 0, H - (m - j) * r, -W / 2, W / 2, mat));
+    }) },
+    // staccionata metallica: montanti ogni 1,1 m al massimo, corrimano e corrente a 1 m e 0,5 m; con la scatola più alta di 1 m sale lungo x
+    staccionata: { nome: 'Staccionata metallica (in pendenza se la scatola è alta più di 1 m)', crea: (pr) => group((g) => {
+      const [L, , H] = ductDims(pr, 2, 0.05, 1), rise = Math.max(0, H - 1), { box, add } = partAdder(g), mat = metalloScale(), y = (x) => (rise * (x + L / 2)) / L;
+      const n = Math.max(1, Math.ceil(L / 1.1));
+      for (let i = 0; i <= n; i += 1) { const x = Math.min(L / 2 - 0.025, Math.max(-L / 2 + 0.025, -L / 2 + (L * i) / n)); box(x - 0.025, x + 0.025, y(x), y(x) + 1, -0.025, 0.025, mat); }
+      for (const hh of [1, 0.5]) { const len = Math.hypot(L, rise) - 0.02, bar = add(new THREE.BoxGeometry(len, 0.04, 0.04), mat, 0, rise / 2 + hh - 0.02, 0); bar.rotation.z = Math.atan2(rise, L); }
+    }) },
+    cancelloScala: { nome: 'Cancello metallico a sbarre', crea: (pr) => group((g) => {
+      const [L, , H] = ductDims(pr, 1.4, 0.05, 1.95), { box } = partAdder(g), mat = metalloScale(), nb = Math.max(2, Math.round(L / 0.12));
+      box(-L / 2, L / 2, 0.06, 0.11, -0.02, 0.02, mat); box(-L / 2, L / 2, H - 0.05, H, -0.02, 0.02, mat);
+      for (const x of [-L / 2, L / 2 - 0.05]) box(x, x + 0.05, 0, H, -0.025, 0.025, mat);
+      for (let k = 1; k < nb; k += 1) { const x = -L / 2 + (L * k) / nb; box(x - 0.012, x + 0.012, 0.06, H - 0.05, -0.012, 0.012, mat); }
+    }) },
+    balaustra: { nome: 'Balaustra di travertino', crea: (pr) => group((g) => {
+      const [L, W, H] = ductDims(pr, 1.7, 0.3, 1), { box } = partAdder(g), mat = primitiveMaterial('travertino'), nb = Math.max(2, Math.floor(L / 0.19));
+      meshUV(box(-L / 2, L / 2, 0, 0.14, -W / 2, W / 2, mat)); meshUV(box(-L / 2, L / 2, H - 0.12, H, -W / 2, W / 2, mat));
+      for (let k = 0; k < nb; k += 1) { const x = -L / 2 + (L * (k + 0.5)) / nb; meshUV(box(x - 0.04, x + 0.04, 0.14, H - 0.12, -0.05, 0.05, mat)); }
+    }) },
+    // porta a vetri: telaio scuro dietro (−z, contro il muro), vetro e montante davanti (+z)
+    portaVetri: { nome: 'Porta a vetri con telaio scuro', crea: (pr) => group((g) => {
+      const [L, W, H] = ductDims(pr, 1.66, 0.08, 2.78), { box } = partAdder(g);
+      const fr = courtOnce('cu|porte telaio', () => stdMat({ color: '#3b2f27', roughness: 0.7 })), gl = courtOnce('cu|porte vetro', () => stdMat({ color: '#25323a', roughness: 0.12, metalness: 0.45 }));
+      box(-L / 2, L / 2, 0, H, -W / 2, -W / 2 + 0.04, fr);
+      box(-L / 2 + 0.08, L / 2 - 0.08, 0.04, H - 0.08, -W / 2 + 0.04, -W / 2 + 0.06, gl);
+      box(-0.025, 0.025, 0, H, -W / 2 + 0.04, W / 2, fr);
+    }) },
+  };
   const CATALOGO = {
+    ...CATALOGO_GINESTRA,
     ...Object.fromEntries(Object.entries(KIT_CONDOTTE).map(([k, [code, nome, size]]) => [k, { nome, crea: () => kitPiece(code, size) }])),
     condotta: { nome: 'Condotta dell’aria (canale zincato su piedini)', crea: (pr) => group((g) => { const [L, W, H] = ductDims(pr, 3, 1, 1.25); ductSegment(g, L, W, H, Math.min(0.45, Math.max(0.1, H * 0.22))); }) },
     uta: { nome: 'Unità di trattamento aria (UTA) da tetto', crea: (pr) => group((g) => {
@@ -3482,10 +3459,19 @@
     });
     return g;
   }
+  // solido a pianta libera dell'editor: poligono u/v (angoli arrotondati come i marciapiedi) estruso da base a base + altezza nel materiale scelto
+  function buildPrism(pr) {
+    const P = pr.poligono, base = Number(pr.base) || 0, h = Math.max(0.02, Number(pr.altezza) || 0.3);
+    if (!Array.isArray(P) || P.length < 3) return new THREE.Group();
+    const [Q, R] = ccwRadii(P, cornerRadii(pr, P, 0)), m = localSlab(filletOutline(Q, R), base, base + h, primitiveMaterial(pr.materiale || 'travertino'));
+    m.userData.primitiva = pr.id;
+    return m;
+  }
   function buildPrimitive(pr) {
     if (pr.forma === 'oggetto') return rotatedAboutCenter(pr, buildCatalogObject(pr));
     if (pr.forma === 'file3d') return rotatedAboutCenter(pr, buildUserModel(pr));
     if (pr.forma === 'strada') return buildRoad(pr);
+    if (pr.forma === 'prisma') return buildPrism(pr);
     if (pr.forma === 'marciapiede' || pr.forma === 'aiuola') { const g = pr.forma === 'marciapiede' ? buildSidewalk(pr) : buildBed(pr); g.userData.primitiva = pr.id; return g; }
     const b = pr.box, du = Math.max(0.02, b.u1 - b.u0), dv = Math.max(0.02, b.v1 - b.v0), dh = Math.max(0.02, b.h1 - b.h0);
     let geo;

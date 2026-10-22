@@ -23,7 +23,8 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
   `ventaglio`: centro e raggi del settore di 60° del fronte sud; `loggia` (primo piano arretrato di 4 m lungo tutto l'arco, fondo in travertino), `balconata`
   (4 piloni arancioni, 3 parapetti di travertino, porte a vetri) e `scale` (per lato: base quadrata con gradini d'angolo, prima rampa fuori lungo la curva sotto la
   pensilina, pilone di travertino fino a metà cancello, pianerottolo, cancello sul filo della facciata, seconda rampa nel sottoscala fino alla loggia).
-  `cuSolidoParts` toglie alla sagoma la corona davanti alla facciata e quella della loggia; `addCuVentaglio` ricostruisce tutto, con le quote delle ali sopra la loggia.
+  `cuSolidoParts` toglie alla sagoma la corona davanti alla facciata e quella della loggia; `addCuVentaglio` ricostruisce la struttura (quote delle ali sopra la loggia);
+  scale, pensiline, piloni, balaustre, porte, cancelli e staccionate sono primitive modificabili dell'editor (`gin-…` in `cortile/chimica-esterni.json`, forma `prisma` e catalogo `rampaScala`, `staccionata`, `cancelloScala`, `balaustra`, `portaVetri`).
 - `tools/`: script di verifica (playwright + Chromium) per render e misure
 - `editor.js`: pulsanti **Commenta** e **Modifica** sulla scena 3D. Il tasto **🌳 Alberi** (sempre visibile, stato ricordato nel browser) nasconde o mostra tutti gli alberi (OSM, magnolie, palme, pini, quelli del catalogo): in `campus-3d.js` sono marcati `userData.albero` e `window.campus3d.alberiVisibili(on)` li gestisce, anche dopo le ricostruzioni. I dati vivono nel db dell'artifact:
   - `segnalazioni`: commenti con punto 3D, lon/lat, coordinate u/v sul lato 0 e nel cortile, oggetto toccato e vista della camera;

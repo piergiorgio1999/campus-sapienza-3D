@@ -871,6 +871,1058 @@
     "h1": 16.14
    },
    "nota": "griglia del kit dell'utente in testa al canale nord, lato ovest"
+  },
+  {
+   "id": "gin-pilone-1",
+   "forma": "box",
+   "materiale": "intonaco arancione",
+   "angolo": 351.31,
+   "box": {
+    "u0": 22.71,
+    "u1": 23.6,
+    "v0": -87.26,
+    "v1": -86.36,
+    "h0": 4.4,
+    "h1": 15.2
+   },
+   "nota": "pilone arancione 1 della balconata (sale fino al tetto)"
+  },
+  {
+   "id": "gin-pilone-2",
+   "forma": "box",
+   "materiale": "intonaco arancione",
+   "angolo": 355.27,
+   "box": {
+    "u0": 25.24,
+    "u1": 26.13,
+    "v0": -87.55,
+    "v1": -86.65,
+    "h0": 4.4,
+    "h1": 15.3
+   },
+   "nota": "pilone arancione 2 della balconata (sale fino al tetto)"
+  },
+  {
+   "id": "gin-pilone-3",
+   "forma": "box",
+   "materiale": "intonaco arancione",
+   "angolo": 359.23,
+   "box": {
+    "u0": 27.78,
+    "u1": 28.67,
+    "v0": -87.68,
+    "v1": -86.78,
+    "h0": 4.4,
+    "h1": 15.3
+   },
+   "nota": "pilone arancione 3 della balconata (sale fino al tetto)"
+  },
+  {
+   "id": "gin-pilone-4",
+   "forma": "box",
+   "materiale": "intonaco arancione",
+   "angolo": 3.19,
+   "box": {
+    "u0": 30.32,
+    "u1": 31.21,
+    "v0": -87.62,
+    "v1": -86.72,
+    "h0": 4.4,
+    "h1": 15.4
+   },
+   "nota": "pilone arancione 4 della balconata (sale fino al tetto)"
+  },
+  {
+   "id": "gin-balaustra-1",
+   "forma": "oggetto",
+   "modello": "balaustra",
+   "ruota": 0,
+   "angolo": 353.29,
+   "box": {
+    "u0": 23.55,
+    "u1": 25.22,
+    "v0": -87.43,
+    "v1": -87.13,
+    "h0": 4.4,
+    "h1": 5.4
+   },
+   "nota": "balaustra di travertino 1 fra i piloni"
+  },
+  {
+   "id": "gin-balaustra-2",
+   "forma": "oggetto",
+   "modello": "balaustra",
+   "ruota": 0,
+   "angolo": 357.25,
+   "box": {
+    "u0": 26.1,
+    "u1": 27.77,
+    "v0": -87.64,
+    "v1": -87.34,
+    "h0": 4.4,
+    "h1": 5.4
+   },
+   "nota": "balaustra di travertino 2 fra i piloni"
+  },
+  {
+   "id": "gin-balaustra-3",
+   "forma": "oggetto",
+   "modello": "balaustra",
+   "ruota": 0,
+   "angolo": 1.21,
+   "box": {
+    "u0": 28.67,
+    "u1": 30.34,
+    "v0": -87.67,
+    "v1": -87.37,
+    "h0": 4.4,
+    "h1": 5.4
+   },
+   "nota": "balaustra di travertino 3 fra i piloni"
+  },
+  {
+   "id": "gin-porta-1",
+   "forma": "oggetto",
+   "modello": "portaVetri",
+   "ruota": 0,
+   "angolo": 353.29,
+   "box": {
+    "u0": 23.99,
+    "u1": 25.65,
+    "v0": -83.58,
+    "v1": -83.5,
+    "h0": 4.4,
+    "h1": 7.18
+   },
+   "nota": "porta a vetri 1 sul fondo della loggia"
+  },
+  {
+   "id": "gin-porta-2",
+   "forma": "oggetto",
+   "modello": "portaVetri",
+   "ruota": 0,
+   "angolo": 357.25,
+   "box": {
+    "u0": 26.29,
+    "u1": 27.95,
+    "v0": -83.77,
+    "v1": -83.69,
+    "h0": 4.4,
+    "h1": 7.18
+   },
+   "nota": "porta a vetri 2 sul fondo della loggia"
+  },
+  {
+   "id": "gin-porta-3",
+   "forma": "oggetto",
+   "modello": "portaVetri",
+   "ruota": 0,
+   "angolo": 1.21,
+   "box": {
+    "u0": 28.59,
+    "u1": 30.25,
+    "v0": -83.8,
+    "v1": -83.72,
+    "h0": 4.4,
+    "h1": 7.18
+   },
+   "nota": "porta a vetri 3 sul fondo della loggia"
+  },
+  {
+   "id": "gin-ovest-gradino-angolo",
+   "forma": "box",
+   "angolo": 348.84,
+   "box": {
+    "u0": 20.09,
+    "u1": 21.82,
+    "v0": -90.59,
+    "v1": -88.87,
+    "h0": 0,
+    "h1": 0.17
+   },
+   "nota": "scala ovest: gradino d'angolo attorno alla base quadrata"
+  },
+  {
+   "id": "gin-ovest-base",
+   "forma": "box",
+   "angolo": 348.61,
+   "box": {
+    "u0": 20.13,
+    "u1": 21.53,
+    "v0": -90.24,
+    "v1": -88.84,
+    "h0": 0,
+    "h1": 0.34
+   },
+   "nota": "scala ovest: base quadrata"
+  },
+  {
+   "id": "gin-ovest-rampa-1",
+   "forma": "oggetto",
+   "modello": "rampaScala",
+   "ruota": 0,
+   "angolo": 165.31,
+   "box": {
+    "u0": 16.99,
+    "u1": 20.19,
+    "v0": -89.72,
+    "v1": -88.32,
+    "h0": 0,
+    "h1": 2.03
+   },
+   "nota": "scala ovest: prima rampa, fuori lungo la curva, fino al mezzo piano"
+  },
+  {
+   "id": "gin-ovest-pianerottolo",
+   "forma": "prisma",
+   "materiale": "travertino",
+   "poligono": [
+    [
+     18.5,
+     -86.25
+    ],
+    [
+     18.22,
+     -86.17
+    ],
+    [
+     17.94,
+     -86.09
+    ],
+    [
+     17.66,
+     -86.0
+    ],
+    [
+     17.38,
+     -85.92
+    ],
+    [
+     17.11,
+     -85.83
+    ],
+    [
+     16.83,
+     -85.73
+    ],
+    [
+     16.55,
+     -85.64
+    ],
+    [
+     15.46,
+     -88.81
+    ],
+    [
+     15.74,
+     -88.9
+    ],
+    [
+     16.01,
+     -88.99
+    ],
+    [
+     16.29,
+     -89.08
+    ],
+    [
+     16.57,
+     -89.17
+    ],
+    [
+     16.85,
+     -89.26
+    ],
+    [
+     17.43,
+     -87.34
+    ],
+    [
+     17.66,
+     -87.41
+    ],
+    [
+     17.9,
+     -87.48
+    ],
+    [
+     18.13,
+     -87.55
+    ]
+   ],
+   "base": 0,
+   "altezza": 2.2,
+   "nota": "scala ovest: pianerottolo di mezzo (corsia e testata oltre il pilone)"
+  },
+  {
+   "id": "gin-ovest-pianerottolo-dentro",
+   "forma": "prisma",
+   "materiale": "travertino",
+   "poligono": [
+    [
+     19.02,
+     -84.42
+    ],
+    [
+     18.76,
+     -84.35
+    ],
+    [
+     18.51,
+     -84.28
+    ],
+    [
+     18.25,
+     -84.2
+    ],
+    [
+     18.0,
+     -84.12
+    ],
+    [
+     17.75,
+     -84.04
+    ],
+    [
+     17.16,
+     -85.84
+    ],
+    [
+     17.43,
+     -85.93
+    ],
+    [
+     17.69,
+     -86.01
+    ],
+    [
+     17.96,
+     -86.09
+    ],
+    [
+     18.23,
+     -86.17
+    ],
+    [
+     18.5,
+     -86.25
+    ]
+   ],
+   "base": 0,
+   "altezza": 2.2,
+   "nota": "scala ovest: pianerottolo dentro, davanti al cancello, sotto l'edificio"
+  },
+  {
+   "id": "gin-ovest-rampa-2",
+   "forma": "oggetto",
+   "modello": "rampaScala",
+   "ruota": 0,
+   "angolo": 347.12,
+   "box": {
+    "u0": 18.7,
+    "u1": 22.54,
+    "v0": -86.77,
+    "v1": -84.87,
+    "h0": 0,
+    "h1": 4.23
+   },
+   "nota": "scala ovest: seconda rampa nel sottoscala, sale verso il centro fino alla loggia"
+  },
+  {
+   "id": "gin-ovest-pilone",
+   "forma": "box",
+   "angolo": 345.23,
+   "box": {
+    "u0": 17.29,
+    "u1": 20.29,
+    "v0": -88.34,
+    "v1": -87.74,
+    "h0": 0,
+    "h1": 4.3
+   },
+   "nota": "scala ovest: pilone di travertino lungo la rampa, finisce in faccia a metà cancello"
+  },
+  {
+   "id": "gin-ovest-pensilina",
+   "forma": "prisma",
+   "materiale": "travertino",
+   "poligono": [
+    [
+     22.38,
+     -87.15
+    ],
+    [
+     22.07,
+     -87.09
+    ],
+    [
+     21.76,
+     -87.03
+    ],
+    [
+     21.45,
+     -86.97
+    ],
+    [
+     21.14,
+     -86.91
+    ],
+    [
+     20.83,
+     -86.85
+    ],
+    [
+     20.52,
+     -86.78
+    ],
+    [
+     20.21,
+     -86.71
+    ],
+    [
+     19.9,
+     -86.63
+    ],
+    [
+     19.59,
+     -86.56
+    ],
+    [
+     19.28,
+     -86.48
+    ],
+    [
+     18.98,
+     -86.4
+    ],
+    [
+     18.67,
+     -86.31
+    ],
+    [
+     18.37,
+     -86.22
+    ],
+    [
+     18.06,
+     -86.14
+    ],
+    [
+     17.76,
+     -86.04
+    ],
+    [
+     17.46,
+     -85.95
+    ],
+    [
+     17.16,
+     -85.85
+    ],
+    [
+     16.06,
+     -89.22
+    ],
+    [
+     16.39,
+     -89.32
+    ],
+    [
+     16.72,
+     -89.43
+    ],
+    [
+     17.05,
+     -89.53
+    ],
+    [
+     17.38,
+     -89.63
+    ],
+    [
+     17.72,
+     -89.72
+    ],
+    [
+     18.05,
+     -89.81
+    ],
+    [
+     18.39,
+     -89.9
+    ],
+    [
+     18.73,
+     -89.99
+    ],
+    [
+     19.06,
+     -90.07
+    ],
+    [
+     19.4,
+     -90.15
+    ],
+    [
+     19.74,
+     -90.23
+    ],
+    [
+     20.08,
+     -90.31
+    ],
+    [
+     20.42,
+     -90.38
+    ],
+    [
+     20.76,
+     -90.45
+    ],
+    [
+     21.1,
+     -90.51
+    ],
+    [
+     21.44,
+     -90.58
+    ],
+    [
+     21.78,
+     -90.64
+    ]
+   ],
+   "base": 4.3,
+   "altezza": 0.3,
+   "nota": "scala ovest: pensilina dall'inizio della scala alla fine del cancello"
+  },
+  {
+   "id": "gin-ovest-cancello",
+   "forma": "oggetto",
+   "modello": "cancelloScala",
+   "ruota": 0,
+   "angolo": 343.02,
+   "box": {
+    "u0": 17.14,
+    "u1": 18.54,
+    "v0": -86.03,
+    "v1": -85.98,
+    "h0": 2.2,
+    "h1": 4.15
+   },
+   "nota": "scala ovest: cancello sul filo della facciata, sotto l'edificio"
+  },
+  {
+   "id": "gin-ovest-staccionata-rampa",
+   "forma": "oggetto",
+   "modello": "staccionata",
+   "ruota": 0,
+   "angolo": 165.31,
+   "box": {
+    "u0": 16.8,
+    "u1": 20.05,
+    "v0": -89.68,
+    "v1": -89.63,
+    "h0": 0.51,
+    "h1": 3.03
+   },
+   "nota": "scala ovest: staccionata lungo la prima rampa"
+  },
+  {
+   "id": "gin-ovest-staccionata-pianerottolo",
+   "forma": "oggetto",
+   "modello": "staccionata",
+   "ruota": 0,
+   "angolo": 341.99,
+   "box": {
+    "u0": 15.44,
+    "u1": 16.9,
+    "v0": -89.02,
+    "v1": -88.97,
+    "h0": 2.2,
+    "h1": 3.2
+   },
+   "nota": "scala ovest: staccionata sul bordo esterno del pianerottolo"
+  },
+  {
+   "id": "gin-ovest-staccionata-testata",
+   "forma": "oggetto",
+   "modello": "staccionata",
+   "ruota": 0,
+   "angolo": 251.03,
+   "box": {
+    "u0": 14.43,
+    "u1": 17.68,
+    "v0": -87.26,
+    "v1": -87.21,
+    "h0": 2.2,
+    "h1": 3.2
+   },
+   "nota": "scala ovest: staccionata in testa al pianerottolo"
+  },
+  {
+   "id": "gin-ovest-staccionata-corsia",
+   "forma": "oggetto",
+   "modello": "staccionata",
+   "ruota": 0,
+   "angolo": 254.02,
+   "box": {
+    "u0": 17.64,
+    "u1": 18.89,
+    "v0": -86.91,
+    "v1": -86.86,
+    "h0": 2.2,
+    "h1": 3.2
+   },
+   "nota": "scala ovest: staccionata sul salto verso la corsia"
+  },
+  {
+   "id": "gin-est-gradino-angolo",
+   "forma": "box",
+   "angolo": 5.66,
+   "box": {
+    "u0": 31.81,
+    "u1": 33.54,
+    "v0": -91.15,
+    "v1": -89.43,
+    "h0": 0,
+    "h1": 0.17
+   },
+   "nota": "scala est: gradino d'angolo attorno alla base quadrata"
+  },
+  {
+   "id": "gin-est-base",
+   "forma": "box",
+   "angolo": 5.89,
+   "box": {
+    "u0": 32.12,
+    "u1": 33.52,
+    "v0": -90.82,
+    "v1": -89.42,
+    "h0": 0,
+    "h1": 0.34
+   },
+   "nota": "scala est: base quadrata"
+  },
+  {
+   "id": "gin-est-rampa-1",
+   "forma": "oggetto",
+   "modello": "rampaScala",
+   "ruota": 0,
+   "angolo": 9.19,
+   "box": {
+    "u0": 33.5,
+    "u1": 36.7,
+    "v0": -90.52,
+    "v1": -89.12,
+    "h0": 0,
+    "h1": 2.03
+   },
+   "nota": "scala est: prima rampa, fuori lungo la curva, fino al mezzo piano"
+  },
+  {
+   "id": "gin-est-pianerottolo",
+   "forma": "prisma",
+   "materiale": "travertino",
+   "poligono": [
+    [
+     35.46,
+     -87.07
+    ],
+    [
+     35.74,
+     -87.01
+    ],
+    [
+     36.03,
+     -86.96
+    ],
+    [
+     36.31,
+     -86.9
+    ],
+    [
+     36.6,
+     -86.84
+    ],
+    [
+     36.88,
+     -86.78
+    ],
+    [
+     37.17,
+     -86.71
+    ],
+    [
+     37.45,
+     -86.64
+    ],
+    [
+     38.24,
+     -89.9
+    ],
+    [
+     37.95,
+     -89.97
+    ],
+    [
+     37.67,
+     -90.03
+    ],
+    [
+     37.38,
+     -90.1
+    ],
+    [
+     37.1,
+     -90.16
+    ],
+    [
+     36.81,
+     -90.22
+    ],
+    [
+     36.41,
+     -88.26
+    ],
+    [
+     36.18,
+     -88.3
+    ],
+    [
+     35.94,
+     -88.35
+    ],
+    [
+     35.7,
+     -88.39
+    ]
+   ],
+   "base": 0,
+   "altezza": 2.2,
+   "nota": "scala est: pianerottolo di mezzo (corsia e testata oltre il pilone)"
+  },
+  {
+   "id": "gin-est-pianerottolo-dentro",
+   "forma": "prisma",
+   "materiale": "travertino",
+   "poligono": [
+    [
+     35.11,
+     -85.2
+    ],
+    [
+     35.37,
+     -85.15
+    ],
+    [
+     35.64,
+     -85.1
+    ],
+    [
+     35.9,
+     -85.04
+    ],
+    [
+     36.16,
+     -84.99
+    ],
+    [
+     36.42,
+     -84.93
+    ],
+    [
+     36.83,
+     -86.79
+    ],
+    [
+     36.56,
+     -86.85
+    ],
+    [
+     36.28,
+     -86.91
+    ],
+    [
+     36.01,
+     -86.96
+    ],
+    [
+     35.73,
+     -87.02
+    ],
+    [
+     35.46,
+     -87.07
+    ]
+   ],
+   "base": 0,
+   "altezza": 2.2,
+   "nota": "scala est: pianerottolo dentro, davanti al cancello, sotto l'edificio"
+  },
+  {
+   "id": "gin-est-rampa-2",
+   "forma": "oggetto",
+   "modello": "rampaScala",
+   "ruota": 0,
+   "angolo": 187.38,
+   "box": {
+    "u0": 31.47,
+    "u1": 35.31,
+    "v0": -87.38,
+    "v1": -85.48,
+    "h0": 0,
+    "h1": 4.23
+   },
+   "nota": "scala est: seconda rampa nel sottoscala, sale verso il centro fino alla loggia"
+  },
+  {
+   "id": "gin-est-pilone",
+   "forma": "box",
+   "angolo": 9.27,
+   "box": {
+    "u0": 33.5,
+    "u1": 36.5,
+    "v0": -89.12,
+    "v1": -88.52,
+    "h0": 0,
+    "h1": 4.3
+   },
+   "nota": "scala est: pilone di travertino lungo la rampa, finisce in faccia a metà cancello"
+  },
+  {
+   "id": "gin-est-pensilina",
+   "forma": "prisma",
+   "materiale": "travertino",
+   "poligono": [
+    [
+     31.51,
+     -87.59
+    ],
+    [
+     31.82,
+     -87.56
+    ],
+    [
+     32.14,
+     -87.53
+    ],
+    [
+     32.45,
+     -87.5
+    ],
+    [
+     32.77,
+     -87.47
+    ],
+    [
+     33.08,
+     -87.43
+    ],
+    [
+     33.4,
+     -87.4
+    ],
+    [
+     33.71,
+     -87.35
+    ],
+    [
+     34.03,
+     -87.31
+    ],
+    [
+     34.34,
+     -87.26
+    ],
+    [
+     34.65,
+     -87.22
+    ],
+    [
+     34.97,
+     -87.16
+    ],
+    [
+     35.28,
+     -87.11
+    ],
+    [
+     35.59,
+     -87.05
+    ],
+    [
+     35.9,
+     -86.99
+    ],
+    [
+     36.21,
+     -86.93
+    ],
+    [
+     36.52,
+     -86.87
+    ],
+    [
+     36.83,
+     -86.8
+    ],
+    [
+     37.6,
+     -90.25
+    ],
+    [
+     37.26,
+     -90.33
+    ],
+    [
+     36.92,
+     -90.4
+    ],
+    [
+     36.58,
+     -90.47
+    ],
+    [
+     36.24,
+     -90.53
+    ],
+    [
+     35.9,
+     -90.59
+    ],
+    [
+     35.56,
+     -90.65
+    ],
+    [
+     35.22,
+     -90.71
+    ],
+    [
+     34.87,
+     -90.76
+    ],
+    [
+     34.53,
+     -90.81
+    ],
+    [
+     34.19,
+     -90.86
+    ],
+    [
+     33.84,
+     -90.91
+    ],
+    [
+     33.5,
+     -90.95
+    ],
+    [
+     33.15,
+     -90.99
+    ],
+    [
+     32.81,
+     -91.03
+    ],
+    [
+     32.46,
+     -91.06
+    ],
+    [
+     32.12,
+     -91.09
+    ],
+    [
+     31.77,
+     -91.12
+    ]
+   ],
+   "base": 4.3,
+   "altezza": 0.3,
+   "nota": "scala est: pensilina dall'inizio della scala alla fine del cancello"
+  },
+  {
+   "id": "gin-est-cancello",
+   "forma": "oggetto",
+   "modello": "cancelloScala",
+   "ruota": 0,
+   "angolo": 11.48,
+   "box": {
+    "u0": 35.43,
+    "u1": 36.83,
+    "v0": -86.91,
+    "v1": -86.86,
+    "h0": 2.2,
+    "h1": 4.15
+   },
+   "nota": "scala est: cancello sul filo della facciata, sotto l'edificio"
+  },
+  {
+   "id": "gin-est-staccionata-rampa",
+   "forma": "oggetto",
+   "modello": "staccionata",
+   "ruota": 0,
+   "angolo": 9.19,
+   "box": {
+    "u0": 33.58,
+    "u1": 36.83,
+    "v0": -90.48,
+    "v1": -90.43,
+    "h0": 0.51,
+    "h1": 3.03
+   },
+   "nota": "scala est: staccionata lungo la prima rampa"
+  },
+  {
+   "id": "gin-est-staccionata-pianerottolo",
+   "forma": "oggetto",
+   "modello": "staccionata",
+   "ruota": 0,
+   "angolo": 12.51,
+   "box": {
+    "u0": 36.78,
+    "u1": 38.24,
+    "v0": -90.04,
+    "v1": -89.99,
+    "h0": 2.2,
+    "h1": 3.2
+   },
+   "nota": "scala est: staccionata sul bordo esterno del pianerottolo"
+  },
+  {
+   "id": "gin-est-staccionata-testata",
+   "forma": "oggetto",
+   "modello": "staccionata",
+   "ruota": 0,
+   "angolo": 283.47,
+   "box": {
+    "u0": 36.17,
+    "u1": 39.42,
+    "v0": -88.31,
+    "v1": -88.26,
+    "h0": 2.2,
+    "h1": 3.2
+   },
+   "nota": "scala est: staccionata in testa al pianerottolo"
+  },
+  {
+   "id": "gin-est-staccionata-corsia",
+   "forma": "oggetto",
+   "modello": "staccionata",
+   "ruota": 0,
+   "angolo": 280.48,
+   "box": {
+    "u0": 35.0,
+    "u1": 36.25,
+    "v0": -87.75,
+    "v1": -87.7,
+    "h0": 2.2,
+    "h1": 3.2
+   },
+   "nota": "scala est: staccionata sul salto verso la corsia"
   }
  ]
 }

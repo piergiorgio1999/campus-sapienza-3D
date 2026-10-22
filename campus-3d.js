@@ -3032,13 +3032,73 @@
   const zinco = () => courtOnce('condotte|zinco', () => stdMat({ color: 0xc4c8ca, roughness: 0.42, metalness: 0.65 }));
   const zincoScuro = () => courtOnce('condotte|giunti', () => stdMat({ color: 0x9da2a5, roughness: 0.5, metalness: 0.6 }));
   const staffe = () => courtOnce('condotte|staffe', () => stdMat({ color: 0x4a4c4d, roughness: 0.7, metalness: 0.3 }));
-  // canale rettangolare lungo x (da −L/2 a L/2), largo W, alto fino ad H, su piedini alti s; flangia ogni 1,25 m circa
+  /* kit modulare di condotte zincate dell'utente (models/ventilazione-glb.json: il GLB di Sketchfab con le texture ridotte a 1024 px):
+     pezzi con sezione 0,54 × 0,39 m, letti una volta, centrati in x/z e appoggiati a y = 0. Il metallo resta a 0,35 come i tubi del
+     cortile: senza mappa d'ambiente un metallo pieno viene quasi nero. */
+  let ventKitPromise = null;
+  function loadVentKit() {
+    if (!ventKitPromise) ventKitPromise = (async () => {
+      await loadDependency('vendor/GLTFLoader.js', () => typeof THREE.GLTFLoader === 'function');
+      const data = await fetch('models/ventilazione-glb.json').then((r) => (r.ok ? r.json() : Promise.reject(new Error('kit condotte'))));
+      const bin = atob(data.glb_base64), bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
+      const gltf = await new Promise((resolve, reject) => new THREE.GLTFLoader().parse(bytes.buffer, 'models/', resolve, reject));
+      const parts = {};
+      gltf.scene.updateMatrixWorld(true);
+      gltf.scene.traverse((o) => {
+        const code = o.isMesh && (/Cube\.?(\d{3})/.exec(o.name) || [])[1]; // i nomi dei nodi arrivano senza il punto (Cube014_Ventilation_0)
+        if (!code || parts[code]) return;
+        const g = o.geometry.clone().applyMatrix4(o.matrixWorld); g.computeBoundingBox();
+        const bb = g.boundingBox, c = bb.getCenter(new THREE.Vector3()); g.translate(-c.x, -bb.min.y, -c.z); g.computeBoundingBox();
+        const mat = o.material; if (mat && mat.metalness != null) { mat.metalness = Math.min(mat.metalness, 0.35); mat.needsUpdate = true; }
+        parts[code] = { geo: g, mat, size: g.boundingBox.getSize(new THREE.Vector3()) };
+      });
+      return parts;
+    })().catch((e) => { console.warn('Kit delle condotte non caricato', e); ventKitPromise = null; return null; });
+    return ventKitPromise;
+  }
+  // pezzi del kit nel catalogo: [codice del nodo, nome, misura naturale x, y, z]
+  const KIT_CONDOTTE = {
+    kitDritto: ['014', 'Condotta zincata: tratto dritto (kit)', [1.51, 0.39, 0.54]],
+    kitCurva: ['027', 'Condotta zincata: curva a 90° (kit)', [0.98, 0.39, 0.98]],
+    kitSalto: ['016', 'Condotta zincata: salto a S (kit)', [1.51, 0.78, 0.54]],
+    kitTi: ['020', 'Condotta zincata: raccordo a T (kit)', [1.01, 0.39, 0.78]],
+    kitGomito: ['023', 'Condotta zincata: gomito in verticale (kit)', [0.72, 0.72, 0.54]],
+    kitGriglia: ['017', 'Condotta zincata: griglia di ripresa (kit)', [0.54, 0.39, 0.03]],
+    kitSerranda: ['033', 'Condotta zincata: serranda a lamelle (kit)', [0.54, 0.39, 0.23]],
+    kitSupporto: ['041', 'Condotta zincata: supporto a portale (kit)', [0.08, 0.73, 0.62]],
+  };
+  const kitHidden = () => courtOnce('condotte|segnaposto', () => new THREE.MeshBasicMaterial({ visible: false }));
+  // segnaposto invisibile della misura del pezzo (scatola dell'editor e «Misure originali» subito giuste); il pezzo vero arriva col kit
+  function kitPiece(code, size) {
+    const g = new THREE.Group(), ph = new THREE.Mesh(new THREE.BoxGeometry(size[0], size[1], size[2]), kitHidden());
+    ph.position.y = size[1] / 2; g.add(ph);
+    loadVentKit().then((kit) => {
+      const p = kit && kit[code];
+      if (!p) { ph.material = zinco(); return; } // senza kit resta una scatola zincata
+      const m = new THREE.Mesh(p.geo, p.mat); m.scale.set(size[0] / p.size.x, size[1] / p.size.y, size[2] / p.size.z);
+      m.castShadow = true; m.receiveShadow = true; g.add(m);
+    });
+    return g;
+  }
+  // canale rettangolare lungo x (da −L/2 a L/2), largo W, alto fino ad H, su piedini alti s; flangia ogni 1,25 m circa.
+  // Quando il kit è caricato il corpo diventa una fila di tratti dritti del kit, con la sezione allargata a W × (H − s)
   function ductSegment(g, L, W, H, s) {
     const { box } = partAdder(g), t = 0.03, n = Math.max(1, Math.round(L / 1.25));
-    box(-L / 2, L / 2, s, H - t, -W / 2 + t, W / 2 - t, zinco());
+    box(-L / 2, L / 2, s, H - t, -W / 2 + t, W / 2 - t, zinco()).userData.corpo = true;
+    loadVentKit().then((kit) => {
+      const p = kit && kit['014'];
+      if (!p) return;
+      const k = ((H - s) / p.size.y + W / p.size.z) / 2, m = Math.max(1, Math.round(L / (p.size.x * k))), seg = L / m; // tratti lunghi in proporzione alla sezione
+      for (const c of g.children.filter((x) => x.userData.corpo)) { g.remove(c); c.geometry.dispose(); }
+      for (let i = 0; i < m; i += 1) {
+        const d = new THREE.Mesh(p.geo, p.mat); d.scale.set(seg / p.size.x, (H - s) / p.size.y, W / p.size.z);
+        d.position.set(-L / 2 + seg * (i + 0.5), s, 0); d.castShadow = true; d.receiveShadow = true; g.add(d);
+      }
+    });
     for (let k = 0; k <= n; k += 1) {
       const x = -L / 2 + (L * k) / n, x0 = Math.max(-L / 2, x - 0.025), x1 = Math.min(L / 2, x + 0.025);
-      box(x0, x1, s - t, H, -W / 2, W / 2, zincoScuro());
+      box(x0, x1, s - t, H, -W / 2, W / 2, zincoScuro()).userData.corpo = true;
       if (s > 0.06) {
         box(Math.max(-L / 2, x0 - 0.08), Math.min(L / 2, x1 + 0.08), 0, 0.05, -W / 2 + 0.03, W / 2 - 0.03, staffe()); // travetto sul tetto
         for (const z of [-W / 2 + 0.08, W / 2 - 0.08]) box(x0, x1, 0.05, s - t, z - 0.03, z + 0.03, staffe());
@@ -3052,6 +3112,7 @@
     return g;
   }
   const CATALOGO = {
+    ...Object.fromEntries(Object.entries(KIT_CONDOTTE).map(([k, [code, nome, size]]) => [k, { nome, crea: () => kitPiece(code, size) }])),
     condotta: { nome: 'Condotta dell’aria (canale zincato su piedini)', crea: (pr) => group((g) => { const [L, W, H] = ductDims(pr, 3, 1, 1.25); ductSegment(g, L, W, H, Math.min(0.45, Math.max(0.1, H * 0.22))); }) },
     uta: { nome: 'Unità di trattamento aria (UTA) da tetto', crea: (pr) => group((g) => {
       const [L, W, H] = ductDims(pr, 7, 2.1, 2.6), { box, add } = partAdder(g), base = 0.18, bh = H - base, t = Math.min(1.1, L * 0.16), e = Math.min(0.7, L * 0.1), k = 0.55;

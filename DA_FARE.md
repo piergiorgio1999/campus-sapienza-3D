@@ -391,4 +391,10 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
   fino al bordo nord (17,0), canale lungo il bordo nord in tre pezzi (il tetto sale da 15,2 a 15,4), curva a est (17,5), due ventilatori, imbuto.
   Sono primitive dell'editor: l'utente li sposta, allunga e ruota per farli combaciare con Maps; i suoi modelli (in arrivo) si caricano con «File 3D»
   o li adatto io.
+- (22/10 sera) **Kit dell'utente** `Ventilation_Modular_GalvanizedSteel.glb` (Sketchfab, 2 zip da 28 MB: 38 pezzi low-poly con sezione 0,54 × 0,39 m,
+  un materiale «MetalGalvanizedSteelWorn001» con tre texture PNG 4096 px = 56 MB). Ridotto a `models/ventilazione-glb.json` (GLB 0,5 MB: geometrie
+  invariate, texture JPEG 1024/1024/512 px; il GLB originale non è nel repository). `loadVentKit` lo carica una volta; nel catalogo i pezzi
+  `kitDritto`, `kitCurva`, `kitSalto`, `kitTi`, `kitGomito`, `kitGriglia`, `kitSerranda`, `kitSupporto` (segnaposto invisibile della misura naturale,
+  il pezzo vero arriva col kit). La `condotta` usa i tratti dritti del kit per il corpo, con la sezione allargata alla scatola (i canali del tetto
+  sono più grossi del kit: 1,3 × 1,3 m e 0,9 × 0,74 m); UTA, ventilatori, imbuto e curva restano miei. Griglia del kit in testa al canale nord (ovest).
 

@@ -856,6 +856,21 @@
     "h1": 18.7
    },
    "nota": "imbuto sopra la UTA, verso il canale"
+  },
+  {
+   "id": "cond-griglia-o",
+   "forma": "oggetto",
+   "modello": "kitGriglia",
+   "ruota": 90,
+   "box": {
+    "u0": 19.57,
+    "u1": 19.6,
+    "v0": -65.62,
+    "v1": -64.78,
+    "h0": 15.43,
+    "h1": 16.14
+   },
+   "nota": "griglia del kit dell'utente in testa al canale nord, lato ovest"
   }
  ]
 }

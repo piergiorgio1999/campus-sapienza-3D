@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Verifica le misure di cu014-solido.json sull'STL di riferimento (riferimenti/cu014-vettoriale.stl).
 
-Uso: python3 -I tools/cu014_stl.py [percorso.stl]   (-I: la cartella tools ha un inspect.py che oscura quello della libreria standard)
+Uso: python3 -I tools/cu014_stl.py [percorso.stl|- [stl|stlAnfiteatro]]   (-I: la cartella tools ha un inspect.py che oscura quello della libreria standard)
 
 L'STL è una mesh a scala arbitraria (1 unità ≈ 86,2 m, z in alto). La trasformazione in metri nelle coordinate del
 lato 0 di CU014 (u, v) è in cu014-solido.json -> "stl"; è stata trovata cercando scala, rotazione e traslazione che
@@ -36,9 +36,12 @@ def in_metri(tri, stl):
 
 
 def main():
-    tri = leggi_stl(sys.argv[1] if len(sys.argv) > 1 else os.path.join(RADICE, 'riferimenti', 'cu014-vettoriale.stl'))
+    # secondo argomento: chiave della trasformazione in cu014-solido.json ('stl' = primo STL, 'stlAnfiteatro' = riferimenti/chimica-anfiteatro.stl)
+    chiave = sys.argv[2] if len(sys.argv) > 2 else 'stl'
+    predefinito = 'chimica-anfiteatro.stl' if chiave == 'stlAnfiteatro' else 'cu014-vettoriale.stl'
+    tri = leggi_stl(sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] != '-' else os.path.join(RADICE, 'riferimenti', predefinito))
     dati = json.load(open(os.path.join(RADICE, 'cu014-solido.json')))
-    uv, h = in_metri(tri, dati['stl'])
+    uv, h = in_metri(tri, dati[chiave])
     cu, ch = uv.mean(1), h.mean(1)
     nrm = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
     su = nrm[:, 2] / np.linalg.norm(nrm, axis=1).clip(1e-12) > 0.8  # facce rivolte in su

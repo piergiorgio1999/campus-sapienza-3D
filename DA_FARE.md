@@ -51,6 +51,24 @@
 - Non fatto: gli angoli smussati e le rientranze minori del tetto (sotto 1 m) restano quelli di OSM; le altre scale antincendio (OBIETTIVI.md) non sono state riverificate.
 - Regole dell'utente: niente test o render locali (li fa la pipeline GitHub), pubblicare subito quando lo chiede, non fermarsi a chiedere.
 
+## Secondo STL: ventaglio e gradoni del fronte sud (22/10/2026) — fatto, da verificare con il render
+- **Cosa contiene `riferimenti/chimica-anfiteatro.stl`** (solo riferimento, la pagina non lo carica): mesh binaria, 77 424 triangoli, 37,4 × 35,7 × 8,9 unità, tutto CU014 più alberi e marciapiedi attorno; il fronte sud
+  a ventaglio si legge bene (falde piane a 15 m con una trave maestra a 18 m, fronte ad arco con gradoni).
+- **Trasformazione** (blocco `stlAnfiteatro` di `cu014-solido.json`, stessa formula del primo): scala **3,40 m/unità**, rotazione **181,75°** (nord in basso, nessun ribaltamento), (u, v) = 3,40 · R(181,75°) · (x, y) + (114,77; 23,98).
+  Trovata con la correlazione 2D fra le pareti verticali dell'STL e la sagoma OSM (ottimo piatto: scarto di ±0,25° e ±0,02 m/unità), poi controllata sul rendering sovrapposto. Piano del terreno
+  z = 3,856 − 0,0207 u − 0,0352 v: pendenza uguale a quella del primo STL (−0,0195 / −0,0365), quindi i due STL concordano sull'inclinazione della scansione.
+- **Confronto quote con il primo STL:** concordano entro 0,0–0,6 m (il nuovo è in media 0,25 m più alto); nel JSON ho messo la media arrotondata a 0,1 m. Corretti: base del lato nord 18,4 m (prima 19: area u −1→39,5, v −34→1),
+  ala sud-ovest 14,4 m solo per u < 9,6, ventaglio 15,2 (ovest) e 15,4 (est), dorsale 17,8 (era 17,5), ala est 15,7 con il gradino a **u 81,5** (era 80,5) e bordo est 10,9, blocco sud-est 19,9, fascia nord-est 10,6, corpo basso 10,7.
+  Restano 19 m il cuore dell'edificio e 21 m la dorsale. Il ponte sul cancello a 8,3 m resta da controllare.
+- **Ventaglio:** il fronte sud è un settore di 60° (da −120° a −60°, −90° = sud) con centro (28,72; −50,38) e raggio 40,28 m (cerchio per i vertici OSM dell'arco, scarto < 0,3 m). La facciata dell'edificio sta a r = 37,3 m
+  (bordo del tetto a 15,5 m); la trave maestra a 17–18,1 m è in asse a −94°, larga 6° (nel rettangolo 2,4 m).
+- **Gradoni** (quota sopra il terreno, misure sul raggio per tre settori): lobo ovest r 37,3→39 a 4,2 m e r 39→40,28 a 2,1 m; rientranza d'ingresso in asse (−97,5°→−88,5°) con fronte a r 38,5 (un gradone a 2,2 m);
+  lobo est 4,6 m e 2,5 m. Sono terrazze, non scalini da 17 cm: alzata 2,1–2,5 m, pedata 1,3–1,7 m. Fuori dall'arco il terreno è piano, con cespugli da 1 a 1,5 m (non modellati).
+  Le pedate sono in travertino e le alzate in mattoni (materiali delle primitive); se le foto mostrano rampe o scalini veri sulle alzate, vanno aggiunti a parte.
+- **Cosa ho rifatto:** `cuSolidoParts` toglie alla sagoma la corona fra r 37,3 e 40,9 (prima il podio veniva estruso come corpo alto 15 m), `addCuVentaglio` costruisce le corone dei gradoni, le ali sono riquotate.
+- **Dubbi:** sotto il tetto dell'ala sud l'STL vede un piano a 3,4 m (r 34–35,5) e uno a 4,2–4,6 m: probabilmente il portico dietro i gradoni, non modellato. Le fasce di 16–17 m sul tetto (angoli −116→−108° e −83→−62°) sono
+  rialzi di 0,5–1 m, non travi precise: non modellate. L'STL non contiene la «piazza grigia» di OBIETTIVI.md §3: il terreno davanti ai gradoni è solo piano.
+
 # Handoff — lavori terminati il 21/10/2026 su richiesta dell'utente
 
 - **Pubblicato:** artifact https://claude.ai/code/artifact/b6b40dff-1e58-4b65-a386-6d4bab8d31ed, versione 32

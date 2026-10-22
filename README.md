@@ -18,7 +18,10 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
   scala, rotazione (178,07°) e traslazione sono state trovate sovrapponendo i muri verticali dell'STL ai lati della sagoma OSM (correlazione 2D,
   poi affinamento a passo fine; l'impronta coincide con quella OSM entro circa 1 m, quindi la sagoma non cambia); sui punti fuori sagoma
   si è interpolato il terreno (inclinato di 2,4°: difetto della scansione, tolto), e le quote dei tetti sono la mediana alta (80°
-  percentile) delle facce rivolte in su dentro ogni rettangolo. `python3 -I tools/cu014_stl.py` rifà le misure e le confronta con il JSON.
+  percentile) delle facce rivolte in su dentro ogni rettangolo. `python3 -I tools/cu014_stl.py` rifà le misure e le confronta con il JSON. Secondo STL (`riferimenti/chimica-anfiteatro.stl`, solo riferimento, non caricato dalla pagina): 77 424 triangoli, 37,4 × 35,7 × 8,9 unità con 1 unità ≈ 3,40 m;
+  la trasformazione è nel blocco `stlAnfiteatro` (rotazione 181,75°, scritta con il segno meno, traslazione in `centroSagoma`; `python3 -I tools/cu014_stl.py - stlAnfiteatro`).
+  `ventaglio`: centro e raggi del settore di 60° del fronte sud e, per ogni settore, i gradoni (`r0`, `r1`, `quota`); `addCuVentaglio` li costruisce come corone
+  circolari (pedata in travertino, alzata in mattoni) e `cuSolidoParts` toglie alla sagoma la stessa corona.
 - `tools/`: script di verifica (playwright + Chromium) per render e misure
 - `editor.js`: pulsanti **Commenta** e **Modifica** sulla scena 3D. Il tasto **🌳 Alberi** (sempre visibile, stato ricordato nel browser) nasconde o mostra tutti gli alberi (OSM, magnolie, palme, pini, quelli del catalogo): in `campus-3d.js` sono marcati `userData.albero` e `window.campus3d.alberiVisibili(on)` li gestisce, anche dopo le ricostruzioni. I dati vivono nel db dell'artifact:
   - `segnalazioni`: commenti con punto 3D, lon/lat, coordinate u/v sul lato 0 e nel cortile, oggetto toccato e vista della camera;

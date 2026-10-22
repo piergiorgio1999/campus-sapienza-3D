@@ -1891,6 +1891,13 @@
     pieces.push({ y0: BASE + bodyH, h: h - BASE - bodyH, kind: 'attic', floorH: h - BASE - bodyH });
     return pieces;
   }
+  // arco di cerchio nelle coordinate del lato 0: centro [u, v], raggio r, angoli in gradi (antiorari dall'asse u, −90° = verso sud, v negativo)
+  function cuArco(c, r, a0, a1) {
+    const n = Math.max(2, Math.ceil(Math.abs(a1 - a0) / 2));
+    return Array.from({ length: n + 1 }, (_, i) => { const a = ((a0 + ((a1 - a0) * i) / n) * Math.PI) / 180; return [c[0] + r * Math.cos(a), c[1] + r * Math.sin(a)]; });
+  }
+  // corona circolare fra i raggi r0 e r1 e gli angoli a0 e a1, come anello chiuso
+  function cuCorona(c, r0, r1, a0, a1) { const e = cuArco(c, r1, a0, a1); return [...e, ...cuArco(c, r0, a1, a0), e[0]]; }
   // sagoma (meno i cortili) divisa nelle ali di cu014-solido.json: [{ shape, h }]; null = dati o libreria mancanti, si torna alla sagoma intera
   function cuSolidoParts(rings, holes) {
     const f = cuSolido && cuFrame(), pc = window.polygonClipping;
@@ -1900,6 +1907,11 @@
       const subject = rings.map(loc).filter((r) => r.length >= 4);
       const cuts = holes.map((h) => [loc(h)]).filter((q) => q[0].length >= 4);
       let rest = cuts.length ? pc.difference(subject, ...cuts) : [subject];
+      const vent = cuSolido.ventaglio; // il fronte sud a ventaglio: oltre la facciata a arco c'è la gradinata, non il corpo (la costruisce addCuVentaglio)
+      if (vent && Array.isArray(vent.settori) && vent.settori.length) {
+        const fuori = vent.settori.map((st) => [cuCorona(vent.centro, vent.raggioFacciata, vent.raggioEsterno + 0.6, st.a0, st.a1)]);
+        rest = pc.difference(rest, ...fuori);
+      }
       const base = Number(cuSolido.altezzaBase) > 0 ? Number(cuSolido.altezzaBase) : null, out = [];
       const push = (multi, h) => {
         for (const poly of multi) {
@@ -1935,6 +1947,27 @@
       mesh.receiveShadow = true; mesh.userData.mats = mats; mesh.userData.cuFondo = fondo.id || true;
       mesh.userData.facadeCode = 'CU014'; mesh.userData.code = 'CU014'; // l'editor la riconosce come tetto di CU014; la planimetria la toglie con l'edificio
       buildingGroup.add(mesh);
+    }
+  }
+  // gradoni curvi del fronte sud a ventaglio (cu014-solido.json -> ventaglio): ogni gradone è una corona circolare estrusa dal terreno alla sua quota,
+  // pedata in travertino (coperchio) e alzata in mattoni (pareti). Quote, raggi e angoli sono misurati sul secondo STL, vedi il README.
+  function addCuVentaglio() {
+    const f = cuSolido && cuFrame(), vent = cuSolido && cuSolido.ventaglio;
+    if (!f || !buildingGroup || !cuDisegnato || officialPlanCodes.has('CU014') || !vent || !Array.isArray(vent.settori) || !Array.isArray(vent.centro)) return;
+    for (const st of vent.settori) {
+      for (const g of st.gradoni || []) {
+        const quota = Number(g.quota);
+        if (!(quota > 0.2) || !(Number(g.r1) > Number(g.r0))) continue;
+        const shape = makeShape([cuCorona(vent.centro, Number(g.r0), Number(g.r1), st.a0, st.a1).map(f.toLL)]);
+        if (!shape) continue;
+        const geo = new THREE.ExtrudeGeometry(shape, { depth: quota, bevelEnabled: false, curveSegments: 1 });
+        geo.rotateX(-Math.PI / 2); geo.translate(0, 0.04, 0);
+        geo.computeVertexNormals();
+        const mesh = new THREE.Mesh(geo, [primitiveMaterial('travertino'), primitiveMaterial('mattoni')]);
+        mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.cuVentaglio = `${st.id || ''}:${g.r0}`;
+        mesh.userData.facadeCode = 'CU014'; mesh.userData.code = 'CU014'; // come la soletta: parte di CU014 per l'editor e per la planimetria ufficiale
+        buildingGroup.add(mesh);
+      }
     }
   }
   // Sagoma meno i cortili/pozzi di luce: differenza booleana, così ogni cortile diventa un vuoto chiuso (pareti su tutti i lati) anche se tocca il bordo.
@@ -2036,6 +2069,7 @@
       else if (geometry.type === 'MultiPolygon') for (const polygon of geometry.coordinates) for (const r of carveCourtyard(polygon)) addPolygon(feature, r, lookup);
     }
     addCuFondi();
+    addCuVentaglio();
     flushContextBuckets();
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance', logarithmicDepthBuffer: true });
     renderer.toneMapping = THREE.ACESFilmicToneMapping;

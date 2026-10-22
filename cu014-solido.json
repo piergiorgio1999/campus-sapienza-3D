@@ -10,23 +10,45 @@
   "pianoTerreno": [-8.8384, -0.019477, -0.036533],
   "nota": "u, v = scala · R(−rotazione) · ((x, y) − traslazione) + centroSagoma; quota sopra il terreno = scala · z − (pianoTerreno[0] + pianoTerreno[1]·u + pianoTerreno[2]·v). Nell'STL z è l'alto e l'unità è arbitraria (1 unità ≈ 86,2 m); il piano del terreno è inclinato di 2,4°, cioè è l'inclinazione della scansione, non quella del suolo."
  },
+ "stlAnfiteatro": {
+  "scalaMetriPerUnita": 3.4,
+  "rotazioneDeg": -181.75,
+  "traslazione": [0, 0],
+  "centroSagoma": [114.77, 23.98],
+  "pianoTerreno": [3.8562, -0.020724, -0.035249],
+  "nota": "Secondo STL (riferimenti/chimica-anfiteatro.stl, 77 424 triangoli, 37,4 × 35,7 × 8,9 unità, 1 unità ≈ 3,40 m, z in alto). Stessa formula di `stl`: (u, v) = scala · R(−rotazione) · ((x, y) − traslazione) + centroSagoma, quindi la rotazione di 181,75° è scritta con il segno meno; quota sopra il terreno = scala · z − (piano[0] + piano[1]·u + piano[2]·v). Il piano del terreno ha la stessa inclinazione del primo STL (−0,0207 e −0,0352 contro −0,0195 e −0,0365): conferma indipendente della registrazione."
+ },
  "altezzaBase": 19,
  "interpiano": 3.425,
  "nota_interpiano": "Stesso interpiano per tutte le ali (il corpo principale a 19 m ha 4 piani da 3,425 m sopra il basamento di 4,4 m), così le file di finestre combaciano dove due ali si toccano e col ponte sul cancello del cortile dell'azoto. Ogni ala tiene i piani interi che le entrano (l'ultimo anche se ne entra il 75 %), il resto va all'attico: la dorsale a 21 m e il blocco a 20 m hanno l'attico più alto.",
  "ali": [
+  { "id": "nord", "rect": [-1, -34, 39.5, 1], "altezza": 18.4, "nota": "Lato nord, più basso del corpo principale (18,1-18,6 m in entrambi gli STL)." },
   { "id": "dorsale", "rect": [39.5, -60, 50, -20], "altezza": 21, "nota": "Corpo centrale, il più alto (coincide con l'altezza 21 m di OSM)." },
-  { "id": "sud-est", "rect": [50, -62, 71.5, -38], "altezza": 20, "nota": "Blocco a sud-est, accanto ai due cortili est." },
-  { "id": "sud-est-basso", "rect": [46, -91, 71.5, -62], "altezza": 20, "nota": "Prosecuzione del blocco verso sud, fino al bordo dell'ala sud." },
-  { "id": "est", "rect": [71.5, -86, 80.5, -26], "altezza": 15.5, "nota": "Ala est più bassa (15-16 m)." },
-  { "id": "bordo-est", "rect": [80.5, -86, 87, -26], "altezza": 11.5, "nota": "Fascia bassa lungo il bordo est (11-12 m)." },
-  { "id": "fascia-nord-est", "rect": [56.34, -26, 87, -20], "altezza": 10.5, "nota": "Corpo basso affacciato sulla terrazza (10-11 m)." },
-  { "id": "sud-ovest", "rect": [-1, -91, 41, -64.5], "altezza": 15, "nota": "Ala sud (14-16 m)." },
-  { "id": "sud-centro", "rect": [41, -91, 46, -71.5], "altezza": 15.5 },
-  { "id": "lucernario-sud", "rect": [25.5, -89, 28, -64.5], "altezza": 17.5, "nota": "Dorsale stretta sull'ala sud (17-18 m)." },
-  { "id": "basso-sud", "rect": [17, -64.5, 41, -60], "altezza": 10.5, "nota": "Corpo basso fra le due ali sud (10-11 m)." },
+  { "id": "sud-est", "rect": [50, -62, 71.5, -38], "altezza": 19.9, "nota": "Blocco a sud-est, accanto ai due cortili est." },
+  { "id": "sud-est-basso", "rect": [46, -91, 71.5, -62], "altezza": 19.9, "nota": "Prosecuzione del blocco verso sud, fino al bordo dell'ala sud." },
+  { "id": "est", "rect": [71.5, -86, 81.5, -26], "altezza": 15.7, "nota": "Ala est più bassa (15,4-16,3 m, sale verso il bordo); il gradino a u 81,5 viene dal secondo STL (prima 80,5)." },
+  { "id": "bordo-est", "rect": [81.5, -86, 87, -26], "altezza": 10.9, "nota": "Fascia bassa lungo il bordo est (10,8-11,1 m)." },
+  { "id": "fascia-nord-est", "rect": [56.34, -26, 87, -20], "altezza": 10.6, "nota": "Corpo basso affacciato sulla terrazza (10,5-10,8 m)." },
+  { "id": "sud-ovest", "rect": [-1, -91, 9.6, -64.5], "altezza": 14.4, "nota": "Ala sud ovest, a quota più bassa del ventaglio (14,1-14,4 m); confine a u 9,6 dal secondo STL." },
+  { "id": "ventaglio-ovest", "rect": [9.6, -91, 26.2, -64.5], "altezza": 15.2, "nota": "Falda piana del ventaglio, lato ovest (15,0-15,3 m)." },
+  { "id": "ventaglio-est", "rect": [28.6, -91, 41, -64.5], "altezza": 15.4, "nota": "Falda piana del ventaglio, lato est (15,2-15,5 m; sale a 15,8 verso il blocco sud-est)." },
+  { "id": "sud-centro", "rect": [41, -91, 46, -71.5], "altezza": 15.7 },
+  { "id": "lucernario-sud", "rect": [26.2, -88, 28.6, -64.5], "altezza": 17.8, "nota": "Dorsale (trave maestra) del ventaglio: 17-18,1 m, larga 2,4 m nel rettangolo (nell'STL è una fascia di 6° attorno a −94°)." },
+  { "id": "basso-sud", "rect": [17, -64.5, 41, -60], "altezza": 10.7, "nota": "Corpo basso fra le due ali sud (10,5-10,9 m)." },
   { "id": "basso-cortile-3", "rect": [41, -64.5, 46, -60], "altezza": 8, "nota": "A nord del cortile n. 3 l'STL dà circa 8 m (u 41-42,5) e il pavimento rialzato del cortile (2-4 m) più a est: prima restava all'altezza base di 19 m e chiudeva il cortile." },
-  { "id": "sud-centro-est", "rect": [46, -91, 48.5, -79], "altezza": 15.5, "nota": "Chiude la tacca triangolare sulla facciata sud fra sud-centro e sud-est-basso (nell'STL qui 15,5-15,9 m)." }
+  { "id": "sud-centro-est", "rect": [46, -91, 48.5, -79], "altezza": 15.7, "nota": "Chiude la tacca triangolare sulla facciata sud fra sud-centro e sud-est-basso (nell'STL qui 15,5-15,9 m)." }
  ],
+ "ventaglio": {
+  "nota": "Corpo a ventaglio e gradoni sul fronte sud (secondo STL, riferimenti/chimica-anfiteatro.stl). Un settore di 60° (da −120° a −60°, −90° = sud) attorno al centro [u, v]: il raggio esterno 40,28 m è il cerchio che passa per i vertici dell'arco OSM (scarto < 0,3 m), la facciata sta a 37,3 m. Angoli a partire dall'asse u, antiorari: u = cu + r·cos a, v = cv + r·sin a. La pagina toglie alla sagoma la corona fra raggioFacciata e raggioEsterno e al suo posto costruisce i gradoni: pedata in travertino, alzata in mattoni. Le quote sono sopra il terreno, misurate come mediana delle facce rivolte in su (STL) per raggio e angolo.",
+  "centro": [28.72, -50.38],
+  "raggioFacciata": 37.3,
+  "raggioEsterno": 40.28,
+  "settori": [
+   { "id": "ovest", "a0": -120, "a1": -97.5, "gradoni": [{ "r0": 37.3, "r1": 39, "quota": 4.2 }, { "r0": 39, "r1": 40.28, "quota": 2.1 }], "nota": "Lobo ovest: due gradoni di alzata 2,1 m, pedata 1,7 e 1,3 m." },
+   { "id": "ingresso", "a0": -97.5, "a1": -88.5, "gradoni": [{ "r0": 37.3, "r1": 37.55, "quota": 4.4 }, { "r0": 37.55, "r1": 38.5, "quota": 2.2 }], "nota": "Rientranza centrale in asse con la dorsale: il fronte arretra a r 38,5 (nell'OSM il tratto retto a v −88) e c'è un solo gradone di 2,2 m." },
+   { "id": "est", "a0": -88.5, "a1": -60, "gradoni": [{ "r0": 37.3, "r1": 39, "quota": 4.6 }, { "r0": 39, "r1": 40.28, "quota": 2.5 }], "nota": "Lobo est: due gradoni di alzata 2,1 e 2,5 m." }
+  ]
+ },
  "fondi": [
   { "id": "cortile-nord", "rect": [14.5, -23, 40.5, -11], "quota": 4.4, "nota": "Il cortile nord ha il pavimento in quota (circa 6 m nell'STL), non a terra: la pagina lo chiude con una soletta. Messa a 4,4 m, sulla linea del basamento, perché a 6 m tagliava a metà le finestre del primo piano dei muri del cortile." }
  ]

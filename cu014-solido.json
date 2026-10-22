@@ -33,7 +33,7 @@
   { "id": "ventaglio-ovest", "rect": [9.6, -91, 26.2, -64.5], "altezza": 15.2, "nota": "Falda piana del ventaglio, lato ovest (15,0-15,3 m)." },
   { "id": "ventaglio-est", "rect": [28.6, -91, 41, -64.5], "altezza": 15.4, "nota": "Falda piana del ventaglio, lato est (15,2-15,5 m; sale a 15,8 verso il blocco sud-est)." },
   { "id": "sud-centro", "rect": [41, -91, 46, -71.5], "altezza": 15.7 },
-  { "id": "lucernario-sud", "rect": [26.2, -88, 28.6, -64.5], "altezza": 17.8, "nota": "Dorsale (trave maestra) del ventaglio: 17-18,1 m, larga 2,4 m nel rettangolo (nell'STL è una fascia di 6° attorno a −94°)." },
+  { "id": "ventaglio-centro", "rect": [24.6, -91, 30.6, -64.5], "altezza": 15.3, "nota": "Era «lucernario-sud» a 17,8 m: la cresta dell'STL (17-18,1 m attorno a −94°) non è una trave ma l'impianto dell'aria sul tetto (UTA, canali, ventilatori), ora fatto con i pezzi del catalogo in cortile/chimica-esterni.json → primitive (id cond-…). Qui il tetto è piano a 15,3 m, media fra 15,2 (ovest) e 15,4 (est), così UTA e canale poggiano su un piano solo." },
   { "id": "basso-sud", "rect": [17, -64.5, 41, -60], "altezza": 10.7, "nota": "Corpo basso fra le due ali sud (10,5-10,9 m)." },
   { "id": "basso-cortile-3", "rect": [41, -64.5, 46, -60], "altezza": 8, "nota": "A nord del cortile n. 3 l'STL dà circa 8 m (u 41-42,5) e il pavimento rialzato del cortile (2-4 m) più a est: prima restava all'altezza base di 19 m e chiudeva il cortile." },
   { "id": "sud-centro-est", "rect": [46, -91, 48.5, -79], "altezza": 15.7, "nota": "Chiude la tacca triangolare sulla facciata sud fra sud-centro e sud-est-basso (nell'STL qui 15,5-15,9 m)." }

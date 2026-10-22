@@ -381,3 +381,14 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
   ovest −100,3° → −110,9°, est −85,2° → −74,6° (pianerottolo di mezzo a −107,9/−110,9 e −77,6/−74,6, vicino a quanto l'STL vede a 1,9–2,5 m).
 - Da confermare con l'utente: numero di porte (messe 3, una per campata), colore della ringhiera (grigio scuro), quota della pensilina (STL: 4,1 ovest, 4,6 est).
 
+## Cresta del ventaglio → impianto dell'aria (22/10/2026, commento 7 e richiesta in chat) — fatto, non provato nel browser
+- L'ala `lucernario-sud` (17,8 m) era la «cresta»: nell'STL (17,0–18,1 m lungo −94°) e nelle foto del commento 10 è l'impianto dell'aria sul tetto.
+  Ora `ventaglio-centro` [24,6, −91, 30,6, −64,5] a 15,3 m: tetto piano.
+- Pezzi nuovi nel catalogo (`campus-3d.js`, la geometria segue la scatola: allungandoli giunti e piedini restano a misura): `condotta` (canale zincato
+  con flange ogni 1,25 m e piedini), `uta` (unità di trattamento aria con raccordo rastremato, cappa e griglia), `ventilatore`, `camino` (imbuto),
+  `curvaCondotta` (gomito verso l'alto con cappello). Si aggiungono anche da «＋ Aggiungi → Oggetto del modello».
+- Posati in `cortile/chimica-esterni.json → primitive` con id `cond-…` (quote = tetto dell'ala + 2 cm): UTA (angolo 86°, in cima 18,0), canale sull'asse
+  fino al bordo nord (17,0), canale lungo il bordo nord in tre pezzi (il tetto sale da 15,2 a 15,4), curva a est (17,5), due ventilatori, imbuto.
+  Sono primitive dell'editor: l'utente li sposta, allunga e ruota per farli combaciare con Maps; i suoi modelli (in arrivo) si caricano con «File 3D»
+  o li adatto io.
+

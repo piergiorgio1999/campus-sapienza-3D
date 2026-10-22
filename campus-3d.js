@@ -3021,7 +3021,71 @@
   // crea(pr) costruisce l'oggetto con le sue misure naturali nelle coordinate locali (X = u, Y = h, Z = −v); la scatola
   // dell'editor (pr.box) lo stira fino a riempirla e pr.ruota lo gira di 90° in 90°
   const group = (fill) => { const g = new THREE.Group(); fill(g); return g; };
+  /* impianto dell'aria sul tetto del ventaglio (foto del commento 10 e STL): la geometria segue la scatola dell'editor (lunghezza lungo x,
+     o lungo v con «ruota» a 90°), così allungando un pezzo per farlo combaciare con Maps giunti e piedini restano della loro misura */
+  const ductDims = (pr, L0, W0, H0) => {
+    const b = pr && pr.box, turned = (Number(pr && pr.ruota) || 0) % 180 !== 0;
+    if (!b) return [L0, W0, H0];
+    const du = b.u1 - b.u0, dv = b.v1 - b.v0;
+    return [Math.max(0.3, turned ? dv : du), Math.max(0.2, turned ? du : dv), Math.max(0.2, b.h1 - b.h0)];
+  };
+  const zinco = () => courtOnce('condotte|zinco', () => stdMat({ color: 0xc4c8ca, roughness: 0.42, metalness: 0.65 }));
+  const zincoScuro = () => courtOnce('condotte|giunti', () => stdMat({ color: 0x9da2a5, roughness: 0.5, metalness: 0.6 }));
+  const staffe = () => courtOnce('condotte|staffe', () => stdMat({ color: 0x4a4c4d, roughness: 0.7, metalness: 0.3 }));
+  // canale rettangolare lungo x (da −L/2 a L/2), largo W, alto fino ad H, su piedini alti s; flangia ogni 1,25 m circa
+  function ductSegment(g, L, W, H, s) {
+    const { box } = partAdder(g), t = 0.03, n = Math.max(1, Math.round(L / 1.25));
+    box(-L / 2, L / 2, s, H - t, -W / 2 + t, W / 2 - t, zinco());
+    for (let k = 0; k <= n; k += 1) {
+      const x = -L / 2 + (L * k) / n, x0 = Math.max(-L / 2, x - 0.025), x1 = Math.min(L / 2, x + 0.025);
+      box(x0, x1, s - t, H, -W / 2, W / 2, zincoScuro());
+      if (s > 0.06) {
+        box(Math.max(-L / 2, x0 - 0.08), Math.min(L / 2, x1 + 0.08), 0, 0.05, -W / 2 + 0.03, W / 2 - 0.03, staffe()); // travetto sul tetto
+        for (const z of [-W / 2 + 0.08, W / 2 - 0.08]) box(x0, x1, 0.05, s - t, z - 0.03, z + 0.03, staffe());
+      }
+    }
+  }
+  // tronco di piramide lungo x: sezione piena (alta h, larga w) in x1, ridotta di k in x0
+  function ductTaper(x0, x1, h, w, k) {
+    const g = new THREE.CylinderGeometry(k * Math.SQRT1_2, Math.SQRT1_2, 1, 4, 1).toNonIndexed();
+    g.rotateY(Math.PI / 4); g.rotateZ(Math.PI / 2); g.scale(Math.abs(x1 - x0), h, w); g.translate((x0 + x1) / 2, 0, 0); g.computeVertexNormals();
+    return g;
+  }
   const CATALOGO = {
+    condotta: { nome: 'Condotta dell’aria (canale zincato su piedini)', crea: (pr) => group((g) => { const [L, W, H] = ductDims(pr, 3, 1, 1.25); ductSegment(g, L, W, H, Math.min(0.45, Math.max(0.1, H * 0.22))); }) },
+    uta: { nome: 'Unità di trattamento aria (UTA) da tetto', crea: (pr) => group((g) => {
+      const [L, W, H] = ductDims(pr, 7, 2.1, 2.6), { box, add } = partAdder(g), base = 0.18, bh = H - base, t = Math.min(1.1, L * 0.16), e = Math.min(0.7, L * 0.1), k = 0.55;
+      const x0 = -L / 2 + e + t; // corpo da x0 a L/2, raccordo rastremato da −L/2 + e a x0, cappa da −L/2 a −L/2 + e
+      box(x0, L / 2, 0, base, -W / 2 + 0.05, W / 2 - 0.05, staffe());
+      box(x0, L / 2, base, H - 0.01, -W / 2 + 0.01, W / 2 - 0.01, zinco());
+      const n = Math.max(2, Math.round((L / 2 - x0) / 1.1));
+      for (let i = 0; i <= n; i += 1) { const x = x0 + ((L / 2 - x0) * i) / n; box(Math.max(x0, x - 0.02), Math.min(L / 2, x + 0.02), base, H, -W / 2, W / 2, zincoScuro()); } // giunti dei pannelli
+      add(ductTaper(-L / 2 + e, x0, bh, W - 0.02, k), zinco(), 0, base + bh / 2, 0);
+      box(-L / 2 + 0.02, -L / 2 + e, base + (bh * (1 - k)) / 2, base + (bh * (1 + k)) / 2, -(W * k) / 2, (W * k) / 2, zinco());
+      box(-L / 2, -L / 2 + 0.02, base + (bh * (1 - k)) / 2 + 0.05, base + (bh * (1 + k)) / 2 - 0.05, -(W * k) / 2 + 0.05, (W * k) / 2 - 0.05, courtOnce('condotte|griglia', () => stdMat({ color: 0x2c2e30, roughness: 0.6, metalness: 0.4 }))); // griglia di presa
+      box(-L / 2 + e, x0, 0, base + (bh * (1 - k)) / 2, -0.06, 0.06, staffe()); // sostegno del raccordo
+    }) },
+    ventilatore: { nome: 'Ventilatore da tetto (unità esterna)', crea: (pr) => group((g) => {
+      const [L, W, H] = ductDims(pr, 1, 1, 1.1), { box, add } = partAdder(g), r = Math.min(L, W) * 0.38;
+      box(-L / 2, L / 2, 0, 0.1, -W / 2, W / 2, staffe());
+      box(-L / 2, L / 2, 0.1, H - 0.08, -W / 2, W / 2, zinco());
+      add(new THREE.CylinderGeometry(r, r, 0.08, 24), courtOnce('condotte|griglia', () => stdMat({ color: 0x2c2e30, roughness: 0.6, metalness: 0.4 })), 0, H - 0.04, 0);
+      add(new THREE.CylinderGeometry(r * 0.25, r * 0.25, 0.1, 12), zincoScuro(), 0, H - 0.03, 0);
+    }) },
+    camino: { nome: 'Camino di ventilazione a imbuto', crea: (pr) => group((g) => {
+      const [L, W, H] = ductDims(pr, 0.7, 0.7, 0.75), { add } = partAdder(g), R = Math.min(L, W) / 2;
+      add(new THREE.CylinderGeometry(R * 0.32, R * 0.32, H * 0.5, 16), zinco(), 0, H * 0.25, 0);
+      add(new THREE.CylinderGeometry(R, R * 0.32, H * 0.5, 24), zinco(), 0, H * 0.75, 0);
+    }) },
+    curvaCondotta: { nome: 'Curva della condotta verso l’alto, con cappello', crea: (pr) => group((g) => {
+      const [L, W, H] = ductDims(pr, 1.5, 1, 2.2), { box } = partAdder(g), s = Math.min(0.25, H * 0.1), d = Math.min(W, L * 0.6), hs = Math.min(0.8, H * 0.4);
+      const xr = L / 2 - d; // tratto orizzontale da −L/2 a xr, montante da xr a L/2
+      box(-L / 2, xr, s, s + hs, -W / 2 + 0.03, W / 2 - 0.03, zinco());
+      box(xr, L / 2, s, H - 0.2, -W / 2 + 0.03, W / 2 - 0.03, zinco());
+      box(xr - 0.06, L / 2, H - 0.2, H - 0.12, -W / 2, W / 2, zincoScuro()); // tesa del cappello
+      box(xr + 0.05, L / 2 - 0.05, H - 0.12, H, -W / 2 + 0.05, W / 2 - 0.05, zincoScuro());
+      for (const x of [-L / 2 + 0.1, xr + d / 2]) box(x - 0.03, x + 0.03, 0, s, -W / 2 + 0.05, W / 2 - 0.05, staffe());
+    }) },
     panchina: { nome: 'Panchina in travertino', crea: () => group((g) => addBench(g, { u: 0, v: 0 }, 0)) },
     palma: { nome: 'Palma', crea: () => albero(palmTree({ u: 0, v: 0, altezza: 4 })) },
     magnolia: { nome: 'Magnolia', crea: () => albero(magnoliaTree({ u: 0, v: 0, altezza: 12.5, raggio: 3.8 }, 0)) },

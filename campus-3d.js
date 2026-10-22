@@ -2092,6 +2092,16 @@
     controls.addEventListener('start', stopTour);
     controls.addEventListener('change', () => scheduleTiles());
     controls.update();
+    mapHost.addEventListener('wheel', onWheelZoom, { capture: true, passive: false });
+    const typing = (t) => t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable);
+    window.addEventListener('keydown', (event) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) { orbitKeys.clear(); return; } // ⌘ tenuto: i keyup degli altri tasti non arrivano
+      if (frameHook || currentView !== '3d' || typing(event.target) || !/^(Key[WASD]|Arrow(Up|Down|Left|Right)|Shift(Left|Right))$/.test(event.code)) return;
+      orbitKeys.add(event.code);
+      if (!/^Shift/.test(event.code)) { event.preventDefault(); stopTour(); stopCameraFlight(); }
+    });
+    window.addEventListener('keyup', (event) => orbitKeys.delete(event.code));
+    window.addEventListener('blur', () => orbitKeys.clear());
     if (pendingCamera) {
       const command = pendingCamera; pendingCamera = null;
       if (command.action === 'fit') flyTo(campusCentroid(), campusFitDistance(), 0);
@@ -3850,12 +3860,56 @@
     }
   }
   let frameHook = null; // passeggiata in prima persona (cammina.js): muove la camera al posto di OrbitControls
+  /* vista libera (fuori dalla passeggiata). Rotellina e pizzico: il passo è proporzionale alla distanza e da vicino rallenta (zoomPace);
+     la distanza scivola verso zoomGoal in pochi fotogrammi. Tasti: W / ↑ avanti dove guardi (in piano, camera e punto guardato insieme),
+     S / ↓ indietro, A / ← e D / → girano attorno al punto guardato con velocità angolare che dipende dal raggio; Maiusc ×3. */
+  const orbitKeys = new Set();
+  let zoomGoal = null, keysAt = 0;
+  const zoomPace = (d) => Math.min(1, Math.max(0.2, Math.sqrt(d / 150)));
+  function onWheelZoom(event) {
+    if (!controls || !controls.enabled || !controls.enableZoom || frameHook) return;
+    event.preventDefault(); event.stopPropagation(); // al posto della rotellina di OrbitControls (5% a scatto, anche da vicino)
+    stopTour(); stopCameraFlight();
+    const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 100 : 1;
+    const dy = Math.max(-120, Math.min(120, event.deltaY * unit)) * (event.ctrlKey ? 10 : 1); // ctrlKey: pizzico del trackpad, scatti piccoli
+    const from = zoomGoal ?? camera.position.distanceTo(controls.target);
+    zoomGoal = Math.min(controls.maxDistance, Math.max(controls.minDistance, from * Math.exp(dy * 0.0006 * zoomPace(from))));
+  }
+  function freeView() {
+    const now = performance.now(), dt = keysAt ? Math.min(0.1, (now - keysAt) / 1000) : 0; keysAt = now;
+    if (!controls.enabled) { zoomGoal = null; return; }
+    const off = camera.position.clone().sub(controls.target);
+    let d = off.length();
+    controls.zoomSpeed = Math.max(0.4, zoomPace(d)); // pizzico con due dita sul touch
+    if (zoomGoal != null) {
+      const next = d + (zoomGoal - d) * 0.25;
+      d = Math.abs(zoomGoal - next) < zoomGoal * 0.002 ? zoomGoal : next;
+      if (d === zoomGoal) zoomGoal = null;
+      off.setLength(d); camera.position.copy(controls.target).add(off);
+    }
+    if (!orbitKeys.size || !dt) return;
+    const k = (c) => orbitKeys.has(c), fast = k('ShiftLeft') || k('ShiftRight') ? 3 : 1;
+    const fwd = (k('KeyW') || k('ArrowUp') ? 1 : 0) - (k('KeyS') || k('ArrowDown') ? 1 : 0);
+    const side = (k('KeyD') || k('ArrowRight') ? 1 : 0) - (k('KeyA') || k('ArrowLeft') ? 1 : 0);
+    if (fwd) {
+      const dir = new THREE.Vector3(-off.x, 0, -off.z);
+      if (dir.lengthSq() > 1e-8) {
+        dir.setLength(fwd * fast * Math.min(400, Math.max(3, d * 0.5)) * dt); // m/s: metà della distanza dal punto guardato
+        camera.position.add(dir); controls.target.add(dir);
+      }
+    }
+    if (side) { // D: la camera gira verso la sua destra attorno al punto guardato; 6 m/s + un quarto del raggio, al massimo 1 rad/s
+      const w = Math.min(1, (6 + 0.25 * d) / Math.max(d, 1)) * fast;
+      off.copy(camera.position).sub(controls.target).applyAxisAngle(new THREE.Vector3(0, 1, 0), side * w * dt);
+      camera.position.copy(controls.target).add(off);
+    }
+  }
   function renderFrame() {
     if (!renderer || !scene || !camera || document.hidden || !parentActive || currentView !== '3d') return;
     updateMinerva(performance.now());
     updateWater(performance.now());
     updateFountains(performance.now());
-    if (frameHook) frameHook(); else controls.update();
+    if (frameHook) frameHook(); else { freeView(); controls.update(); }
     renderer.render(scene, camera);
   }
   function resizeRenderer() {
@@ -4006,7 +4060,7 @@
     facciate: { nomi: Object.keys(FACADE_PALETTES), nomeDi: (code) => facadeNameFor(code), set: (code, name) => setFacade(code, name), materiale: (name, kind, tipo) => facadePatchMaterial(name, kind, tipo), campata: FACADE_BAY },
     cortile: { get M() { return courtyardFrame ? courtyardFrame.M : null; }, rebuild: () => loadCourtyardModel() },
     // passeggiata in prima persona (cammina.js): fn viene chiamata a ogni fotogramma al posto di OrbitControls; null la chiude
-    primaPersona: (fn) => { frameHook = typeof fn === 'function' ? fn : null; if (frameHook) { stopTour(); stopCameraFlight(); } if (controls) controls.enabled = !frameHook; },
+    primaPersona: (fn) => { frameHook = typeof fn === 'function' ? fn : null; orbitKeys.clear(); zoomGoal = null; if (frameHook) { stopTour(); stopCameraFlight(); } if (controls) controls.enabled = !frameHook; },
     tasselli: () => scheduleTiles() };
   init();
 })();

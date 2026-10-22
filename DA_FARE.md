@@ -350,3 +350,13 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
 - `undo(again)` → `putItem` / `putPrim` / `putFacade`: rimettono il valore, ridisegnano e salvano (o cancellano il documento se
   si torna al file); durante l'annulla `undoing` impedisce di registrare. Tasti ⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y (ignorati nei campi
   di testo), ↶ ↷ nella barra solo in «Modifica». La pila vive solo nella pagina aperta (si perde ricaricando).
+
+## Vista libera, Commenta in Modifica, palma 2 (22/10/2026) — fatto, non provato nel browser
+- `campus-3d.js`: `onWheelZoom` (capture su `map3dHost`, sostituisce la rotellina di OrbitControls: passo ∝ `deltaY`, ridotto da
+  `zoomPace` fino a 0,2 sotto ~6 m dal punto guardato; pizzico del trackpad = `ctrlKey` ×10) e `freeView` in `renderFrame`
+  (distanza che scivola verso `zoomGoal`; `zoomSpeed` del pizzico touch ≥ 0,4; WASD/frecce: W/S in piano a metà della distanza
+  al secondo, A/D giro attorno a `controls.target` a (6 + r/4)/r rad/s, max 1; Maiusc ×3; tasti ignorati nei campi e in passeggiata).
+- `editor.js`: `commentSel` (tasto «💬 Commenta» nelle schede di oggetto, pezzo, edificio) → `newComment(hit, null, back)`;
+  `commentDoc` accetta `hit.item` e `hit.extra` (`scatola`, `pezzo`, `edificio`).
+- Palma 2 dell'ingresso (u 42,4, v 7,9): `rimosso: true` nel file su richiesta dell'utente («tolta per ora»).
+

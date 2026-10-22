@@ -396,7 +396,8 @@
     {
      "u": 42.4,
      "v": 7.9,
-     "altezza": 3.4
+     "altezza": 3.4,
+     "rimosso": true
     }
    ],
    "totem": [

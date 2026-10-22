@@ -784,7 +784,7 @@
     if (sel.type === 'item' && !['pavimento', 'portico'].includes(sel.it.percorso)) row.append(button('Duplica', duplicateSel));
     if (sel.type === 'item' && sel.it.remove) row.append(button('Elimina', removeSel));
     if (sel.type === 'prim') row.append(button('Elimina', removePrim));
-    row.append(button('Fine', () => deselect(), true));
+    row.append(button('💬 Commenta', commentSel), button('Fine', () => deselect(), true));
     nodes.push(row); openCard(nodes, 'dock');
   }
   // «Specchia»: poligoni (marciapiedi, aiuole) → vertici, raggi e discese specchiati rispetto al centro della scatola; oggetti del catalogo → campo
@@ -1278,7 +1278,7 @@
     deselect();
     // il lato toccato (riga di muro, interno o esterno): la tendina della texture cambia solo quello; sul tetto resta null → tutto l'edificio
     const wall = cellFromHit(h), onSide = wall && wall.code === code ? wall : null;
-    sel = { type: 'edificio', code, tool: null, vis: new T.Group(), handles: [], wall: onSide, tutto: !onSide };
+    sel = { type: 'edificio', code, tool: null, vis: new T.Group(), handles: [], wall: onSide, tutto: !onSide, point: h.point.clone(), obj: h.object };
     fx.add(sel.vis); buildingCard();
     hint(onSide ? 'La texture cambia solo il lato toccato. Spunta «Tutto l’edificio» per cambiarli tutti.' : 'Toccato il tetto: la texture cambia tutto l’edificio.');
   }
@@ -1305,7 +1305,7 @@
     sel.palette = sel.palette || 'arancione';
     row.append(tool('togli', 'Togli finestre'), tool('aggiungi', 'Aggiungi finestre'), tool('muro', 'Texture di un muro'));
     if (st.facciata || n) row.append(button('Ripristina originale', () => { facadeState.set(code, clone(base.facciate[code] || { facciata: null, finestre: [] })); applyFacade(code); saveFacade(code); buildingCard(); }));
-    row.append(button('Fine', () => deselect(), true));
+    row.append(button('💬 Commenta', commentSel), button('Fine', () => deselect(), true));
     openCard([el('h3', '', 'Edificio ' + code), el('p', 'ed-meta', 'L’edificio non si deforma: si cambiano la texture e le finestre.' + (n ? ` Celle modificate: ${n}.` : '')), el('label', '', sel.tutto || !w ? 'Texture della facciata (tutto l’edificio)' : 'Texture del lato toccato'), sl, allLabel, el('label', '', 'Texture per «Texture di un muro»'), wl, row], 'dock');
   }
 
@@ -1534,16 +1534,30 @@
     }
     return g;
   }
-  function newComment(hit, e) {
-    const ta = el('textarea'); ta.placeholder = 'Cosa va cambiato qui?'; ta.setAttribute('aria-label', 'Testo del commento');
-    const meta = el('p', 'ed-meta', describe(hit.object));
+  // commento su quello che è selezionato in «Modifica»: puntina in cima alla scatola (o dove hai toccato l'edificio), poi si torna alla sua scheda
+  function commentSel() {
+    if (!sel) return;
+    let hit;
+    if (sel.type === 'edificio') hit = { point: sel.point, object: sel.obj, extra: { edificio: sel.code } };
+    else {
+      const f = frameBy(sel.frameKey), b = sel.box; if (!f) return;
+      const point = toWorld(f, (b.u0 + b.u1) / 2, (b.v0 + b.v1) / 2, b.h1);
+      hit = sel.type === 'item' ? { point, object: null, item: sel.it, extra: { scatola: clone(b) } }
+        : { point, object: sel.p.mesh, extra: { pezzo: { percorso: sel.p.path, istanza: sel.p.inst, cornice: sel.p.frameKey, scatola: clone(b) } } };
+    }
+    newComment(hit, null, () => { if (!sel) return; sel.cardHidden = false; if (sel.type === 'edificio') buildingCard(); else infoCard(); });
+  }
+  function newComment(hit, e, back) {
+    const ta = el('textarea'); ta.placeholder = hit.item || hit.extra ? 'Cosa va cambiato in questo?' : 'Cosa va cambiato qui?'; ta.setAttribute('aria-label', 'Testo del commento');
+    const meta = el('p', 'ed-meta', hit.item ? hit.item.label : describe(hit.object) + (hit.extra && hit.extra.pezzo ? ' (pezzo selezionato)' : ''));
+    const done = () => { closeCard(); if (back) back(); };
     const row = el('div', 'ed-row'), files = [], shots = el('div');
     const nodes = [el('h3', '', 'Nuovo commento'), meta, ta, shots];
     if (assets) {
       const input = photoInput((fs) => { files.push(...fs); shots.replaceChildren(thumbs(files.map((f) => URL.createObjectURL(f)))); });
       nodes.push(input); row.append(button('📷 Foto', () => input.click()));
     }
-    row.append(button('Annulla', closeCard), button('Salva', async () => {
+    row.append(button('Annulla', done), button('Salva', async () => {
       const testo = ta.value.trim(); if (!testo && !files.length) { ta.focus(); return; }
       if (!db) { hint('Per salvare i commenti apri la pagina da claude.ai.'); return; }
       if (saving) return; saving = true;
@@ -1551,16 +1565,16 @@
         let foto = [];
         if (files.length) { try { foto = await uploadPhotos(files); } catch (err) { hint('Foto non caricate (' + photoError(err) + '): il commento non è stato salvato.'); return; } }
         const doc = commentDoc(hit, testo); if (foto.length) doc.foto = foto;
-        await db.collection('segnalazioni').add(doc); closeCard(); hint('Commento salvato' + (foto.length ? ` con ${foto.length} foto` : '') + '. Claude lo legge con le coordinate.');
+        await db.collection('segnalazioni').add(doc); done(); hint('Commento salvato' + (foto.length ? ` con ${foto.length} foto` : '') + '. Claude lo legge con le coordinate.');
       } catch (err) { hint('Non sono riuscito a salvare (' + (err && err.code || 'errore') + ').'); }
       finally { saving = false; }
     }, true));
     nodes.push(row);
-    openCard(nodes, e.clientX, e.clientY);
+    if (e) openCard(nodes, e.clientX, e.clientY); else openCard(nodes);
     setTimeout(() => ta.focus(), 30);
   }
   function commentDoc(hit, testo) {
-    const w = hit.point, it = treeItemFromHit(hit) || itemAt(w), lonLat = C.toLonLat ? C.toLonLat(w) : null;
+    const w = hit.point, it = hit.item || treeItemFromHit(hit) || itemAt(w), lonLat = C.toLonLat ? C.toLonLat(w) : null;
     const f0 = frameEsterni(0), fc = frameCortile();
     const loc = (f) => { if (!f) return null; const q = toLocal(f, w); return { u: round(q.u), v: round(q.v), h: round(q.h) }; };
     const lc = loc(fc), inCourt = lc && lc.u > -6 && lc.u < 24 && lc.v > -8 && lc.v < 16;
@@ -1571,7 +1585,8 @@
       punto: { x: round(w.x), y: round(w.y), z: round(w.z) }, quota: round(w.y),
       lonLat: lonLat ? [Number(lonLat[0].toFixed(7)), Number(lonLat[1].toFixed(7))] : null,
       lato0: loc(f0), cortile: inCourt ? lc : null,
-      oggetto: describe(hit.object),
+      oggetto: hit.item ? hit.item.label : describe(hit.object),
+      ...(hit.extra || {}),
       elemento: it ? { chiave: it.key, nome: it.nome || '', etichetta: it.label, sorgente: it.sorgente, percorso: it.percorso } : null,
       vista: { camera: r3(camera.position), target: r3(tg) },
     };

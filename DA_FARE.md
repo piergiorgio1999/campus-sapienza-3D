@@ -6,6 +6,32 @@
   delle magnolie, chioma B spostata a stima (`chiomaOffset`).
 - Nuovo dall'utente (22/10): `riferimenti/cu014-vettoriale.stl`, modello vettoriale di CU014 ("vec cu14"): **usato** per il solido, vedi sotto.
 
+## Ripresa del 22/10/2026 (mattina)
+- **Alberi generici (OSM e «Albero» del catalogo):** il tronco sale fino al centro della chioma principale (prima finiva sotto e la chioma
+  restava staccata). `buildTrees` in `campus-3d.js`; pini, palme e magnolie invariati. Pubblicato (v52).
+- **Commento del solido bianco** (`segnalazioni/8370inyxicsqy5ulsd2j`): era il condizionatore dell'ingresso spostato dall'utente
+  (`prim:chimica-esterni.6.6`, scatola d'origine identica); tolto in v49, confermato dall'utente: commento «fatta», prim «scartata».
+- **Modifiche del db riportate nei file** (`cortile/chimica-esterni.json`, analisi con verifica avversaria): rivestimento dell'ingresso
+  u 41,5–54,45, altezza 4,3; panchina 2 eliminata (`rimosso`); ringhiera 1 (u 44,5) tolta (`ringhiere[0] = []`); primo pergolato allungato
+  dall'utente a u 16,5–44,4 (27,9 m; il secondo resta u 52,26–78,76 dove l'ha indicato l'utente, non specchiato). Superate o inerti, da
+  segnare senza toccare i file: prim del pergolato 11.101 (scartata), 11.103 (applicata), aggiunte `pmvif9e8er9` e `pmvidbhtrdk`
+  (eliminate, applicata), pezzi della cancellata `prim:cortile-modello.0.33/.34/.35` (superati da `cancellata.sporgenza`, applicata) e `.43@2`
+  (trascinamento involontario, scartata).
+- **Da chiedere all'utente:** la palma 2 a sinistra del portone (`esterni:elementi.6.palme.1`) è stata eliminata 35 s dopo che il condizionatore
+  era stato trascinato dentro la sua scatola di selezione: probabilmente voleva togliere il condizionatore. Finché il documento resta
+  «da applicare» la pagina la nasconde dal vivo; il file la tiene.
+- **Solido STL, difetti confermati e corretti:**
+  - interpiano unico 3,425 m per tutte le ali (`cuPieces`, campo `interpiano` in `cu014-solido.json`; via `cuLevelsFor`): prima ogni ala
+    aveva il suo (2,6–4,07 m) e le file di finestre non combaciavano; dorsale 21 m e blocco 20 m hanno ora l'attico più alto (2,9 e 1,9 m),
+    10,5 m e 17,5 m circa 2,7–2,8 m;
+  - ponte sul cancello con la stessa griglia del corpo principale (tetto a 7,87 m, sulla linea dei muri del cortile);
+  - nuova ala «basso-cortile-3» a 8 m [41, −64,5, 46, −60] (prima 19 m dove l'STL dà ~8 m e il pavimento del cortile n. 3);
+  - tacca sulla facciata sud chiusa: «sud-centro-est» [46, −91, 48,5, −79] a 15,5 m e «sud-est-basso» fino a v −91;
+  - «fascia-nord-est» parte da u 56,34 (prima 55: scasso di 1,34 m nello spigolo dell'ala nord verso la terrazza);
+  - soletta del cortile nord a 4,4 m invece di 6 (tagliava le finestre del primo piano); è parte di CU014 per l'editor (tetto) e per la
+    planimetria ufficiale, e non c'è se CU014 non è disegnato; anche il ponte ha `code: 'CU014'`.
+  - Non toccato: la toppa arancione del muro ovest (corpo a 19 m, 4 piani da 3,425: resta valida).
+
 ## Solido di CU014 dall'STL (22/10/2026) — fatto, da verificare con il render
 - **Cosa contiene l'STL:** mesh binaria, 103 594 triangoli, 2,02 × 2,23 × 0,36 unità (1 unità ≈ 86,2 m, z in alto, origine arbitraria). È una
   nuvola/mesh rumorosa dell'edificio e del suo intorno (alberi, marciapiedi), non un vettoriale pulito: l'impronta c'è, i piani dei tetti si leggono bene.

@@ -11,19 +11,23 @@
   "nota": "u, v = scala · R(−rotazione) · ((x, y) − traslazione) + centroSagoma; quota sopra il terreno = scala · z − (pianoTerreno[0] + pianoTerreno[1]·u + pianoTerreno[2]·v). Nell'STL z è l'alto e l'unità è arbitraria (1 unità ≈ 86,2 m); il piano del terreno è inclinato di 2,4°, cioè è l'inclinazione della scansione, non quella del suolo."
  },
  "altezzaBase": 19,
+ "interpiano": 3.425,
+ "nota_interpiano": "Stesso interpiano per tutte le ali (il corpo principale a 19 m ha 4 piani da 3,425 m sopra il basamento di 4,4 m), così le file di finestre combaciano dove due ali si toccano e col ponte sul cancello del cortile dell'azoto. Ogni ala tiene i piani interi che le entrano (l'ultimo anche se ne entra il 75 %), il resto va all'attico: la dorsale a 21 m e il blocco a 20 m hanno l'attico più alto.",
  "ali": [
   { "id": "dorsale", "rect": [39.5, -60, 50, -20], "altezza": 21, "nota": "Corpo centrale, il più alto (coincide con l'altezza 21 m di OSM)." },
   { "id": "sud-est", "rect": [50, -62, 71.5, -38], "altezza": 20, "nota": "Blocco a sud-est, accanto ai due cortili est." },
-  { "id": "sud-est-basso", "rect": [46, -86, 71.5, -62], "altezza": 20, "nota": "Prosecuzione del blocco verso sud, fino al bordo dell'ala sud." },
+  { "id": "sud-est-basso", "rect": [46, -91, 71.5, -62], "altezza": 20, "nota": "Prosecuzione del blocco verso sud, fino al bordo dell'ala sud." },
   { "id": "est", "rect": [71.5, -86, 80.5, -26], "altezza": 15.5, "nota": "Ala est più bassa (15-16 m)." },
   { "id": "bordo-est", "rect": [80.5, -86, 87, -26], "altezza": 11.5, "nota": "Fascia bassa lungo il bordo est (11-12 m)." },
-  { "id": "fascia-nord-est", "rect": [55, -26, 87, -20], "altezza": 10.5, "nota": "Corpo basso affacciato sulla terrazza (10-11 m)." },
+  { "id": "fascia-nord-est", "rect": [56.34, -26, 87, -20], "altezza": 10.5, "nota": "Corpo basso affacciato sulla terrazza (10-11 m)." },
   { "id": "sud-ovest", "rect": [-1, -91, 41, -64.5], "altezza": 15, "nota": "Ala sud (14-16 m)." },
   { "id": "sud-centro", "rect": [41, -91, 46, -71.5], "altezza": 15.5 },
   { "id": "lucernario-sud", "rect": [25.5, -89, 28, -64.5], "altezza": 17.5, "nota": "Dorsale stretta sull'ala sud (17-18 m)." },
-  { "id": "basso-sud", "rect": [17, -64.5, 41, -60], "altezza": 10.5, "nota": "Corpo basso fra le due ali sud (10-11 m)." }
+  { "id": "basso-sud", "rect": [17, -64.5, 41, -60], "altezza": 10.5, "nota": "Corpo basso fra le due ali sud (10-11 m)." },
+  { "id": "basso-cortile-3", "rect": [41, -64.5, 46, -60], "altezza": 8, "nota": "A nord del cortile n. 3 l'STL dà circa 8 m (u 41-42,5) e il pavimento rialzato del cortile (2-4 m) più a est: prima restava all'altezza base di 19 m e chiudeva il cortile." },
+  { "id": "sud-centro-est", "rect": [46, -91, 48.5, -79], "altezza": 15.5, "nota": "Chiude la tacca triangolare sulla facciata sud fra sud-centro e sud-est-basso (nell'STL qui 15,5-15,9 m)." }
  ],
  "fondi": [
-  { "id": "cortile-nord", "rect": [14.5, -23, 40.5, -11], "quota": 6, "nota": "Il cortile nord ha il pavimento a circa 6 m (primo piano), non a terra: la pagina lo chiude con una soletta a questa quota." }
+  { "id": "cortile-nord", "rect": [14.5, -23, 40.5, -11], "quota": 4.4, "nota": "Il cortile nord ha il pavimento in quota (circa 6 m nell'STL), non a terra: la pagina lo chiude con una soletta. Messa a 4,4 m, sulla linea del basamento, perché a 6 m tagliava a metà le finestre del primo piano dei muri del cortile." }
  ]
 }

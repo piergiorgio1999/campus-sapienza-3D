@@ -1855,15 +1855,17 @@
     const props = feature.properties || {};
     const code = String(props['addr:housenumber'] || props.ref || '').trim().toUpperCase();
     const holes = (code && courtyardHoles[code]) || [];
-    const parts = (code === 'CU014' && cuSolidoParts(rings, holes)) || shapesFor(rings, holes).map((shape) => ({ shape }));
+    const solido = code === 'CU014' && cuSolidoParts(rings, holes);
+    const parts = solido || shapesFor(rings, holes).map((shape) => ({ shape }));
     if (!parts.length) return;
     if (code && officialPlanCodes.has(code)) return;
+    if (code === 'CU014') { cuDisegnato = true; if (solido) cuSolidoUsato = true; }
     const b = lookup.get(code);
     if (!b) { if (insideCampus(polygonCentroid(outer))) for (const { shape } of parts) addContextPolygon(shape, props); return; } // edifici del quartiere: volumi uniti, non selezionabili
     for (const { shape, h } of parts) addCodedShape(shape, feature, props, code, b, h);
   }
   /* ---------- solido di CU014 dall'STL di riferimento (cu014-solido.json): ali a quote diverse e fondo del cortile nord ---------- */
-  let cuSolido = null;
+  let cuSolido = null, cuDisegnato = false, cuSolidoUsato = false; // CU014 estruso (anche senza STL) / con le ali dell'STL
   // lato 0 della sagoma OSM di CU014: u lungo il lato, v verso l'esterno (stesse coordinate dei file del cortile e dell'editor)
   function cuFrame() {
     const cu = buildings.find((x) => String(x.code).toUpperCase() === 'CU014'), ring = cu && cu.rings && cu.rings[0];
@@ -1877,8 +1879,18 @@
     };
   }
   const rectRing = ([u0, v0, u1, v1]) => [[u0, v0], [u1, v0], [u1, v1], [u0, v1], [u0, v0]];
-  // numero di piani del corpo per un'ala di altezza h: interpiano vicino a 3,95 m (come il rilievo delle scale); null = lascia a buildingPieces
-  function cuLevelsFor(h) { return h < 8.5 ? null : Math.max(1, Math.ceil((h - 5.3) / 3.95 - 0.1)) + 1; }
+  // pezzi (basamento, corpo, attico) di un'ala alta h: lo stesso interpiano per tutte le ali (cu014-solido.json → interpiano,
+  // 3,425 m: il corpo principale a 19 m con 4 piani), così le file di finestre combaciano dove due ali si toccano; l'ultimo piano
+  // resta solo se ne entra almeno il 75 % (finestra quasi intera), altrimenti l'avanzo va all'attico
+  function cuPieces(h) {
+    const BASE = 4.4, ATTIC = 0.9, F = Number(cuSolido && cuSolido.interpiano) > 0 ? Number(cuSolido.interpiano) : 3.425;
+    if (h < BASE + ATTIC + 0.5) return buildingPieces(h, NaN);
+    const room = h - BASE - ATTIC, whole = Math.floor(room / F + 1e-6), n = room / F - whole >= 0.75 ? whole + 1 : whole;
+    const bodyH = Math.min(room, n * F), pieces = [{ y0: 0, h: BASE, kind: 'base', floorH: BASE }];
+    if (bodyH > 0.01) pieces.push({ y0: BASE, h: bodyH, kind: 'body', floorH: F });
+    pieces.push({ y0: BASE + bodyH, h: h - BASE - bodyH, kind: 'attic', floorH: h - BASE - bodyH });
+    return pieces;
+  }
   // sagoma (meno i cortili) divisa nelle ali di cu014-solido.json: [{ shape, h }]; null = dati o libreria mancanti, si torna alla sagoma intera
   function cuSolidoParts(rings, holes) {
     const f = cuSolido && cuFrame(), pc = window.polygonClipping;
@@ -1909,7 +1921,7 @@
   // soletta dei cortili che hanno il pavimento in quota (il cortile nord è a circa 6 m): chiude il pozzo scavato nella sagoma
   function addCuFondi() {
     const f = cuSolido && cuFrame();
-    if (!f || !buildingGroup || !Array.isArray(cuSolido.fondi)) return;
+    if (!f || !buildingGroup || !cuDisegnato || officialPlanCodes.has('CU014') || !Array.isArray(cuSolido.fondi)) return;
     for (const fondo of cuSolido.fondi) {
       const quota = Number(fondo.quota);
       if (!Array.isArray(fondo.rect) || !(quota > 0.2)) continue;
@@ -1921,6 +1933,7 @@
       const mats = [normalRoof, hiddenCapMaterial()]; // solo il piano superiore, con la stessa ortofoto dei tetti
       const mesh = new THREE.Mesh(g, mats);
       mesh.receiveShadow = true; mesh.userData.mats = mats; mesh.userData.cuFondo = fondo.id || true;
+      mesh.userData.facadeCode = 'CU014'; mesh.userData.code = 'CU014'; // l'editor la riconosce come tetto di CU014; la planimetria la toglie con l'edificio
       buildingGroup.add(mesh);
     }
   }
@@ -1940,7 +1953,7 @@
   function addCodedShape(shape, feature, props, code, b, heightOverride) {
     let rawHeight = b?.height || props.height;
     let rawLevels = b?.levels || props['building:levels'];
-    if (heightOverride > 0) { rawHeight = heightOverride; rawLevels = cuLevelsFor(heightOverride); } // ala a quota propria (cu014-solido.json)
+    if (heightOverride > 0) rawHeight = heightOverride; // ala a quota propria (cu014-solido.json)
     const height = heightInfo({ height: rawHeight, levels: rawLevels }).value;
     const geometry = new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false, curveSegments: 1 });
     geometry.rotateX(-Math.PI / 2);
@@ -1948,7 +1961,7 @@
     // ExtrudeGeometry uses material 0 for caps and 1 for walls.
     const set = facadeSetFor(code);
     const levelCount = Number(String(rawLevels ?? '').replace(',', '.'));
-    const pieceList = buildingPieces(height, levelCount);
+    const pieceList = heightOverride > 0 ? cuPieces(height) : buildingPieces(height, levelCount);
     for (const [pieceIndex, piece] of pieceList.entries()) {
       const g = new THREE.ExtrudeGeometry(shape, { depth: piece.h, bevelEnabled: false, curveSegments: 1 });
       g.rotateX(-Math.PI / 2);
@@ -3556,15 +3569,17 @@
     // un solo volume, stessa fascia del corpo dell'edificio con le stesse quote delle texture, così piani e finestre continuano senza giunte.
     // Alto solo PO.piani piani (1 = il primo piano) sopra il piano terra, chiuso da un unico tetto piano liscio (niente attico né cornice).
     const cu = buildings.find((x) => String(x.code).toUpperCase() === 'CU014') || {};
-    const topH = heightInfo({ height: cu.height, levels: cu.levels }).value, baseH = PO.soffitto + 0.35; // stessa altezza e piani dell'edificio
+    // stessa altezza e piani dei muri a cui si appoggia: con le ali dell'STL è il corpo principale (altezzaBase, interpiano unico)
+    const hAla = cuSolidoUsato && Number(cuSolido.altezzaBase) > 0 ? Number(cuSolido.altezzaBase) : null;
+    const topH = hAla || heightInfo({ height: cu.height, levels: cu.levels }).value, baseH = PO.soffitto + 0.35;
     const [cu0, cu1] = PO.corpoU || PO.u; // il corpo si stende su tutta la larghezza fra le due ali (come il cortile), anche sopra i pilastri
     const ringLL = [[cu0, PO.v[0]], [cu1, PO.v[0]], [cu1, PO.v[1]], [cu0, PO.v[1]], [cu0, PO.v[0]]].map((q) => {
       const [x, n] = courtyardFrame.toMap(q);
       return [(x + mapWidth / 2) / metersPerLon + bounds.west, (n + mapDepth / 2) / metersPerLat + bounds.south];
     });
     const shp = makeShape([ringLL]);
-    if (shp && topH > baseH + 1 && buildingGroup) {
-      const set = facadeSetFor('CU014'), full = buildingPieces(topH, Number(cu.levels));
+    if (shp && topH > baseH + 1 && buildingGroup && !officialPlanCodes.has('CU014')) { // con la planimetria ufficiale CU014 non c'è
+      const set = facadeSetFor('CU014'), full = hAla ? cuPieces(hAla) : buildingPieces(topH, Number(cu.levels));
       const bodyP = full.find((q) => q.kind === 'body'), atticP = full.find((q) => q.kind === 'attic');
       const nFloors = Math.max(1, Math.round(Number(PO.piani) || 1));
       const bodyTop = Math.min(topH - (atticP ? atticP.h : 0), bodyP.y0 + nFloors * bodyP.floorH); // quota del tetto del ponte
@@ -3579,7 +3594,7 @@
         g.computeVertexNormals();
         const mats = [k === pieces.length - 1 ? normalRoof : hiddenCapMaterial(), set[piece.kind]];
         const mesh = new THREE.Mesh(g, mats); mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.mats = mats; mesh.userData.porticoCorpo = true;
-        Object.assign(mesh.userData, { facadeCode: 'CU014', kind: piece.kind, y0: 0.04 + piece.y0, floorH: piece.kind === 'attic' ? piece.h : piece.floorH });
+        Object.assign(mesh.userData, { facadeCode: 'CU014', code: 'CU014', kind: piece.kind, y0: 0.04 + piece.y0, floorH: piece.kind === 'attic' ? piece.h : piece.floorH });
         buildingGroup.add(mesh);
       });
     }

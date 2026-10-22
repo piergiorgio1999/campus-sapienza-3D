@@ -269,10 +269,10 @@
    },
    "rivestimento": {
     "u": [
-     41.6,
-     54.2
+     41.5,
+     54.45
     ],
-    "altezza": 4.6
+    "altezza": 4.3
    },
    "scritta": [
     "ISTITUTO",
@@ -310,16 +310,7 @@
     }
    ],
    "ringhiere": [
-    [
-     [
-      44.5,
-      6.6
-     ],
-     [
-      44.5,
-      20.4
-     ]
-    ],
+    [],
     [
      [
       50.7,
@@ -350,13 +341,14 @@
      "orienta": "v"
     },
     {
-     "u": 45.0,
-     "v": 13.0,
+     "u": 45.5,
+     "v": 11.85,
      "lunghezza": 1.9,
      "profondita": 0.5,
      "altezza": 0.45,
      "rientro": 0.25,
-     "orienta": "v"
+     "orienta": "v",
+     "rimosso": true
     },
     {
      "u": 45.0,
@@ -475,7 +467,7 @@
    "tipo": "pergolato",
    "nome": "Pergolato con vite lungo il viale (Street View 2015)",
    "lato": 0,
-   "u": [16.5, 43],
+   "u": [16.5, 44.4],
    "v": [12.1, 14.7],
    "altezza": 3,
    "passo": 1.8,

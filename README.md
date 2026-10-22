@@ -10,7 +10,9 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
   `altezzaBase` (19 m) e `ali`: rettangoli `[u0, v0, u1, v1]` nelle coordinate del lato 0 con la quota del loro tetto (in m sopra il terreno;
   l'ultima ala della lista vince dove si sovrappongono), usati da `cuSolidoParts` in `campus-3d.js` per estrudere la sagoma OSM
   (meno i cortili di `courtyards.json` e i vuoti/pieni del cortile) ala per ala, con le stesse texture di facciata (i piani del corpo
-  si adattano alla quota, interpiano ≈ 3,95 m); `fondi`: cortili con il pavimento in quota (il cortile nord è a 6 m, `addCuFondi` mette la soletta);
+  hanno tutti lo stesso `interpiano`, 3,425 m, così le file di finestre combaciano fra ali e col ponte sul cancello; `cuPieces` tiene i piani interi
+  e manda l'avanzo all'attico); `fondi`: cortili con il pavimento in quota (cortile nord: soletta di `addCuFondi` a 4,4 m, sulla linea del basamento,
+  invece dei 6 m dell'STL che tagliavano le finestre del primo piano);
   `stl`: trasformazione scala/rotazione/traslazione dall'STL ai metri del lato 0 e piano del terreno. Senza il file la pagina torna alla sagoma intera
   a 21 m. Da dove vengono le misure: l'STL è una mesh binaria di 103 594 triangoli a scala arbitraria (z in alto, 1 unità ≈ 86,2 m, 4,6 MB):
   scala, rotazione (178,07°) e traslazione sono state trovate sovrapponendo i muri verticali dell'STL ai lati della sagoma OSM (correlazione 2D,

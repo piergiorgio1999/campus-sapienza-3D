@@ -3637,13 +3637,18 @@
       const h = Math.min(22, Math.max(5, pine ? R * 2.6 + 3 : R * 2.1 + 2.5));
       q.setFromAxisAngle(up, rnd(i, 2) * Math.PI * 2);
       const trunkH = pine ? h * 0.72 : h * 0.4;
-      p.set(w.x, 0, -w.n); s.set(pine ? 1.6 : 1.2, trunkH, pine ? 1.6 : 1.2);
-      m.compose(p, q, s); trunks.setMatrixAt(i, m);
-      for (let k = 0; k < LUMPS; k += 1) {
+      const lumps = Array.from({ length: LUMPS }, (_, k) => {
         const a = rnd(i * 7 + k, 4) * Math.PI * 2, off = k === 0 ? 0 : R * 0.38;
         const r = R * (k === 0 ? 0.82 : 0.62 + 0.12 * rnd(i * 7 + k, 5));
         const ry = pine ? r * 0.36 : r * (0.8 + 0.25 * rnd(i * 7 + k, 6));
         const yc = pine ? trunkH + ry * 0.5 + (k ? 0.3 : 0) : trunkH + (h - trunkH) * (k === 0 ? 0.52 : 0.4 + 0.25 * rnd(i * 7 + k, 7));
+        return { a, off, r, ry, yc };
+      });
+      // latifoglie: il tronco sale fino al centro della chioma principale (prima finiva sotto la chioma e restava staccato)
+      p.set(w.x, 0, -w.n); s.set(pine ? 1.6 : 1.2, pine ? trunkH : lumps[0].yc, pine ? 1.6 : 1.2);
+      m.compose(p, q, s); trunks.setMatrixAt(i, m);
+      for (let k = 0; k < LUMPS; k += 1) {
+        const { a, off, r, ry, yc } = lumps[k];
         p.set(w.x + Math.cos(a) * off, yc, -w.n + Math.sin(a) * off); s.set(r, ry, r);
         m.compose(p, q, s); crowns.setMatrixAt(i * LUMPS + k, m);
         if (pine) c.setHSL(0.27 + 0.03 * rnd(i, 7), 0.3, 0.15 + 0.05 * rnd(i * 7 + k, 8));

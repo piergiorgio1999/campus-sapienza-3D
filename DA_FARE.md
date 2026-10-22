@@ -341,3 +341,12 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
 - **Porta antincendio doppia** (`portaAntincendio` nel CATALOGO): due ante in lamiera marrone, maniglione rosso dietro, maniglia a L in plastica davanti, vasistas sopra. L'oggetto «Portone in legno con stipiti» `aggiunta:pmvjamz7iwe` sta nel db: va cambiato dalla scheda (tendina «Oggetto») oppure con `modello: "portaAntincendio"` (poi trascinarlo per riagganciarlo al muro).
 - **Specchia** (↔ lungo u, ↕ lungo v) nella scheda: marciapiedi/aiuole con `poligono` (vertici, `raggi`, `discese`) e oggetti del catalogo (campo `specchio`: `u`, `v`, `uv`, scala −1 nel costruttore). Non per i solidi semplici (simmetrici).
 - Non verificato a schermo.
+
+## Annulla / Ripeti nell'editor (22/10/2026) — fatto, non provato nel browser
+- `editor.js`: pila `undoStack`/`redoStack`; `saveItem`, `saveSelPrim`, `removePrim`, `saveFacade` e «Ripristina» registrano
+  prima/dopo (`remember`, `rememberPrim`). «Prima» = ultimo valore noto (`known`, `primKnown`, `facadeKnown`, aggiornati anche
+  da `applyOverrides`/`applyFacadeDoc`), altrimenti il file; `null` = oggetto aggiunto che non c'era o pezzo com'era nel file.
+  Salvataggi della stessa chiave entro 0,7 s diventano un solo passo.
+- `undo(again)` → `putItem` / `putPrim` / `putFacade`: rimettono il valore, ridisegnano e salvano (o cancellano il documento se
+  si torna al file); durante l'annulla `undoing` impedisce di registrare. Tasti ⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y (ignorati nei campi
+  di testo), ↶ ↷ nella barra solo in «Modifica». La pila vive solo nella pagina aperta (si perde ricaricando).

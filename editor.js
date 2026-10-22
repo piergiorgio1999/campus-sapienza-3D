@@ -42,6 +42,7 @@
     .ed-btn{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid #d9d0cc;background:#fffffff2;color:#3b3431;box-shadow:0 4px 14px #32201b22;font:inherit;cursor:pointer}
     .ed-btn[aria-pressed="true"]{background:#822433;border-color:#822433;color:#fff}
     .ed-btn:focus-visible{outline:3px solid #822433;outline-offset:2px}
+    .ed-btn:disabled{opacity:.45;cursor:default}
     .ed-hint{position:absolute;z-index:20;left:12px;right:12px;top:12px;margin:auto;max-width:520px;padding:10px 12px;border-radius:10px;background:#211d1dE6;color:#fff;font:13px/1.4 Arial,Helvetica,sans-serif;text-align:center;pointer-events:none}
     .ed-card{position:absolute;z-index:21;width:min(320px,calc(100% - 24px));padding:12px;border-radius:12px;background:#fff;color:#211d1d;border:1px solid #e3ddd7;box-shadow:0 12px 32px #25191433;font:13px/1.4 Arial,Helvetica,sans-serif}
     .ed-card h3{margin:0 0 6px;padding-right:40px;font-size:14px}
@@ -80,6 +81,9 @@
     ui.show = el('button', 'ed-btn', '▤ Scheda'); ui.show.type = 'button'; ui.show.hidden = true; ui.show.title = 'Riapri la scheda dell’oggetto selezionato';
     ui.trees = el('button', 'ed-btn', '🌳 Alberi'); ui.trees.type = 'button'; ui.trees.title = 'Mostra o nascondi tutti gli alberi';
     ui.bar.append(ui.show, ui.add, ui.trees, ui.comment, ui.edit);
+    ui.undo = el('button', 'ed-btn', '↶'); ui.undo.type = 'button'; ui.undo.title = 'Annulla l’ultima modifica (⌘Z / Ctrl+Z)'; ui.undo.setAttribute('aria-label', 'Annulla');
+    ui.redo = el('button', 'ed-btn', '↷'); ui.redo.type = 'button'; ui.redo.title = 'Ripeti la modifica annullata (⇧⌘Z / Ctrl+Y)'; ui.redo.setAttribute('aria-label', 'Ripeti');
+    ui.bar.prepend(ui.undo, ui.redo);
     ui.rot = el('button', 'ed-btn', '⟳ Ruota'); ui.rot.type = 'button'; ui.rot.hidden = true; ui.rot.title = 'Ruota l’oggetto selezionato (scorciatoia R)'; ui.rot.setAttribute('aria-pressed', 'false'); ui.show.after(ui.rot);
     ui.hint = el('div', 'ed-hint'); ui.hint.hidden = true;
     ui.card = el('div', 'ed-card'); ui.card.hidden = true;
@@ -90,6 +94,9 @@
     ui.trees.addEventListener('click', () => setTrees(ui.trees.getAttribute('aria-pressed') !== 'true'));
     ui.show.addEventListener('click', showCard);
     ui.rot.addEventListener('click', toggleRot);
+    ui.undo.addEventListener('click', () => undo(false));
+    ui.redo.addEventListener('click', () => undo(true));
+    undoUi();
   }
   // «Alberi»: acceso = alberi visibili; lo stato resta nel browser e campus-3d.js lo riapplica a ogni ricostruzione
   function setTrees(on) {
@@ -130,7 +137,7 @@
   function button(label, fn, primary) { const b = el('button', primary ? 'ed-primary' : '', label); b.type = 'button'; b.addEventListener('click', fn); return b; }
   function setMode(next) {
     mode = next; closeCard(); deselect(); placing = null;
-    ui.add.hidden = mode !== 'modifica';
+    ui.add.hidden = mode !== 'modifica'; undoUi();
     ui.comment.setAttribute('aria-pressed', String(mode === 'commenta'));
     ui.edit.setAttribute('aria-pressed', String(mode === 'modifica'));
     const offline = db ? '' : ' (senza accesso a claude.ai non si salva)';
@@ -886,9 +893,10 @@
   function removePrim() {
     const p = sel.p, id = primId(p), label = 'Pezzo: ' + describe(p.mesh), orig = sel.orig, box = clone(sel.box);
     primRemove(p); primsFromDb.set(id, p); deselect();
-    saveDoc(id, { sorgente: 'primitiva', percorso: p.path, istanza: p.inst, cornice: p.frameKey, oggetto: 'pezzo di ' + describe(p.mesh), tipo: 'primitiva', originale: orig, valore: box, rimosso: true, stato: 'da applicare', autore: myId, aggiornato: new Date().toISOString() });
+    rememberPrim(p, orig, { box, rimosso: true });
+    saveDoc(id, primDoc(p, orig, box, true));
     openCard([el('h3', '', 'Eliminato: ' + label), el('p', 'ed-meta', 'Resta nel file come "rimosso": Claude lo toglie anche dai dati.'),
-      (() => { const r = el('div', 'ed-row'); r.append(button('Annulla', () => { primRestore(p); primsFromDb.delete(id); dropDoc(id); closeCard(); }), button('Chiudi', closeCard, true)); return r; })()], 'dock');
+      (() => { const r = el('div', 'ed-row'); r.append(button('Annulla', () => { primRestore(p); primsFromDb.delete(id); rememberPrim(p, orig, null); dropDoc(id); closeCard(); }), button('Chiudi', closeCard, true)); return r; })()], 'dock');
   }
 
   /* ---------- trascinamento ---------- */
@@ -1198,11 +1206,13 @@
     const code = o.codice; if (!code) return;
     const st = facadeOf(code), next = { facciata: o.facciata || null, finestre: clone(o.finestre || []) };
     if (JSON.stringify(st) === JSON.stringify(next)) return;
-    facadeState.set(code, next); applyFacade(code);
+    facadeState.set(code, next); facadeKnown.set(code, clone(next)); applyFacade(code);
     if (sel && sel.type === 'edificio' && sel.code === code) buildingCard();
   }
   function saveFacade(code) {
-    const st = facadeOf(code);
+    const st = facadeOf(code), now = clone({ facciata: st.facciata || null, finestre: st.finestre || [] });
+    remember({ kind: 'facciata', key: 'edificio:' + code, code, label: 'facciata ' + code, before: facadeKnown.has(code) ? facadeKnown.get(code) : clone(base.facciate[code] || { facciata: null, finestre: [] }), after: now });
+    facadeKnown.set(code, now);
     return saveDoc(docId('edificio:' + code), { sorgente: 'edificio', codice: code, oggetto: 'Facciata ' + code, tipo: 'facciata', facciata: st.facciata || null, finestre: st.finestre || [], originale: base.facciate[code] || null, stato: 'da applicare', autore: myId, aggiornato: new Date().toISOString() });
   }
   // la cella sotto il dito: campata e piano dalle stesse coordinate usate per le texture del muro
@@ -1306,30 +1316,41 @@
   function queued(id, fn) { const p = (writes.get(id) || Promise.resolve()).catch(() => {}).then(fn); writes.set(id, p); return p; }
   async function saveDoc(id, data) {
     if (!db) { hint('Modifica applicata solo su questo schermo: per salvarla apri la pagina da claude.ai.'); return; }
-    try { await queued(id, () => db.collection('modifiche').doc(id).set(data)); hint('Modifica salvata: ' + data.oggetto + '. Claude la vede e la riporta nei file.'); }
-    catch (e) { hint('Non sono riuscito a salvare (' + ((e && e.code) || 'errore') + ').'); }
+    try { await queued(id, () => db.collection('modifiche').doc(id).set(data)); hint('Modifica salvata: ' + data.oggetto + '. Claude la vede e la riporta nei file.'); return true; }
+    catch (e) { hint('Non sono riuscito a salvare (' + ((e && e.code) || 'errore') + ').'); return false; }
   }
   async function dropDoc(id) {
     if (!db) return;
-    try { await queued(id, () => db.collection('modifiche').doc(id).delete()); hint('Ripristinato com’era nel file.'); }
-    catch (e) { hint('Non sono riuscito a ripristinare (' + ((e && e.code) || 'errore') + '): riprova.'); }
+    try { await queued(id, () => db.collection('modifiche').doc(id).delete()); hint('Ripristinato com’era nel file.'); return true; }
+    catch (e) { hint('Non sono riuscito a ripristinare (' + ((e && e.code) || 'errore') + '): riprova.'); return false; }
   }
   function saveItem(it) {
+    const now = it.get();
+    remember({ kind: 'oggetto', key: it.key, label: it.label, before: lastOf(it), after: now });
+    known.set(it.key, now);
     return saveDoc(docId(it.key), { sorgente: it.sorgente, percorso: it.percorso, nome: it.nome || '', oggetto: it.label, tipo: 'oggetto', valore: it.get(), originale: baseValue(it), scatola: roundBox(it.box()), stato: 'da applicare', autore: myId, aggiornato: new Date().toISOString() });
+  }
+  function primDoc(p, orig, box, rimosso) {
+    const d = { sorgente: 'primitiva', percorso: p.path, istanza: p.inst, cornice: p.frameKey, oggetto: 'pezzo di ' + describe(p.mesh), tipo: 'primitiva', originale: orig, valore: clone(box) };
+    if (rimosso) d.rimosso = true;
+    return Object.assign(d, { stato: 'da applicare', autore: myId, aggiornato: new Date().toISOString() });
   }
   function saveSelPrim() {
     const p = sel.p;
+    rememberPrim(p, sel.orig, { box: clone(sel.box) });
     infoCard();
-    return saveDoc(primId(p), { sorgente: 'primitiva', percorso: p.path, istanza: p.inst, cornice: p.frameKey, oggetto: 'pezzo di ' + describe(p.mesh), tipo: 'primitiva', originale: sel.orig, valore: clone(sel.box), stato: 'da applicare', autore: myId, aggiornato: new Date().toISOString() });
+    return saveDoc(primId(p), primDoc(p, sel.orig, sel.box));
   }
   async function restore() {
     if (!sel) return;
     if (sel.type === 'item') {
       const it = sel.it, orig = baseValue(it);
+      remember({ kind: 'oggetto', key: it.key, label: it.label, before: lastOf(it), after: orig }); known.delete(it.key);
       if (!orig) { if (it.remove) { it.remove(); rebuild(it.sorgente); } } // aggiunto sul posto: annullare vuol dire toglierlo
       else { it.set(orig); rebuild(it.sorgente); }
       await dropDoc(docId(it.key));
     } else {
+      rememberPrim(sel.p, sel.orig, null);
       primRestore(sel.p); sel.box = primBox(sel.p); drawSel();
       await dropDoc(primId(sel.p));
     }
@@ -1341,8 +1362,8 @@
     else if (!rootOf(sel.p.mesh) || !scene.getObjectById(sel.p.mesh.id)) { deselect(); return; }
     if (!drag) { sel.box = selBox(); drawSel(); if (!sliding) infoCard(); } // il cursore del raggio non va ridisegnato mentre lo trascini
   }
-  function rebuild(sorgente) {
-    const court = sorgente === 'aggiunta' && (C.esterni.cfg.primitive || []).some((p) => p.cornice === 'cortile'); // aggiunte nel cortile
+  function rebuild(sorgente, cortile) {
+    const court = sorgente === 'aggiunta' && (cortile || (C.esterni.cfg.primitive || []).some((p) => p.cornice === 'cortile')); // aggiunte nel cortile
     const r = sorgente === 'cortile' ? C.cortile.rebuild() : sorgente === 'albero' ? C.alberi.rebuild() : court ? Promise.all([C.esterni.rebuild(), C.cortile.rebuild()]) : C.esterni.rebuild();
     Promise.resolve(r).then(() => { reapplyPrims(); refreshSel(); });
   }
@@ -1357,16 +1378,16 @@
       if (!o.valore) continue;
       live.add(`${o.sorgente}:${o.percorso}`);
       let it = findItem(`${o.sorgente}:${o.percorso}`);
-      if (!it && o.sorgente === 'aggiunta') { const E = C.esterni.cfg; (E.primitive = E.primitive || []).push(Object.assign({ id: o.percorso }, clone(o.valore))); touched.add('aggiunta'); continue; }
-      if (!it && o.sorgente === 'albero' && C.alberi.list) { C.alberi.list.push(Object.assign({ id: o.percorso }, clone(o.valore))); touched.add('albero'); continue; }
+      if (!it && o.sorgente === 'aggiunta') { const E = C.esterni.cfg; (E.primitive = E.primitive || []).push(Object.assign({ id: o.percorso }, clone(o.valore))); known.set(`${o.sorgente}:${o.percorso}`, clone(o.valore)); touched.add('aggiunta'); continue; }
+      if (!it && o.sorgente === 'albero' && C.alberi.list) { C.alberi.list.push(Object.assign({ id: o.percorso }, clone(o.valore))); known.set(`${o.sorgente}:${o.percorso}`, clone(o.valore)); touched.add('albero'); continue; }
       if (!it) continue;
       if (JSON.stringify(it.get()) === JSON.stringify(o.valore)) continue;
-      it.set(o.valore); touched.add(it.sorgente);
+      it.set(o.valore); known.set(it.key, clone(o.valore)); touched.add(it.sorgente);
     }
     for (const key of fromDb) {
       if (live.has(key) || (drag && sel && sel.it && sel.it.key === key)) continue;
       const it = findItem(key); if (!it) continue;
-      const orig = baseValue(it);
+      const orig = baseValue(it); known.delete(key);
       if (orig) it.set(orig);
       else if (it.sorgente === 'aggiunta') { const E = C.esterni.cfg; E.primitive = (E.primitive || []).filter((p) => p !== it.obj); }
       else if (it.sorgente === 'albero') { const L = C.alberi.list; const k = L.indexOf(it.obj); if (k >= 0) L.splice(k, 1); }
@@ -1375,6 +1396,87 @@
     fromDb = live;
     if (touched.size) for (const s of touched) rebuild(s);
     else { reapplyPrims(); refreshSel(); }
+  }
+
+  /* ---------- annulla e ripeti (⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y, ↶ ↷ nella barra) ---------- */
+  // ogni salvataggio registra com'era prima e com'è dopo: oggetti, pezzi e facciate. «Prima» è l'ultimo valore noto
+  // (salvato da qui o arrivato dal db), altrimenti quello del file; null = l'oggetto non c'era o il pezzo era com'era nel file
+  const undoStack = [], redoStack = [], known = new Map(), primKnown = new Map(), facadeKnown = new Map();
+  let undoing = false;
+  const lastOf = (it) => (known.has(it.key) ? clone(known.get(it.key)) : baseValue(it));
+  function remember(e) {
+    if (undoing || JSON.stringify(e.before) === JSON.stringify(e.after)) return;
+    const top = undoStack[undoStack.length - 1], t = Date.now();
+    if (top && top.key === e.key && t - top.t < 700) { // trascinamenti e cursori: un solo passo
+      top.after = e.after; top.t = t;
+      if (JSON.stringify(top.before) === JSON.stringify(top.after)) undoStack.pop(); // tornato com'era (es. «Annulla» subito dopo Elimina)
+    }
+    else { e.t = t; undoStack.push(e); if (undoStack.length > 200) undoStack.shift(); }
+    redoStack.length = 0; undoUi();
+  }
+  function primLast(id) {
+    if (primKnown.has(id)) return clone(primKnown.get(id));
+    const o = primsFromDb.has(id) && overrides.find((x) => x.id === id && x.sorgente === 'primitiva' && (!x.stato || x.stato === 'da applicare'));
+    return o && o.valore ? (o.rimosso ? { box: clone(o.valore), rimosso: true } : { box: clone(o.valore) }) : null;
+  }
+  function rememberPrim(p, orig, after) {
+    const id = primId(p);
+    remember({ kind: 'pezzo', key: id, id, path: p.path, inst: p.inst, frameKey: p.frameKey, orig: clone(orig), label: 'pezzo di ' + describe(p.mesh), before: primLast(id), after: after && clone(after) });
+    if (after) primKnown.set(id, clone(after)); else primKnown.set(id, null);
+  }
+  function undoUi() {
+    if (!ui.undo) return;
+    ui.undo.hidden = ui.redo.hidden = mode !== 'modifica';
+    ui.undo.disabled = !undoStack.length; ui.redo.disabled = !redoStack.length;
+  }
+  // rimette un oggetto al valore val (null: l'oggetto non c'era, quindi via dalla scena e dal db)
+  function putItem(key, val) {
+    const i = key.indexOf(':'), sorgente = key.slice(0, i), percorso = key.slice(i + 1);
+    let it = findItem(key);
+    if (val == null) {
+      const court = !!(it && it.obj && it.obj.cornice === 'cortile');
+      if (it && sorgente === 'aggiunta') { const E = C.esterni.cfg; E.primitive = (E.primitive || []).filter((p) => p !== it.obj); }
+      else if (it && sorgente === 'albero') { const L = C.alberi.list, k = L.indexOf(it.obj); if (k >= 0) L.splice(k, 1); }
+      if (sel && sel.type === 'item' && sel.it.key === key) deselect();
+      known.delete(key); rebuild(sorgente, court);
+      return dropDoc(docId(key));
+    }
+    if (!it && sorgente === 'aggiunta') { const E = C.esterni.cfg; (E.primitive = E.primitive || []).push(Object.assign({ id: percorso }, clone(val))); it = findItem(key); }
+    else if (!it && sorgente === 'albero' && C.alberi.list) { C.alberi.list.push(Object.assign({ id: percorso }, clone(val))); it = findItem(key); }
+    if (!it) return Promise.resolve(false);
+    it.set(val); rebuild(sorgente, !!(it.obj && it.obj.cornice === 'cortile'));
+    const orig = baseValue(it);
+    if (orig && JSON.stringify(orig) === JSON.stringify(it.get())) { known.delete(key); return dropDoc(docId(key)); }
+    return saveItem(it);
+  }
+  function putPrim(e, val) {
+    const mesh = byPath(e.path); if (!mesh || !mesh.isMesh) return Promise.resolve(false);
+    const p = { mesh, inst: e.inst, path: e.path, frameKey: e.frameKey }, mine = sel && sel.type === 'prim' && sel.p.mesh === mesh && sel.p.inst === e.inst;
+    if (!frameBy(p.frameKey)) return Promise.resolve(false);
+    primRestore(p);
+    if (mine && val && val.rimosso) deselect();
+    if (!val) { primsFromDb.delete(e.id); primKnown.set(e.id, null); }
+    else { if (val.rimosso) primRemove(p); else primApply(p, e.orig, val.box); primsFromDb.set(e.id, p); primKnown.set(e.id, clone(val)); }
+    if (mine && sel) { sel.box = primBox(sel.p); drawSel(); infoCard(); }
+    return val ? saveDoc(e.id, primDoc(p, e.orig, val.box, val.rimosso)) : dropDoc(e.id);
+  }
+  function putFacade(code, val) {
+    facadeState.set(code, clone(val)); applyFacade(code);
+    if (sel && sel.type === 'edificio' && sel.code === code) buildingCard();
+    return saveFacade(code);
+  }
+  function undo(again) {
+    if (drag) return;
+    const from = again ? redoStack : undoStack, to = again ? undoStack : redoStack, e = from.pop();
+    if (!e) { hint(again ? 'Niente da ripetere.' : 'Niente da annullare.'); return; }
+    const val = again ? e.after : e.before;
+    let done;
+    undoing = true;
+    try { done = e.kind === 'pezzo' ? putPrim(e, val) : e.kind === 'facciata' ? putFacade(e.code, val) : putItem(e.key, val); }
+    finally { undoing = false; }
+    e.t = 0; to.push(e); undoUi();
+    const msg = (again ? 'Ripetuto: ' : 'Annullato: ') + e.label + '.' + (again ? '' : redoStack.length ? ' ⇧⌘Z / Ctrl+Y per ripeterlo.' : '');
+    hint(msg); Promise.resolve(done).then((ok) => { if (ok !== false) hint(msg); });
   }
 
   /* ---------- commenti ---------- */
@@ -1612,6 +1714,12 @@
     document.addEventListener('keydown', (e) => { // R: Sposta ↔ Ruota, non mentre si scrive in un campo
       const tg = e.target, typing = tg && (/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName) || tg.isContentEditable);
       if ((e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.metaKey && !e.altKey && !typing && mode === 'modifica' && sel && sel.type === 'item') { toggleRot(); e.preventDefault(); }
+    });
+    document.addEventListener('keydown', (e) => { // ⌘Z / Ctrl+Z annulla, ⇧⌘Z / Ctrl+Y ripete; nei campi di testo resta quello del browser
+      const tg = e.target, typing = tg && (/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName) || tg.isContentEditable), k = (e.key || '').toLowerCase();
+      if (typing || !(e.metaKey || e.ctrlKey) || e.altKey || (k !== 'z' && k !== 'y')) return;
+      if (mode !== 'modifica' && !undoStack.length && !redoStack.length) return;
+      e.preventDefault(); undo(k === 'y' || e.shiftKey);
     });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (ui.card.hidden) setMode(null); else closeCard(); } });
     loop(); connect();

@@ -44,18 +44,24 @@
   "raggioFacciata": 37.3,
   "raggioEsterno": 40.28,
   "settori": [{ "id": "fronte", "a0": -120, "a1": -60 }],
+  "loggia": {
+   "nota": "Primo piano arretrato lungo tutto l'arco (commento 11: «almeno 3 se non 5 metri»; l'STL vede un piano a 3,2-3,6 m fino a r 34 sotto l'anfiteatro): la pagina toglie alla sagoma la corona fra rInterno e raggioFacciata fra a0 e a1 e la ricostruisce: piano terra, pavimento della loggia a balconata.quota, fondo rivestito di travertino, soffitto, volume sopra alle quote delle ali.",
+   "rInterno": 33.3, "a0": -117, "a1": -63
+  },
   "balconata": {
-   "nota": "Balconata al primo piano incassata nella facciata, non sporge: colonne arancioni sul filo della facciata (profonde 0,4 m), parapetti di travertino fra le colonne, porte a vetri sul fondo (l'utente ricorda 3 o 4 porte: qui una per campata). Sotto il basamento con le sue finestre; sopra la loggia (un interpiano) la facciata arretrata fino al filo interno delle colonne, alle quote delle ali. Inizia appena prima della prima colonna (margine: metri dall'inizio al centro della colonna), dove arrivano le scale.",
-   "a0": -100.3, "a1": -85.2, "rInterno": 35.7, "quota": 4.4,
-   "colonne": { "n": 4, "larghezza": 0.7, "profondita": 0.4, "margine": 0.95 },
+   "nota": "Centro dell'arco: 4 piloni arancioni sul filo della facciata (0,9 × 0,9 m, salgono fino al tetto come lesene; sopra la loggia il volume fra i piloni è arretrato di `arretramento`), 3 parapetti di travertino fra i piloni, porte a vetri sul fondo della loggia (l'utente ricorda 3 o 4: qui una per campata). La balconata inizia appena prima del primo pilone, dove arrivano le scale.",
+   "a0": -100.3, "a1": -85.2, "quota": 4.4, "arretramento": 0.4,
+   "colonne": { "n": 4, "larghezza": 0.9, "profondita": 0.9, "margine": 1.05 },
    "parapetto": { "altezza": 1.0, "profondita": 0.3 },
    "porte": { "n": 3, "larghezza": 1.5, "altezza": 2.7 }
   },
   "scale": {
-   "nota": "Una scala per lato, lungo la curva. Prima rampa nella fascia esterna: parte da terra vicino alla balconata e sale verso l'estremità del lobo fino al mezzo piano (quota/2), coperta dalla pensilina di travertino; pianerottolo con il cancello sulla linea del muro (svolta di 90° verso l'edificio, cancello, di nuovo 90°); seconda rampa nella fascia interna che torna verso il centro fino al pianerottolo alto, alla quota della balconata. Fra le rampe il lungo muro di travertino (la «grossa colonna allungata») che regge la pensilina; ringhiera metallica sui bordi aperti. 13 alzate per rampa (17 cm), pedata 32 cm; pianerottoli in metri lungo l'arco. Quote dell'STL: pensilina 4,1-4,6 m, pianerottolo 1,9-2,5 m.",
-   "gradini": 13, "pedata": 0.32, "pianerottoloAlto": 1.2, "pianerottolo": 2.0,
-   "fasciaInterna": [37.3, 38.65], "muro": [38.65, 38.95], "fasciaEsterna": [38.95, 40.35],
-   "pensilina": { "quota": 4.6, "spessore": 0.25 },
+   "nota": "Una scala per lato (commenti 10 e 11). Prima rampa fuori, lungo la curva, nella fascia rampa1: base quadrata (lato m) con `base.gradini` gradini d'angolo sui due lati liberi, poi i gradini fino al mezzo piano; fra la rampa e l'edificio la corsia e un grosso pilone di travertino (fascia pilone, lungo piloneLunghezza m) che regge la pensilina e finisce in faccia a metà cancello. Pensilina: fascia curva attaccata alla facciata dall'inizio della scala alla fine del cancello, senza ringhiera sopra. Pianerottolo di mezzo: svolta di 90° verso l'edificio, cancello sul filo della facciata (sotto l'edificio, nell'area aperta ma coperta sotto l'anfiteatro), di nuovo 90°. Seconda rampa nel sottoscala aperto (fascia sottoscala, dentro la facciata) che torna verso il centro e arriva alla loggia `arrivo` m prima del primo pilone; sopra di lei la soletta della loggia è aperta. 13 alzate per rampa (17 cm), pedata 32 cm; raggi in metri dal centro del ventaglio.",
+   "gradini": 13, "pedata": 0.32, "arrivo": 0.3, "pianerottolo": 1.4, "piloneLunghezza": 3.0,
+   "sottoscala": [35.4, 37.3], "corsia": [37.3, 38.65], "pilone": [38.65, 39.25], "rampa1": [39.25, 40.65],
+   "base": { "lato": 1.4, "gradini": 2 },
+   "cancello": { "larghezza": 1.4, "raggio": 37.25 },
+   "pensilina": { "quota": 4.6, "spessore": 0.3, "rEsterno": 40.85 },
    "lati": [{ "id": "ovest", "verso": -1 }, { "id": "est", "verso": 1 }]
   }
  },

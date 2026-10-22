@@ -20,9 +20,10 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
   si è interpolato il terreno (inclinato di 2,4°: difetto della scansione, tolto), e le quote dei tetti sono la mediana alta (80°
   percentile) delle facce rivolte in su dentro ogni rettangolo. `python3 -I tools/cu014_stl.py` rifà le misure e le confronta con il JSON. Secondo STL (`riferimenti/chimica-anfiteatro.stl`, solo riferimento, non caricato dalla pagina): 77 424 triangoli, 37,4 × 35,7 × 8,9 unità con 1 unità ≈ 3,40 m;
   la trasformazione è nel blocco `stlAnfiteatro` (rotazione 181,75°, scritta con il segno meno, traslazione in `centroSagoma`; `python3 -I tools/cu014_stl.py - stlAnfiteatro`).
-  `ventaglio`: centro e raggi del settore di 60° del fronte sud; `balconata` (loggia al primo piano incassata, 4 colonne, 3 parapetti di travertino, porte a vetri)
-  e `scale` (per lato: prima rampa sotto la pensilina fino al mezzo piano, pianerottolo con cancello, seconda rampa fino alla balconata, muro di travertino fra le rampe,
-  ringhiera metallica). `cuSolidoParts` toglie alla sagoma la corona davanti alla facciata e la loggia; `addCuVentaglio` costruisce tutto, con le quote delle ali sopra la loggia.
+  `ventaglio`: centro e raggi del settore di 60° del fronte sud; `loggia` (primo piano arretrato di 4 m lungo tutto l'arco, fondo in travertino), `balconata`
+  (4 piloni arancioni, 3 parapetti di travertino, porte a vetri) e `scale` (per lato: base quadrata con gradini d'angolo, prima rampa fuori lungo la curva sotto la
+  pensilina, pilone di travertino fino a metà cancello, pianerottolo, cancello sul filo della facciata, seconda rampa nel sottoscala fino alla loggia).
+  `cuSolidoParts` toglie alla sagoma la corona davanti alla facciata e quella della loggia; `addCuVentaglio` ricostruisce tutto, con le quote delle ali sopra la loggia.
 - `tools/`: script di verifica (playwright + Chromium) per render e misure
 - `editor.js`: pulsanti **Commenta** e **Modifica** sulla scena 3D. Il tasto **🌳 Alberi** (sempre visibile, stato ricordato nel browser) nasconde o mostra tutti gli alberi (OSM, magnolie, palme, pini, quelli del catalogo): in `campus-3d.js` sono marcati `userData.albero` e `window.campus3d.alberiVisibili(on)` li gestisce, anche dopo le ricostruzioni. I dati vivono nel db dell'artifact:
   - `segnalazioni`: commenti con punto 3D, lon/lat, coordinate u/v sul lato 0 e nel cortile, oggetto toccato e vista della camera;

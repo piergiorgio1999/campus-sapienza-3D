@@ -398,3 +398,17 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
   il pezzo vero arriva col kit). La `condotta` usa i tratti dritti del kit per il corpo, con la sezione allargata alla scatola (i canali del tetto
   sono più grossi del kit: 1,3 × 1,3 m e 0,9 × 0,74 m); UTA, ventilatori, imbuto e curva restano miei. Griglia del kit in testa al canale nord (ovest).
 
+## Commento 11 (`segnalazioni/330rkn3n0q1zt794bh5j`): scale e loggia del fronte sud rifatte (22/10/2026 notte) — fatto, non provato nel browser
+- Testo dell'utente (riassunto): la pensilina è una fascia che segue la curva dell'edificio e arriva alla fine del cancello; il cancello sta sotto
+  l'edificio (area aperta ma coperta sotto l'anfiteatro), non sotto la pensilina; il primo piano è tutto arretrato di 3–5 m, con i 4 piloni e
+  le facciate di fondo in travertino; sopra non c'è ringhiera; alla base delle scale una base quadrata con uno o due gradini d'angolo prima della
+  staccionata; prima della svolta, un pilone di travertino largo, lungo il verso delle scale, che finisce in faccia a metà cancello. Foto: primo
+  piano arretrato lungo tutto l'arco, pensiline alla quota del primo piano sui due lati, piloni con balaustre al centro.
+- `cu014-solido.json → ventaglio.loggia` (rInterno 33,3, da −117° a −63°), `balconata` (piloni 0,9 × 0,9, margine 1,05 m, arretramento 0,4 sopra la
+  loggia fra i piloni), `scale` (fasce: sottoscala 35,4–37,3, corsia 37,3–38,65, pilone 38,65–39,25, rampa1 39,25–40,65; cancello largo 1,4 a r 37,25;
+  base quadrata 1,4 m con 2 gradini; pilone lungo 3 m; pensilina in cima a 4,6, spessa 0,3: 2,1 m liberi sul pianerottolo).
+- Angoli risultanti: ovest arrivo −99,85°, piede seconda rampa e cancello −105,9 → −108,06 (metà −106,98 = fine del pilone e della prima rampa),
+  prima rampa −102,39 → −106,98, base −100,38 → −102,39, pianerottolo fino a −109,04, pensilina −99,78 → −108,06; est speculare
+  (arrivo −85,65, cancello −79,6 → −77,44, pianerottolo fino a −76,46). L'STL vede la pensilina est fino a −69°: il lato est potrebbe essere più lungo.
+- Tolta la ringhiera sopra (pianerottolo alto); la seconda rampa è dentro l'edificio, con la soletta della loggia aperta sopra di lei.
+

@@ -360,3 +360,14 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
   `commentDoc` accetta `hit.item` e `hit.extra` (`scatola`, `pezzo`, `edificio`).
 - Palma 2 dell'ingresso (u 42,4, v 7,9): `rimosso: true` nel file su richiesta dell'utente («tolta per ora»).
 
+## Aggiungi: strada asfaltata e file 3D (22/10/2026) — fatto, non provato nel browser
+- Strada (`forma: 'strada'`, `poligono`, `base`, `raggio`/`raggi`): `buildRoad` in `campus-3d.js`, `ShapeGeometry` a `base + 0,02`,
+  `roadMaterial` trasparente a opacità 1 senza scrittura della profondità, `renderOrder` 3 + base/100 + indice·1e-5 (dopo cartina −2,
+  ortofoto 1 e tasselli satellitari 2; ordine fisso tra strade). Con il depth buffer logaritmico `polygonOffset` non basterebbe.
+  Editor: vertici, raggi, Specchia, faccia bassa per la quota (`lock.h1`).
+- File 3D (`forma: 'file3d'`, `modello3d: { asset, formato, nome, su, misure }`, `box`, `angolo`, `specchio`): `prepareModel` legge e
+  misura il file (unità: oltre 500 → mm, oltre 150 → cm), lo comprime con fflate e lo impacchetta come JSON base64 (gli asset non
+  accettano binari 3D; limite 20 MB); `userModel` lo riscarica da `/_blob/<asset>` e lo mette in cache; `buildUserModel` lo scala
+  nella scatola (segnaposto grigio, rosso se non si carica). USDZ non supportato (three r128 non ha il lettore; quello recente legge
+  solo USDA): convertire in GLB. Nel riportarlo nei file la primitiva tiene `modello3d.asset` (l'allegato resta nell'artifact).
+

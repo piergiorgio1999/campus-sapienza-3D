@@ -22,7 +22,7 @@
   let db = null, assets = null, myId = null, saving = false;
   let mode = null; // 'commenta' | 'modifica' | null
   const base = { esterni: null, cortile: null, alberi: null, facciate: {} };
-  const FORME = { oggetto: 'Oggetto del modello', box: 'Parallelepipedo', cilindro: 'Cilindro', sfera: 'Sfera', marciapiede: 'Marciapiede', aiuola: 'Aiuola', albero: 'Albero', pino: 'Pino' };
+  const FORME = { oggetto: 'Oggetto del modello', box: 'Parallelepipedo', cilindro: 'Cilindro', sfera: 'Sfera', marciapiede: 'Marciapiede', strada: 'Strada asfaltata', aiuola: 'Aiuola', albero: 'Albero', pino: 'Pino', file3d: 'File 3D (glb, gltf, obj, stl, ply, fbx, dae, 3mf)' };
   const TIPI_AIUOLA = { squadrata: 'squadrata', rotonda: 'rotonda', spezzata: 'con angoli spezzati' };
   const TERRENI = { prato: 'prato', foglie: 'terra con foglie', terra: 'terra senza foglie' };
   const TEXTURE = { cortina: 'mattoni rossi', giallo: 'mattoni gialli', travertino: 'travertino', ocra: 'intonaco ocra', arancione: 'intonaco arancione', intonaco: 'intonaco chiaro' };
@@ -162,7 +162,7 @@
   // cornice ruotata (`rot:<id>`) di un solido con angolo (pr.angolo, gradi, positivo = antiorario visto dall'alto): un Object3D figlio
   // della cornice base, ruotato attorno al centro della scatola. Le coordinate u/v/h restano quelle della cornice base (il centro della
   // scatola sta fermo), così maniglie e scatola girano con l'oggetto; senza angolo è la cornice base stessa.
-  const TURNABLE = ['box', 'cilindro', 'sfera', 'oggetto'];
+  const TURNABLE = ['box', 'cilindro', 'sfera', 'oggetto', 'file3d'];
   const angleOf = (pr) => (pr && pr.box && TURNABLE.includes(pr.forma) ? (((Number(pr.angolo) || 0) % 360) + 360) % 360 : 0);
   // voci non primitive con un angolo proprio (it.angKey = campo in gradi dell'oggetto, it.angId = nome della cornice ruotata, per esempio i tubi del gas):
   // la loro scatola è quella non ruotata, centrata sul punto (u, v), e gira attorno al centro come i solidi
@@ -405,13 +405,13 @@
     });
     // primitive aggiunte: scatola nelle coordinate del lato 0
     if (E) (E.primitive || []).forEach((pr) => {
-      const poly = pr.forma === 'marciapiede' || (pr.forma === 'aiuola' && pr.tipo !== 'rotonda');
-      const label = pr.forma === 'oggetto' ? nomeOggetto(pr.modello) : pr.forma === 'marciapiede' ? 'Marciapiede' : pr.forma === 'aiuola' ? `Aiuola ${TIPI_AIUOLA[pr.tipo] || ''} (${TERRENI[pr.terreno] || 'prato'})` : `${FORME[pr.forma] || FORME.box} in ${pr.materiale || 'travertino'}`;
-      add({ sorgente: 'aggiunta', frameKey: pr.cornice || 'lato0', obj: pr, percorso: pr.id, nome: pr.id, label, fields: ['id', 'forma', 'materiale', 'box', 'poligono', 'base', 'altezza', 'tipo', 'terreno', 'cordolo', 'discese', 'raggio', 'raggi', 'modello', 'ruota', 'angolo', 'specchio', 'scritta', 'cartello', 'logoMuseo', 'cornice'], primitiva: true,
+      const road = pr.forma === 'strada', poly = road || pr.forma === 'marciapiede' || (pr.forma === 'aiuola' && pr.tipo !== 'rotonda');
+      const label = pr.forma === 'oggetto' ? nomeOggetto(pr.modello) : road ? FORME.strada : pr.forma === 'file3d' ? 'Modello 3D: ' + ((pr.modello3d && pr.modello3d.nome) || 'file') : pr.forma === 'marciapiede' ? 'Marciapiede' : pr.forma === 'aiuola' ? `Aiuola ${TIPI_AIUOLA[pr.tipo] || ''} (${TERRENI[pr.terreno] || 'prato'})` : `${FORME[pr.forma] || FORME.box} in ${pr.materiale || 'travertino'}`;
+      add({ sorgente: 'aggiunta', frameKey: pr.cornice || 'lato0', obj: pr, percorso: pr.id, nome: pr.id, label, fields: ['id', 'forma', 'materiale', 'box', 'poligono', 'base', 'altezza', 'tipo', 'terreno', 'cordolo', 'discese', 'raggio', 'raggi', 'modello', 'ruota', 'angolo', 'specchio', 'scritta', 'cartello', 'logoMuseo', 'cornice', 'modello3d'], primitiva: true,
         vincolo: pr.forma === 'marciapiede' || pr.forma === 'aiuola' ? 'suolo' : pr.forma === 'oggetto' && A_PARETE.includes(pr.modello) ? 'parete' : pr.forma === 'oggetto' && pr.modello === 'tombino' ? 'superficie' : undefined,
-        lock: pr.forma === 'marciapiede' || pr.forma === 'aiuola' ? { h0: true } : pr.forma === 'oggetto' && (A_PARETE.includes(pr.modello) || pr.modello === 'tombino') ? { h0: true } : {},
-        box: poly ? () => ({ ...bboxPts(pr.poligono), h0: Number(pr.base) || 0, h1: (Number(pr.base) || 0) + (Number(pr.altezza) || 0.15) }) : () => pr.box,
-        apply: poly ? (o, n) => { pr.poligono = scalePts(pr.poligono, o, n); pr.altezza = round(Math.max(0.05, n.h1 - n.h0)); if (pr.forma === 'marciapiede' || pr.forma === 'aiuola') pr.base = 0; } : (o, n) => { pr.box = roundBox(angleOf(pr) ? unturnBox(n, o, angleOf(pr)) : n); }, // con un angolo la scatola è nella cornice ruotata
+        lock: road ? { h1: true } : pr.forma === 'marciapiede' || pr.forma === 'aiuola' ? { h0: true } : pr.forma === 'oggetto' && (A_PARETE.includes(pr.modello) || pr.modello === 'tombino') ? { h0: true } : {},
+        box: poly ? () => ({ ...bboxPts(pr.poligono), h0: Number(pr.base) || 0, h1: (Number(pr.base) || 0) + (road ? 0.05 : Number(pr.altezza) || 0.15) }) : () => pr.box, // strada: piano senza spessore, scatola sottile per le maniglie
+        apply: poly ? (o, n) => { pr.poligono = scalePts(pr.poligono, o, n); if (road) { pr.base = round(n.h0); return; } pr.altezza = round(Math.max(0.05, n.h1 - n.h0)); if (pr.forma === 'marciapiede' || pr.forma === 'aiuola') pr.base = 0; } : (o, n) => { pr.box = roundBox(angleOf(pr) ? unturnBox(n, o, angleOf(pr)) : n); }, // con un angolo la scatola è nella cornice ruotata
         verts: poly ? { get: () => pr.poligono, set: (q) => { pr.poligono = q; } } : undefined });
     });
     return out;
@@ -700,6 +700,11 @@
     const m = C.esterni.misura(pr.modello, Number(pr.ruota) || 0) || { du: 1, dv: 1, dh: 1 }, b = pr.box, cu = (b.u0 + b.u1) / 2, cv = (b.v0 + b.v1) / 2;
     pr.box = roundBox({ u0: cu - m.du / 2, u1: cu + m.du / 2, v0: cv - m.dv / 2, v1: cv + m.dv / 2, h0: b.h0, h1: b.h0 + m.dh });
   }
+  // modello 3D caricato: scatola alle misure del file (unità indovinate al caricamento), stesso centro e stessa base
+  function fitFile(pr) {
+    const m = (pr.modello3d && pr.modello3d.misure) || { x: 1, y: 1, z: 1 }, b = pr.box, cu = (b.u0 + b.u1) / 2, cv = (b.v0 + b.v1) / 2;
+    pr.box = roundBox({ u0: cu - m.x / 2, u1: cu + m.x / 2, v0: cv - m.z / 2, v1: cv + m.z / 2, h0: b.h0, h1: b.h0 + m.y });
+  }
   function turn90(pr) {
     const b = pr.box, cu = (b.u0 + b.u1) / 2, cv = (b.v0 + b.v1) / 2, du = b.u1 - b.u0, dv = b.v1 - b.v0;
     pr.ruota = ((Number(pr.ruota) || 0) + 90) % 360;
@@ -757,6 +762,17 @@
       } else if (pr.forma === 'aiuola') {
         nodes.push(...pick('Forma dell’aiuola', Object.entries(TIPI_AIUOLA), pr.tipo || 'squadrata', (v) => { reshapeBed(pr, v); saveItem(sel.it); rebuild('aggiunta'); }));
         nodes.push(...pick('Terreno', Object.entries(TERRENI), pr.terreno || 'prato', (v) => change('terreno', v)));
+      } else if (pr.forma === 'file3d') {
+        const M3 = pr.modello3d || {}, f2 = (x) => Number(x).toFixed(2).replace('.', ',');
+        nodes.push(el('p', 'ed-meta', `File: ${M3.nome || '?'} (${String(M3.formato || '').toUpperCase()})` + (M3.misure ? ` · misure del file ${f2(M3.misure.x)} × ${f2(M3.misure.z)} × ${f2(M3.misure.y)} m` : '') + '. Il modello riempie la scatola: le maniglie lo allungano.'));
+        nodes.push(...pick('Asse verticale del file', [['y', 'Y in alto (glTF, OBJ, FBX, DAE)'], ['z', 'Z in alto (STL, PLY, 3MF, CAD)']], M3.su || 'y', (v) => {
+          const m = clone(M3); if (m.su !== v && m.misure) m.misure = { x: m.misure.x, y: m.misure.z, z: m.misure.y }; // girare l'asse scambia altezza e profondità
+          m.su = v; pr.modello3d = m; fitFile(pr); saveItem(sel.it); rebuild('aggiunta');
+        }));
+        const r3 = el('div', 'ed-row'); r3.append(button('Ruota di 90°', redo(turnFree)), button('Misure del file', redo(fitFile))); nodes.push(r3, ...angleSlider(pr));
+        const mr = el('div', 'ed-row'); mr.append(mirrorButton('Specchia ↔', 'u'), mirrorButton('Specchia ↕', 'v')); nodes.push(mr);
+      } else if (pr.forma === 'strada') {
+        nodes.push(el('p', 'ed-meta', 'Piano d’asfalto senza spessore, 2 cm sopra la base: non sfarfalla con terreno, ortofoto e lastre; marciapiedi e oggetti sopra lo coprono. La faccia bassa della scatola alza o abbassa la strada.'));
       } else if (pr.forma !== 'marciapiede') {
         nodes.push(...pick('Forma', [['box', FORME.box], ['cilindro', FORME.cilindro], ['sfera', FORME.sfera]], pr.forma || 'box', (v) => change('forma', v)));
         nodes.push(...pick('Materiale', C.esterni.materiali.map((m) => [m, m]), pr.materiale || 'travertino', (v) => change('materiale', v)));
@@ -797,7 +813,7 @@
   }
   const mirrorButton = (label, ax) => button(label, () => {
     const it = sel.it, pr = it.obj;
-    if (pr.forma === 'oggetto') { const m = String(pr.specchio || ''), has = m.includes(ax), next = (has ? m.replace(ax, '') : m + ax).split('').sort().join(''); if (next) pr.specchio = next; else delete pr.specchio; } // 'uv' in ordine fisso
+    if (pr.forma === 'oggetto' || pr.forma === 'file3d') { const m = String(pr.specchio || ''), has = m.includes(ax), next = (has ? m.replace(ax, '') : m + ax).split('').sort().join(''); if (next) pr.specchio = next; else delete pr.specchio; } // 'uv' in ordine fisso
     else mirrorPoly(pr, ax);
     saveItem(it); rebuild(it.sorgente); hint('Specchiato ' + (ax === 'u' ? 'lungo u (↔)' : 'lungo v (↕)') + '.');
   });
@@ -1148,18 +1164,44 @@
     deselect();
     const shape = el('select'), mat = el('select'), matLbl = el('label', '', 'Materiale'), tipo = el('select'), tipoLbl = el('label', '', 'Forma dell’aiuola'), terr = el('select'), terrLbl = el('label', '', 'Terreno');
     const obj = el('select'), objLbl = el('label', '', 'Quale oggetto');
+    // file 3D: nessun filtro sui tipi (sull'iPad i formati 3D non hanno un tipo riconosciuto e resterebbero grigi), si controlla l'estensione
+    const fileIn = el('input'), fileBtn = button('📁 Scegli il file 3D', () => fileIn.click()), fileMeta = el('p', 'ed-meta', 'Formati: GLB, glTF (con i dati dentro), OBJ, STL, PLY, FBX, DAE, 3MF. USDZ: convertilo prima in GLB.');
+    let picked = null, busy = false;
+    fileIn.type = 'file'; fileIn.hidden = true;
+    fileIn.addEventListener('change', () => { picked = fileIn.files && fileIn.files[0] ? fileIn.files[0] : null; if (picked) fileMeta.textContent = `${picked.name} · ${(picked.size / 1048576).toFixed(1).replace('.', ',')} MB`; });
     const fill = (sl, entries) => { for (const [k, t] of entries) { const o = el('option', '', t); o.value = k; sl.append(o); } };
     fill(shape, Object.entries(FORME)); fill(mat, C.esterni.materiali.map((m) => [m, m])); fill(tipo, Object.entries(TIPI_AIUOLA)); fill(terr, Object.entries(TERRENI)); fill(obj, C.esterni.catalogo);
-    const sync = () => { const f = shape.value, solid = ['box', 'cilindro', 'sfera'].includes(f); mat.hidden = matLbl.hidden = !solid; tipo.hidden = tipoLbl.hidden = terr.hidden = terrLbl.hidden = f !== 'aiuola'; obj.hidden = objLbl.hidden = f !== 'oggetto'; };
+    const sync = () => { const f = shape.value, solid = ['box', 'cilindro', 'sfera'].includes(f); mat.hidden = matLbl.hidden = !solid; tipo.hidden = tipoLbl.hidden = terr.hidden = terrLbl.hidden = f !== 'aiuola'; obj.hidden = objLbl.hidden = f !== 'oggetto'; fileBtn.hidden = fileMeta.hidden = f !== 'file3d'; };
     shape.addEventListener('change', sync); sync();
     const row = el('div', 'ed-row');
-    row.append(button('Annulla', () => { placing = null; closeCard(); setMode('modifica'); }), button('Tocca dove metterlo', () => {
+    row.append(button('Annulla', () => { placing = null; closeCard(); setMode('modifica'); }), button('Tocca dove metterlo', async () => {
+      if (shape.value === 'file3d') {
+        if (busy) return;
+        if (!picked) { fileIn.click(); return; }
+        if (!assets || !C.modelli3d) { hint('Per caricare un file 3D apri la pagina da claude.ai con i permessi di modifica.'); return; }
+        busy = true;
+        try {
+          hint('Leggo ' + picked.name + '…');
+          const pk = await C.modelli3d.prepara(picked);
+          if (pk.blob.size > 20 * 1048576) throw Object.assign(new Error('grande'), { code: 'too_large' });
+          hint('Carico ' + pk.nome + ' negli allegati dell’artifact…');
+          const up = await assets.upload(pk.blob);
+          C.modelli3d.registra(pk, up.id);
+          const m = pk.misure, f2 = (x) => Number(x).toFixed(2).replace('.', ',');
+          placing = { forma: 'file3d', modello3d: { asset: up.id, formato: pk.formato, nome: pk.nome, su: pk.su, misure: m } }; closeCard();
+          hint(`Tocca il punto della scena dove mettere ${pk.nome} (${f2(m.x)} × ${f2(m.z)} × ${f2(m.y)} m${pk.scala !== 1 ? (pk.scala === 0.001 ? ', file in millimetri' : ', file in centimetri') : ''}).`);
+        } catch (err) { hint('Non riesco a caricare il file 3D: ' + modelError(err) + '.'); }
+        finally { busy = false; }
+        return;
+      }
       placing = { forma: shape.value, materiale: mat.value, tipo: tipo.value, terreno: terr.value, modello: obj.value }; closeCard();
       const what = placing.forma === 'oggetto' ? nomeOggetto(placing.modello) : FORME[placing.forma] + (['box', 'cilindro', 'sfera'].includes(placing.forma) ? ' in ' + placing.materiale : '');
       hint('Tocca il punto della scena dove mettere: ' + what.toLowerCase() + '.');
     }, true));
-    openCard([el('h3', '', 'Aggiungi'), el('label', '', 'Cosa aggiungere'), shape, objLbl, obj, matLbl, mat, tipoLbl, tipo, terrLbl, terr, row], 'dock');
+    openCard([el('h3', '', 'Aggiungi'), el('label', '', 'Cosa aggiungere'), shape, objLbl, obj, matLbl, mat, tipoLbl, tipo, terrLbl, terr, fileBtn, fileMeta, fileIn, row], 'dock');
   }
+  const modelError = (err) => ({ usdz: 'USDZ non si legge nel browser, convertilo in GLB (Reality Converter sul Mac o Blender) oppure mandamelo in chat', formato: 'formato non riconosciuto (vanno GLB, glTF, OBJ, STL, PLY, FBX, DAE, 3MF)', vuoto: 'il file non contiene geometria',
+    too_large: 'troppo grande anche compresso (massimo 20 MB): alleggeriscilo o mandamelo in chat', quota_or_state: 'spazio dell’artifact esaurito', rate_limited: 'troppi caricamenti, riprova tra poco', not_granted: 'serve il permesso di modifica' }[err && err.code] || (err && (err.code || err.message)) || 'errore');
   const newId = (p) => p + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
   function placeAt(hit) {
     const what = placing; placing = null;
@@ -1172,6 +1214,8 @@
     }
     const q = toLocal(frameBy('lato0'), hit.point), u = snap(q.u), v = snap(q.v), h = rootOf(hit.object) ? round(q.h) : 0; // sul terreno: a quota 0, non sotto il piano
     let pr = { id: newId('p'), forma: what.forma, materiale: what.materiale, box: { u0: round(u - 0.5), u1: round(u + 0.5), v0: round(v - 0.5), v1: round(v + 0.5), h0: h, h1: round(h + 1) } };
+    if (what.forma === 'strada') pr = { id: pr.id, forma: 'strada', poligono: [[u - 6, v - 3], [u + 6, v - 3], [u + 6, v + 3], [u - 6, v + 3]].map(([a, b]) => [round(a), round(b)]), base: h };
+    if (what.forma === 'file3d') { const m = what.modello3d.misure; pr = { id: pr.id, forma: 'file3d', modello3d: clone(what.modello3d), box: roundBox({ u0: u - m.x / 2, u1: u + m.x / 2, v0: v - m.z / 2, v1: v + m.z / 2, h0: h, h1: h + m.y }) }; }
     if (what.forma === 'marciapiede') pr = { id: pr.id, forma: 'marciapiede', poligono: [[u - 3, v - 0.9], [u + 3, v - 0.9], [u + 3, v + 0.9], [u - 3, v + 0.9]].map(([a, b]) => [round(a), round(b)]), base: h, altezza: 0.15, raggio: 0.3, discese: [] };
     if (what.forma === 'aiuola') { pr = { id: pr.id, forma: 'aiuola', terreno: what.terreno || 'prato', cordolo: 0.16, poligono: [[u - 1.5, v - 1], [u + 1.5, v - 1], [u + 1.5, v + 1], [u - 1.5, v + 1]].map(([a, b]) => [round(a), round(b)]), base: h, altezza: 0.42 }; reshapeBed(pr, what.tipo || 'squadrata'); }
     if (what.forma === 'oggetto') { // copia di un oggetto del modello con le sue misure naturali, appoggiata dove hai toccato

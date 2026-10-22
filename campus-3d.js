@@ -3094,8 +3094,115 @@
     obj.position.x -= cu; obj.position.z += cv; pivot.add(obj);
     return pivot;
   }
+  /* strade asfaltate aggiunte dall'editor: piano senza spessore (poligono u/v, angoli arrotondati come i marciapiedi) a 2 cm sopra
+     `base`. Come cartina e ortofoto non scrive la profondità e si disegna dopo gli oggetti opachi e dopo i livelli piatti del terreno
+     (renderOrder ≥ 3, materiale trasparente a opacità piena): niente sfarfallio con terreno, ortofoto, lastre o asfalti alla stessa
+     quota; quello che ci sta sopra (marciapiedi, cordoli, oggetti) la copre normalmente. Tra due strade sovrapposte vince la più alta,
+     a pari quota l'ultima aggiunta: ordine fisso, che non cambia muovendo la camera. */
+  function roadMaterial() {
+    if (primMats.has('strada')) return primMats.get('strada');
+    const t = canvasTex(512, 512, (ctx, w) => {
+      noiseFill(ctx, w, w, '#3d3f41', '#323436', 16000);
+      for (let i = 0; i < 2600; i += 1) { ctx.fillStyle = hash01(i, 71) > 0.55 ? 'rgba(200,198,190,.28)' : 'rgba(18,18,18,.35)'; ctx.fillRect(hash01(i, 72) * w, hash01(i, 73) * w, 1.4, 1.4); } // inerti
+      for (let i = 0; i < 7; i += 1) { ctx.fillStyle = 'rgba(28,29,30,.18)'; ctx.fillRect(hash01(i, 74) * w, hash01(i, 75) * w, 60 + 120 * hash01(i, 76), 40 + 90 * hash01(i, 77)); } // rappezzi
+    }, 1 / 4, 1 / 4);
+    const m = new THREE.MeshStandardMaterial({ map: t, roughness: 0.96, metalness: 0, transparent: true, opacity: 1, depthWrite: false });
+    primMats.set('strada', m);
+    return m;
+  }
+  function buildRoad(pr) {
+    const P = pr.poligono, base = Number(pr.base) || 0;
+    if (!Array.isArray(P) || P.length < 3) return new THREE.Group();
+    const [Q, R] = ccwRadii(P, cornerRadii(pr, P, 0));
+    const geo = new THREE.ShapeGeometry(shapeOf(filletOutline(Q, R)), 6); geo.rotateX(-Math.PI / 2); // (u, v) → (x, −z), normale in alto
+    const m = new THREE.Mesh(geo, roadMaterial()), k = Math.max(0, ((exteriorsCfg && exteriorsCfg.primitive) || []).indexOf(pr));
+    m.position.y = base + 0.02; m.receiveShadow = true; m.castShadow = false;
+    m.renderOrder = 3 + Math.min(100, Math.max(-10, base)) * 0.01 + k * 1e-5;
+    m.userData.primitiva = pr.id;
+    return m;
+  }
+  /* modelli 3D caricati dall'editor (forma 'file3d', campo modello3d { asset, formato, nome, su, misure }): il file sta negli asset
+     dell'artifact come JSON { tipo: 'modello3d', formato, nome, compresso: 'gzip', dati: base64 } (gli asset non accettano binari 3D).
+     Il modello, centrato e appoggiato a terra, riempie la scatola dell'oggetto; finché si carica resta una scatola grigia trasparente. */
+  const MODEL_FORMATS = { glb: ['GLTFLoader'], gltf: ['GLTFLoader'], obj: ['OBJLoader'], stl: ['STLLoader'], ply: ['PLYLoader'],
+    fbx: ['fflate', 'NURBSUtils', 'NURBSCurve', 'FBXLoader'], dae: ['TGALoader', 'ColladaLoader'], '3mf': ['fflate', '3MFLoader'] };
+  const VENDOR_LIBS = { GLTFLoader: () => typeof THREE.GLTFLoader === 'function', OBJLoader: () => typeof THREE.OBJLoader === 'function', STLLoader: () => typeof THREE.STLLoader === 'function',
+    PLYLoader: () => typeof THREE.PLYLoader === 'function', FBXLoader: () => typeof THREE.FBXLoader === 'function', TGALoader: () => typeof THREE.TGALoader === 'function',
+    ColladaLoader: () => typeof THREE.ColladaLoader === 'function', '3MFLoader': () => typeof THREE.ThreeMFLoader === 'function', NURBSUtils: () => typeof THREE.NURBSUtils === 'object',
+    NURBSCurve: () => typeof THREE.NURBSCurve === 'function', fflate: () => typeof window.fflate === 'object' && typeof window.fflate.gunzipSync === 'function' };
+  async function vendorLibs(names) { for (const n of names) await loadDependency(`vendor/${n === 'fflate' ? 'fflate.min' : n}.js`, VENDOR_LIBS[n]); }
+  const modelUp = (formato) => (['stl', 'ply', '3mf'].includes(formato) ? 'z' : 'y'); // STL, PLY e 3MF di solito hanno Z in alto
+  async function parseModel(bytes, formato) {
+    if (!MODEL_FORMATS[formato]) throw Object.assign(new Error('formato'), { code: 'formato' });
+    await vendorLibs(MODEL_FORMATS[formato]);
+    const buf = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), text = () => new TextDecoder().decode(bytes);
+    if (formato === 'glb' || formato === 'gltf') return (await new Promise((res, rej) => new THREE.GLTFLoader().parse(formato === 'gltf' ? text() : buf, '', res, rej))).scene;
+    if (formato === 'obj') return new THREE.OBJLoader().parse(text());
+    if (formato === 'fbx') return new THREE.FBXLoader().parse(buf, '');
+    if (formato === 'dae') return new THREE.ColladaLoader().parse(text(), '').scene;
+    if (formato === '3mf') return new THREE.ThreeMFLoader().parse(buf);
+    const g = formato === 'stl' ? new THREE.STLLoader().parse(buf) : new THREE.PLYLoader().parse(buf), colors = !!g.attributes.color;
+    if (formato === 'ply' && !g.index) return new THREE.Points(g, new THREE.PointsMaterial({ size: 0.02, vertexColors: colors, color: colors ? 0xffffff : 0xcfc8bd })); // nuvola di punti
+    if (!g.attributes.normal) g.computeVertexNormals();
+    return new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: colors ? 0xffffff : 0xcfc8bd, vertexColors: colors, roughness: 0.8, metalness: 0 }));
+  }
+  function normalizeModel(obj, su) {
+    const inner = new THREE.Group(); inner.add(obj);
+    if (su === 'z') inner.rotation.x = -Math.PI / 2;
+    inner.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(inner);
+    if (box.isEmpty()) throw Object.assign(new Error('vuoto'), { code: 'vuoto' });
+    const size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3()), root = new THREE.Group();
+    inner.position.set(-c.x, -box.min.y, -c.z); root.add(inner);
+    root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    return { root, size: { x: Math.max(size.x, 1e-3), y: Math.max(size.y, 1e-3), z: Math.max(size.z, 1e-3) } };
+  }
+  const userModels = new Map(); // `${asset}|${su}` → Promise<{ root, size } | null>
+  function userModel(m) {
+    const su = m.su || modelUp(m.formato), key = `${m.asset}|${su}`;
+    if (!userModels.has(key)) userModels.set(key, (async () => {
+      await vendorLibs(['fflate']);
+      const pack = await fetch('/_blob/' + m.asset).then((r) => (r.ok ? r.json() : Promise.reject(new Error('asset ' + r.status))));
+      const bin = atob(pack.dati || ''); let bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
+      if (pack.compresso === 'gzip') bytes = window.fflate.gunzipSync(bytes);
+      return normalizeModel(await parseModel(bytes, pack.formato || m.formato), su);
+    })().catch((e) => { console.warn('Modello 3D non caricato', m.asset, e); return null; })); // un fallimento resta in memoria: niente richieste a ogni ricostruzione
+    return userModels.get(key);
+  }
+  // prima del caricamento negli asset: legge il file, lo prova, ne misura la scatola (unità del file indovinate: mm o cm se enorme) e lo impacchetta
+  async function prepareModel(file) {
+    const formato = (String(file.name).split('.').pop() || '').toLowerCase();
+    if (/^usd[azc]?$/.test(formato)) throw Object.assign(new Error('usdz'), { code: 'usdz' });
+    if (!MODEL_FORMATS[formato]) throw Object.assign(new Error('formato'), { code: 'formato' });
+    await vendorLibs(['fflate']);
+    const raw = new Uint8Array(await file.arrayBuffer()), su = modelUp(formato), model = normalizeModel(await parseModel(raw, formato), su);
+    const big = Math.max(model.size.x, model.size.y, model.size.z), scala = big > 500 ? 0.001 : big > 150 ? 0.01 : 1;
+    const gz = window.fflate.gzipSync(raw, { level: 6 }); let s = '';
+    for (let i = 0; i < gz.length; i += 0x8000) s += String.fromCharCode.apply(null, gz.subarray(i, i + 0x8000));
+    const json = JSON.stringify({ tipo: 'modello3d', formato, nome: file.name, compresso: 'gzip', byte: raw.length, dati: btoa(s) });
+    const r3 = (x) => Math.round(x * scala * 1000) / 1000;
+    return { blob: new Blob([json], { type: 'application/json' }), formato, nome: file.name, su, scala, misure: { x: r3(model.size.x), y: r3(model.size.y), z: r3(model.size.z) }, model };
+  }
+  const placeholderMaterial = () => primMats.get('file3d|attesa') || primMats.set('file3d|attesa', new THREE.MeshStandardMaterial({ color: 0xbfb8ae, transparent: true, opacity: 0.35, depthWrite: false })).get('file3d|attesa');
+  const failedModelMaterial = () => primMats.get('file3d|errore') || primMats.set('file3d|errore', new THREE.MeshStandardMaterial({ color: 0x9c3a3a, transparent: true, opacity: 0.4, depthWrite: false })).get('file3d|errore');
+  function buildUserModel(pr) {
+    const b = pr.box, du = Math.max(0.02, b.u1 - b.u0), dv = Math.max(0.02, b.v1 - b.v0), dh = Math.max(0.02, b.h1 - b.h0), M = pr.modello3d || {};
+    const g = new THREE.Group(); g.position.set((b.u0 + b.u1) / 2, b.h0, -(b.v0 + b.v1) / 2); g.userData.primitiva = pr.id;
+    const ph = new THREE.Mesh(new THREE.BoxGeometry(du, dh, dv), placeholderMaterial()); ph.position.y = dh / 2; g.add(ph);
+    if (!M.asset) { ph.material = failedModelMaterial(); return g; }
+    userModel(M).then((res) => {
+      if (!res) { ph.material = failedModelMaterial(); return; }
+      const m = res.root.clone(true), sp = String(pr.specchio || '');
+      m.scale.set((sp.includes('u') ? -1 : 1) * du / res.size.x, dh / res.size.y, (sp.includes('v') ? -1 : 1) * dv / res.size.z);
+      g.remove(ph); ph.geometry.dispose(); g.add(m);
+    });
+    return g;
+  }
   function buildPrimitive(pr) {
     if (pr.forma === 'oggetto') return rotatedAboutCenter(pr, buildCatalogObject(pr));
+    if (pr.forma === 'file3d') return rotatedAboutCenter(pr, buildUserModel(pr));
+    if (pr.forma === 'strada') return buildRoad(pr);
     if (pr.forma === 'marciapiede' || pr.forma === 'aiuola') { const g = pr.forma === 'marciapiede' ? buildSidewalk(pr) : buildBed(pr); g.userData.primitiva = pr.id; return g; }
     const b = pr.box, du = Math.max(0.02, b.u1 - b.u0), dv = Math.max(0.02, b.v1 - b.v0), dh = Math.max(0.02, b.h1 - b.h0);
     let geo;
@@ -4052,6 +4159,8 @@
   window.campus3d = { get camera() { return camera; }, get controls() { return controls; }, get scene() { return scene; }, get renderer() { return renderer; }, bounceMinerva: () => bounceMinerva(), pdfToWorld: (x, y) => pdfToWorld(x, y),
     toLonLat: (w) => worldToLonLat(w),
     // editor sul posto (editor.js): configurazioni vive e ricostruzione dei gruppi
+    // file 3D: prepara(file) li legge, misura e impacchetta; registra(p, asset) tiene in memoria il modello già letto per quell'asset
+    modelli3d: { formati: Object.keys(MODEL_FORMATS), prepara: (file) => prepareModel(file), registra: (p, asset) => { userModels.set(`${asset}|${p.su}`, Promise.resolve(p.model)); } },
     esterni: { get cfg() { return exteriorsCfg; }, rebuild: () => buildChemistryExteriors(), materiali: PRIM_MATERIALS,
       catalogo: Object.entries(CATALOGO).map(([k, d]) => [k, d.nome]), totemCartello: TOTEM_CARTELLO, misura: (modello, ruota) => catalogSize(modello, ruota) },
     project: (lonLat) => { const p = project(lonLat); return new THREE.Vector3(p.x, 0, -p.n); },

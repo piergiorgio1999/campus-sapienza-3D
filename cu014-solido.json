@@ -39,15 +39,25 @@
   { "id": "sud-centro-est", "rect": [46, -91, 48.5, -79], "altezza": 15.7, "nota": "Chiude la tacca triangolare sulla facciata sud fra sud-centro e sud-est-basso (nell'STL qui 15,5-15,9 m)." }
  ],
  "ventaglio": {
-  "nota": "Corpo a ventaglio e gradoni sul fronte sud (secondo STL, riferimenti/chimica-anfiteatro.stl). Un settore di 60° (da −120° a −60°, −90° = sud) attorno al centro [u, v]: il raggio esterno 40,28 m è il cerchio che passa per i vertici dell'arco OSM (scarto < 0,3 m), la facciata sta a 37,3 m. Angoli a partire dall'asse u, antiorari: u = cu + r·cos a, v = cv + r·sin a. La pagina toglie alla sagoma la corona fra raggioFacciata e raggioEsterno e al suo posto costruisce i gradoni: pedata in travertino, alzata in mattoni. Le quote sono sopra il terreno, misurate come mediana delle facce rivolte in su (STL) per raggio e angolo.",
+  "nota": "Fronte sud a ventaglio (secondo STL, riferimenti/chimica-anfiteatro.stl, e descrizione dell'utente del 22/10/2026 con le foto del commento 10). Settore di 60° (da −120° a −60°, −90° = sud) attorno al centro [u, v]: il raggio esterno 40,28 m è il cerchio per i vertici dell'arco OSM (scarto < 0,3 m), la facciata sta a 37,3 m. Angoli dall'asse u, antiorari: u = cu + r·cos a, v = cv + r·sin a. La pagina toglie alla sagoma la corona fra raggioFacciata e raggioEsterno + 0,6 (settori) e la loggia della balconata fra balconata.rInterno e raggioFacciata, poi costruisce la balconata centrale e le due scale laterali. I vecchi gradoni di 2 m erano sbagliati: dall'alto l'STL vedeva pensiline (4,1-4,6 m) e pianerottoli (1,9-2,5 m).",
   "centro": [28.72, -50.38],
   "raggioFacciata": 37.3,
   "raggioEsterno": 40.28,
-  "settori": [
-   { "id": "ovest", "a0": -120, "a1": -97.5, "gradoni": [{ "r0": 37.3, "r1": 39, "quota": 4.2 }, { "r0": 39, "r1": 40.28, "quota": 2.1 }], "nota": "Lobo ovest: due gradoni di alzata 2,1 m, pedata 1,7 e 1,3 m." },
-   { "id": "ingresso", "a0": -97.5, "a1": -88.5, "gradoni": [{ "r0": 37.3, "r1": 37.55, "quota": 4.4 }, { "r0": 37.55, "r1": 38.5, "quota": 2.2 }], "nota": "Rientranza centrale in asse con la dorsale: il fronte arretra a r 38,5 (nell'OSM il tratto retto a v −88) e c'è un solo gradone di 2,2 m." },
-   { "id": "est", "a0": -88.5, "a1": -60, "gradoni": [{ "r0": 37.3, "r1": 39, "quota": 4.6 }, { "r0": 39, "r1": 40.28, "quota": 2.5 }], "nota": "Lobo est: due gradoni di alzata 2,1 e 2,5 m." }
-  ]
+  "settori": [{ "id": "fronte", "a0": -120, "a1": -60 }],
+  "balconata": {
+   "nota": "Balconata al primo piano incassata nella facciata, non sporge: colonne arancioni sul filo della facciata (profonde 0,4 m), parapetti di travertino fra le colonne, porte a vetri sul fondo (l'utente ricorda 3 o 4 porte: qui una per campata). Sotto il basamento con le sue finestre; sopra la loggia (un interpiano) la facciata arretrata fino al filo interno delle colonne, alle quote delle ali. Inizia appena prima della prima colonna (margine: metri dall'inizio al centro della colonna), dove arrivano le scale.",
+   "a0": -100.3, "a1": -85.2, "rInterno": 35.7, "quota": 4.4,
+   "colonne": { "n": 4, "larghezza": 0.7, "profondita": 0.4, "margine": 0.95 },
+   "parapetto": { "altezza": 1.0, "profondita": 0.3 },
+   "porte": { "n": 3, "larghezza": 1.5, "altezza": 2.7 }
+  },
+  "scale": {
+   "nota": "Una scala per lato, lungo la curva. Prima rampa nella fascia esterna: parte da terra vicino alla balconata e sale verso l'estremità del lobo fino al mezzo piano (quota/2), coperta dalla pensilina di travertino; pianerottolo con il cancello sulla linea del muro (svolta di 90° verso l'edificio, cancello, di nuovo 90°); seconda rampa nella fascia interna che torna verso il centro fino al pianerottolo alto, alla quota della balconata. Fra le rampe il lungo muro di travertino (la «grossa colonna allungata») che regge la pensilina; ringhiera metallica sui bordi aperti. 13 alzate per rampa (17 cm), pedata 32 cm; pianerottoli in metri lungo l'arco. Quote dell'STL: pensilina 4,1-4,6 m, pianerottolo 1,9-2,5 m.",
+   "gradini": 13, "pedata": 0.32, "pianerottoloAlto": 1.2, "pianerottolo": 2.0,
+   "fasciaInterna": [37.3, 38.65], "muro": [38.65, 38.95], "fasciaEsterna": [38.95, 40.35],
+   "pensilina": { "quota": 4.6, "spessore": 0.25 },
+   "lati": [{ "id": "ovest", "verso": -1 }, { "id": "est", "verso": 1 }]
+  }
  },
  "fondi": [
   { "id": "cortile-nord", "rect": [14.5, -23, 40.5, -11], "quota": 4.4, "nota": "Il cortile nord ha il pavimento in quota (circa 6 m nell'STL), non a terra: la pagina lo chiude con una soletta. Messa a 4,4 m, sulla linea del basamento, perché a 6 m tagliava a metà le finestre del primo piano dei muri del cortile." }

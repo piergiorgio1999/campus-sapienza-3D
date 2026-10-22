@@ -371,3 +371,13 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
   nella scatola (segnaposto grigio, rosso se non si carica). USDZ non supportato (three r128 non ha il lettore; quello recente legge
   solo USDA): convertire in GLB. Nel riportarlo nei file la primitiva tiene `modello3d.asset` (l'allegato resta nell'artifact).
 
+## Commento 10 (`segnalazioni/agr20hmujudjh4noslbj`): fronte sud a ventaglio rifatto (22/10/2026) — fatto, non provato nel browser
+- I gradoni di 2 m erano sbagliati. Descrizione dell'utente (chat) e 4 foto del commento: ai due lati del fronte curvo una pensilina in travertino copre la
+  prima rampa (lungo la curva) fino al mezzo piano; lì il pianerottolo, svolta di 90°, cancello, di nuovo 90° e seconda rampa fino alla balconata, che
+  inizia appena prima della prima colonna arancione; ringhiera metallica e una grossa colonna allungata di travertino (il muro fra le rampe sotto la
+  pensilina). Al centro la balconata incassata (non sporge) con 4 colonne e 3 parapetti di travertino; dentro 3 o 4 porte a vetri (l'utente non ricorda).
+- Dati in `cu014-solido.json → ventaglio.balconata` e `ventaglio.scale` (angoli della balconata −100,3° → −85,2°, loggia profonda 1,6 m, quota 4,4;
+  scale: 13 alzate da 17 cm per rampa, pedata 32 cm, fasce 37,3–38,65 / muro 38,65–38,95 / 40,35, pensilina in cima a 4,6 m). Le scale risultano
+  ovest −100,3° → −110,9°, est −85,2° → −74,6° (pianerottolo di mezzo a −107,9/−110,9 e −77,6/−74,6, vicino a quanto l'STL vede a 1,9–2,5 m).
+- Da confermare con l'utente: numero di porte (messe 3, una per campata), colore della ringhiera (grigio scuro), quota della pensilina (STL: 4,1 ovest, 4,6 est).
+

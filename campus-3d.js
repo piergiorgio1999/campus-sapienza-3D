@@ -1907,12 +1907,14 @@
       const subject = rings.map(loc).filter((r) => r.length >= 4);
       const cuts = holes.map((h) => [loc(h)]).filter((q) => q[0].length >= 4);
       let rest = cuts.length ? pc.difference(subject, ...cuts) : [subject];
-      const vent = cuSolido.ventaglio; // il fronte sud a ventaglio: oltre la facciata a arco c'è la gradinata, non il corpo (la costruisce addCuVentaglio)
+      const vent = cuSolido.ventaglio; // fronte sud a ventaglio: oltre la facciata ad arco ci sono scale e pensiline, non il corpo (addCuVentaglio)
       if (vent && Array.isArray(vent.settori) && vent.settori.length) {
         const fuori = vent.settori.map((st) => [cuCorona(vent.centro, vent.raggioFacciata, vent.raggioEsterno + 0.6, st.a0, st.a1)]);
+        const B = vent.balconata; // la loggia della balconata: la corona fra rInterno e la facciata la ricostruisce addCuVentaglio
+        if (B && Number(B.rInterno) > 0) fuori.push([cuCorona(vent.centro, Number(B.rInterno), vent.raggioFacciata, Number(B.a0), Number(B.a1))]);
         rest = pc.difference(rest, ...fuori);
       }
-      const base = Number(cuSolido.altezzaBase) > 0 ? Number(cuSolido.altezzaBase) : null, out = [];
+      const out = [];
       const push = (multi, h) => {
         for (const poly of multi) {
           if (!poly.length || polyArea(poly[0]) < 0.5) continue;
@@ -1920,15 +1922,22 @@
           if (shape) out.push({ shape, h });
         }
       };
-      for (const ala of cuSolido.ali.slice().reverse()) { // l'ultima ala della lista vince dove si sovrappongono
-        if (!Array.isArray(ala.rect) || !(Number(ala.altezza) > 0) || !rest.length) continue;
-        const cut = [rectRing(ala.rect)];
-        push(pc.intersection(rest, cut), Number(ala.altezza));
-        rest = pc.difference(rest, cut);
-      }
-      push(rest, base);
+      for (const { multi, h } of cuAliSplit(rest, pc)) push(multi, h);
       return out;
     } catch (_) { return null; }
+  }
+  // un multipoligono (coordinate del lato 0) diviso fra le ali di cu014-solido.json: [{ multi, h }]; l'ultima ala della lista vince
+  // dove si sovrappongono, il resto prende altezzaBase (null = altezza OSM)
+  function cuAliSplit(rest, pc) {
+    const out = [];
+    for (const ala of cuSolido.ali.slice().reverse()) {
+      if (!Array.isArray(ala.rect) || !(Number(ala.altezza) > 0) || !rest.length) continue;
+      const cut = [rectRing(ala.rect)];
+      out.push({ multi: pc.intersection(rest, cut), h: Number(ala.altezza) });
+      rest = pc.difference(rest, cut);
+    }
+    out.push({ multi: rest, h: Number(cuSolido.altezzaBase) > 0 ? Number(cuSolido.altezzaBase) : null });
+    return out;
   }
   // soletta dei cortili che hanno il pavimento in quota (il cortile nord è a circa 6 m): chiude il pozzo scavato nella sagoma
   function addCuFondi() {
@@ -1949,25 +1958,134 @@
       buildingGroup.add(mesh);
     }
   }
-  // gradoni curvi del fronte sud a ventaglio (cu014-solido.json -> ventaglio): ogni gradone è una corona circolare estrusa dal terreno alla sua quota,
-  // pedata in travertino (coperchio) e alzata in mattoni (pareti). Quote, raggi e angoli sono misurati sul secondo STL, vedi il README.
+  // altezza dell'ala che copre il punto (u, v) del lato 0, con la stessa regola di cuSolidoParts (l'ultima ala della lista vince)
+  function cuAltezzaIn(u, v) {
+    for (const ala of (cuSolido.ali || []).slice().reverse()) {
+      const r = ala.rect;
+      if (Array.isArray(r) && Number(ala.altezza) > 0 && u >= Math.min(r[0], r[2]) && u <= Math.max(r[0], r[2]) && v >= Math.min(r[1], r[3]) && v <= Math.max(r[1], r[3])) return Number(ala.altezza);
+    }
+    return Number(cuSolido.altezzaBase) || 15;
+  }
+  /* fronte sud a ventaglio (cu014-solido.json → ventaglio; descrizione dell'utente e foto del commento 10, 22/10/2026).
+     Centro: balconata al primo piano incassata nella facciata (non sporge): 4 colonne arancioni sul filo della facciata, 3 parapetti
+     di travertino fra le colonne, porte a vetri sul fondo; sotto il basamento con le sue finestre, sopra la loggia la facciata
+     continua arretrata fra le colonne. La corona fra rInterno e raggioFacciata è tolta alla sagoma da cuSolidoParts.
+     Lati: scala lungo la curva. Prima rampa nella fascia esterna, da terra verso l'esterno fino al mezzo piano, coperta dalla
+     pensilina in travertino; pianerottolo con il cancello (svolta di 90° verso l'edificio, cancello, di nuovo 90°); seconda rampa
+     nella fascia interna che torna verso il centro e arriva al pianerottolo alto, alla quota della balconata, appena prima della
+     prima colonna. Fra le due rampe il lungo muro di travertino che regge la pensilina; ringhiera metallica sui bordi aperti. */
   function addCuVentaglio() {
-    const f = cuSolido && cuFrame(), vent = cuSolido && cuSolido.ventaglio;
-    if (!f || !buildingGroup || !cuDisegnato || officialPlanCodes.has('CU014') || !vent || !Array.isArray(vent.settori) || !Array.isArray(vent.centro)) return;
-    for (const st of vent.settori) {
-      for (const g of st.gradoni || []) {
-        const quota = Number(g.quota);
-        if (!(quota > 0.2) || !(Number(g.r1) > Number(g.r0))) continue;
-        const shape = makeShape([cuCorona(vent.centro, Number(g.r0), Number(g.r1), st.a0, st.a1).map(f.toLL)]);
-        if (!shape) continue;
-        const geo = new THREE.ExtrudeGeometry(shape, { depth: quota, bevelEnabled: false, curveSegments: 1 });
-        geo.rotateX(-Math.PI / 2); geo.translate(0, 0.04, 0);
-        geo.computeVertexNormals();
-        const mesh = new THREE.Mesh(geo, [primitiveMaterial('travertino'), primitiveMaterial('mattoni')]);
-        mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.cuVentaglio = `${st.id || ''}:${g.r0}`;
-        mesh.userData.facadeCode = 'CU014'; mesh.userData.code = 'CU014'; // come la soletta: parte di CU014 per l'editor e per la planimetria ufficiale
-        buildingGroup.add(mesh);
+    const f = cuSolido && cuFrame(), vent = cuSolido && cuSolido.ventaglio, B = vent && vent.balconata, S = vent && vent.scale;
+    if (!f || !buildingGroup || !cuDisegnato || !cuSolidoUsato || officialPlanCodes.has('CU014') || !vent || !Array.isArray(vent.centro) || !B) return;
+    const C0 = vent.centro, Y0 = 0.04, rad = Math.PI / 180, deg = (len, r) => len / r / rad;
+    const loc = (r, a) => [C0[0] + r * Math.cos(a * rad), C0[1] + r * Math.sin(a * rad)];
+    const W = (r, a, h) => { const p = project(f.toLL(loc(r, a))); return new THREE.Vector3(p.x, Y0 + h, -p.n); };
+    const tag = (m) => { m.castShadow = true; m.receiveShadow = true; Object.assign(m.userData, { facadeCode: 'CU014', code: 'CU014', cuVentaglio: true }); buildingGroup.add(m); return m; };
+    // settore di corona fra i raggi r0, r1 e gli angoli a0, a1, pieno dalla quota h0 alla h1 (sopra il terreno)
+    const sector = (r0, r1, a0, a1, h0, h1, mat) => {
+      if (!(h1 - h0 > 0.005) || !(r1 - r0 > 0.005) || Math.abs(a1 - a0) < 1e-4) return null;
+      const shape = makeShape([cuCorona(C0, r0, r1, Math.min(a0, a1), Math.max(a0, a1)).map(f.toLL)]);
+      if (!shape) return null;
+      const g = new THREE.ExtrudeGeometry(shape, { depth: h1 - h0, bevelEnabled: false, curveSegments: 1 });
+      g.rotateX(-Math.PI / 2); g.translate(0, Y0 + h0, 0); g.computeVertexNormals(); planarUVs(g, 1);
+      return tag(new THREE.Mesh(g, mat));
+    };
+    const rail = (pts, r, mat) => { const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0), pts.length * 3, r, 6, false), mat); m.receiveShadow = false; return tag(m); };
+    const trav = primitiveMaterial('travertino'), set = facadeSetFor('CU014');
+    const plaster = courtOnce('cu|lesene', () => stdMat({ color: FACADE_PALETTES.cortina.wall, roughness: 0.9 }));
+    const glass = courtOnce('cu|porte vetro', () => stdMat({ color: '#25323a', roughness: 0.12, metalness: 0.45 }));
+    const frame = courtOnce('cu|porte telaio', () => stdMat({ color: '#3b2f27', roughness: 0.7 }));
+    const metal = courtOnce('cu|ringhiera scale', () => stdMat({ color: '#2f3633', roughness: 0.45, metalness: 0.6 }));
+    const F = Number(cuSolido.interpiano) > 0 ? Number(cuSolido.interpiano) : 3.425;
+    const rf = Number(vent.raggioFacciata), ri = Number(B.rInterno) || rf - 1.6, q = Number(B.quota) || 4.4, a0 = Number(B.a0), a1 = Number(B.a1);
+    const col = B.colonne || {}, nc = Math.max(2, Number(col.n) || 4), cw = Number(col.larghezza) || 0.7, rc = rf - (Number(col.profondita) || 0.4);
+    // basamento davanti alla loggia (finestre del piano terra) e pavimento della balconata in travertino
+    {
+      const shape = makeShape([cuCorona(C0, ri, rf, a0, a1).map(f.toLL)]);
+      if (shape) {
+        const g = new THREE.ExtrudeGeometry(shape, { depth: q - 0.15, bevelEnabled: false, curveSegments: 1 });
+        g.rotateX(-Math.PI / 2); g.translate(0, Y0, 0); applyRoofUVs(g); applyWallUVs(g, Y0, FACADE_BAY, q); g.computeVertexNormals();
+        const mats = [hiddenCapMaterial(), set.base], m = tag(new THREE.Mesh(g, mats));
+        Object.assign(m.userData, { mats, kind: 'base', y0: Y0, floorH: q });
       }
+    }
+    sector(ri, rf, a0, a1, q - 0.15, q, trav);
+    // sopra la loggia (un interpiano) la facciata arretrata fino a rc, alle quote delle ali; soffitto della loggia
+    for (const { multi, h } of cuAliSplit([[cuCorona(C0, ri, rc, a0, a1)]], window.polygonClipping)) {
+      if (!(h > q + F + 0.3)) continue;
+      const pieces = cuPieces(h);
+      for (const poly of multi) {
+        if (!poly.length || polyArea(poly[0]) < 0.05) continue;
+        const shape = makeShape(poly.map((r) => r.map(f.toLL)));
+        if (!shape) continue;
+        pieces.forEach((p, k) => {
+          const lo = Math.max(p.y0, q + F), hi = p.y0 + p.h;
+          if (!(hi - lo > 0.01)) return;
+          const g = new THREE.ExtrudeGeometry(shape, { depth: hi - lo, bevelEnabled: false, curveSegments: 1 });
+          g.rotateX(-Math.PI / 2); g.translate(0, Y0 + lo, 0); applyRoofUVs(g);
+          if (p.kind !== 'attic') applyWallUVs(g, Y0 + p.y0, FACADE_BAY, p.floorH);
+          g.computeVertexNormals();
+          const mats = [k === pieces.length - 1 ? normalRoof : hiddenCapMaterial(), set[p.kind]], m = tag(new THREE.Mesh(g, mats));
+          Object.assign(m.userData, { mats, kind: p.kind, y0: Y0 + p.y0, floorH: p.kind === 'attic' ? p.h : p.floorH });
+        });
+      }
+    }
+    sector(ri, rc, a0, a1, q + F - 0.06, q + F, plaster);
+    // colonne: la prima a `margine` metri dall'inizio della balconata, le altre in passo uguale fino all'altra estremità
+    const mg = deg(Number(col.margine) || 0.95, rf), ha = deg(cw / 2, rf), cols = [];
+    for (let i = 0; i < nc; i += 1) cols.push(a0 + mg + ((a1 - a0 - 2 * mg) * i) / (nc - 1));
+    for (const ac of cols) { const [u, v] = loc((rc + rf) / 2, ac); sector(rc, rf, ac - ha, ac + ha, q, cuAltezzaIn(u, v), plaster); }
+    // parapetti di travertino fra le colonne: zoccolo, balaustrini, corrimano
+    const P = B.parapetto || {}, hp = Number(P.altezza) || 1, dp = Number(P.profondita) || 0.3;
+    for (let i = 0; i + 1 < nc; i += 1) {
+      const s0 = cols[i] + ha, s1 = cols[i + 1] - ha, L = Math.abs(s1 - s0) * rad * (rf - dp / 2);
+      sector(rf - dp, rf, s0, s1, q, q + 0.14, trav);
+      sector(rf - dp, rf - 0.02, s0, s1, q + hp - 0.12, q + hp, trav);
+      const nb = Math.max(2, Math.floor(L / 0.19)), bw = deg(0.04, rf);
+      for (let k = 0; k < nb; k += 1) { const ab = s0 + ((s1 - s0) * (k + 0.5)) / nb; sector(rf - dp / 2 - 0.05, rf - dp / 2 + 0.05, ab - bw, ab + bw, q + 0.14, q + hp - 0.12, trav); }
+    }
+    // porte a vetri sul fondo della loggia, una per campata (o distribuite se il numero è diverso)
+    const D = B.porte || {}, nd = Math.max(0, Number(D.n) || 0), wd = Number(D.larghezza) || 1.5, hd = Number(D.altezza) || 2.7;
+    for (let k = 0; k < nd; k += 1) {
+      const ad = nd === nc - 1 ? (cols[k] + cols[k + 1]) / 2 : a0 + ((a1 - a0) * (k + 0.5)) / nd, hw = deg(wd / 2, ri), fw = deg(wd / 2 + 0.08, ri), mw = deg(0.025, ri);
+      sector(ri, ri + 0.04, ad - fw, ad + fw, q, q + hd + 0.08, frame);
+      sector(ri + 0.04, ri + 0.06, ad - hw, ad + hw, q + 0.02, q + hd, glass);
+      sector(ri + 0.06, ri + 0.08, ad - mw, ad + mw, q, q + hd, frame);
+    }
+    if (!S) return;
+    // scale ai due lati
+    const n = Math.max(4, Number(S.gradini) || 13), q2 = q / 2, rise = q2 / n, tread = Number(S.pedata) || 0.32;
+    const [ri0, ri1] = S.fasciaInterna || [rf, 38.65], [rm0, rm1] = S.muro || [ri1, ri1 + 0.3], [ro0, ro1] = S.fasciaEsterna || [rm1, rm1 + 1.4];
+    const rI = (ri0 + ri1) / 2, rO = (ro0 + ro1) / 2, pen = S.pensilina || {}, top = Number(pen.quota) || 4.6, thick = Number(pen.spessore) || 0.25;
+    for (const lato of S.lati || []) {
+      const s = Number(lato.verso) < 0 ? -1 : 1, aS = s < 0 ? a0 : a1; // estremità della balconata da cui parte la scala
+      const aP = aS + s * deg(Number(S.pianerottoloAlto) || 1.2, rI); // pianerottolo alto: da aS ad aP
+      const aL = aP + s * deg((n - 1) * tread, rI); // seconda rampa da aL (mezzo piano) ad aP
+      const aE = aL + s * deg(Number(S.pianerottolo) || 2, (ri0 + ro1) / 2); // pianerottolo di mezzo da aL ad aE
+      const aB = aL - s * deg((n - 1) * tread, rO); // prima rampa da aB (terra) ad aL
+      const at = (a0x, k, r) => a0x + s * deg(k * tread, r), aC = s < 0 ? cols[0] : cols[nc - 1]; // il pianerottolo alto arriva fino alla prima colonna
+      sector(ri0, ri1, aC, aP, 0, q, trav);
+      for (let k = 1; k < n; k += 1) sector(ri0, ri1, aL - (at(0, k - 1, rI)), aL - (at(0, k, rI)), 0, q2 + k * rise, trav); // gradino k sopra il mezzo piano
+      sector(ri0, ro1, aL, aE, 0, q2, trav);
+      for (let k = 1; k < n; k += 1) sector(ro0, ro1, at(aB, k - 1, rO), at(aB, k, rO), 0, k * rise, trav);
+      sector(rm0, rm1, aB, aL, 0, top - thick, trav); // muro lungo fra le rampe, regge la pensilina
+      sector(rm0 + 0.01, ro1 + 0.2, aS, aL, top - thick, top, trav); // pensilina sulla prima rampa, fino al mezzo piano
+      // cancello sul pianerottolo, sulla linea del muro
+      const rg = (rm0 + rm1) / 2, gw = deg(0.012, rg), nbar = Math.max(4, Math.round(Math.abs(aE - aL) * rad * rg / 0.13));
+      for (let k = 0; k <= nbar; k += 1) { const ab = aL + ((aE - aL) * k) / nbar; sector(rg - 0.012, rg + 0.012, ab - gw, ab + gw, q2, q2 + 1.95, metal); }
+      for (const hb of [q2 + 0.1, q2 + 1.9]) sector(rg - 0.02, rg + 0.02, aL, aE, hb, hb + 0.05, metal);
+      // ringhiera: bordo esterno della prima rampa e del pianerottolo, testata del pianerottolo, bordo del pianerottolo alto e della seconda rampa
+      const hStair1 = (a) => Math.min(q2, Math.max(0, ((a - aB) / (aL - aB)) * q2)), hStair2 = (a) => (s * (a - aP) <= 0 ? q : q - ((a - aP) / (aL - aP)) * q2);
+      const edge = (r, from, to, hf) => { const pts = [], m = Math.max(2, Math.ceil(Math.abs(to - from) / 0.5)); for (let k = 0; k <= m; k += 1) { const a = from + ((to - from) * k) / m; pts.push([a, hf(a)]); } return pts; };
+      const fence = (r, list) => {
+        rail(list.map(([a, h]) => W(r, a, h + 1)), 0.03, metal); rail(list.map(([a, h]) => W(r, a, h + 0.5)), 0.015, metal);
+        const pw = deg(0.025, r); let last = null;
+        for (const [a, h] of list) { if (last != null && Math.abs(a - last) * rad * r < 1.1) continue; sector(r - 0.025, r + 0.025, a - pw, a + pw, h, h + 1, metal); last = a; }
+      };
+      fence(ro1 - 0.05, [...edge(ro1, aB, aL, hStair1), ...edge(ro1, aL, aE, () => q2).slice(1)]);
+      const endPts = []; for (let k = 0; k <= 6; k += 1) endPts.push(W(ro1 - 0.05 - ((ro1 - ri0 - 0.1) * k) / 6, aE - s * deg(0.05, rO), q2 + 1));
+      rail(endPts, 0.03, metal);
+      fence(ri1 - 0.05, edge(ri1, aC, aB, hStair2));
     }
   }
   // Sagoma meno i cortili/pozzi di luce: differenza booleana, così ogni cortile diventa un vuoto chiuso (pareti su tutti i lati) anche se tocca il bordo.

@@ -39,6 +39,7 @@ Modello 3D web (three.js) del Vecchio Edificio di Chimica (CU014) e degli edific
     `cornice` = `cortile` o `esterni:<elemento>` per i duplicati fatti in quelle coordinate), `edificio:<codice>`
     (texture `facciata` e celle `finestre` tolte o aggiunte; la texture di un solo lato è una toppa `tipo: "texture"` in `finestre`, come «Texture di un muro»).
   Nel trascinamento c'è la calamita (allineamenti, misure, spaziature, con le guide colorate; Alt la sospende).
+  (22/10) «Ruota» vale ormai per quasi tutti gli oggetti (campo `angolo`, o vertici dei poligoni); porte e portoni (`portone`, `portaAntincendio`) restano poggiati al suolo e attaccati al muro, tombini sulla superficie sotto, aiuole e marciapiedi a terra; «Specchia ↔ / ↕» nella scheda. Dettagli in `DA_FARE.md`.
   Selettore **⤡ Sposta / ⟳ Ruota** in cima alla scheda (e tasto flottante «⟳ Ruota» accanto a «▤ Scheda» quando la scheda è
   nascosta; scorciatoia **R**, non mentre si scrive in un campo). In «Ruota» le maniglie della scatola lasciano il posto a un
   anello orizzontale con una maniglia: trascinandola (o l'anello) l'oggetto gira attorno al centro della scatola, passo 5°,

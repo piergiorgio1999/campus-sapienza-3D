@@ -2446,6 +2446,16 @@
     const box = (u0, u1, h0, h1, v0, v1, mat) => add(new THREE.BoxGeometry(u1 - u0, h1 - h0, v1 - v0), mat, (u0 + u1) / 2, (h0 + h1) / 2, -(v0 + v1) / 2);
     return { add, box };
   }
+  // rotazione libera di un oggetto dell'editor (campo `angolo` del dato, gradi, positivo = antiorario visto dall'alto) attorno al perno (cu, cv):
+  // restituisce il gruppo in cui costruire l'oggetto con le sue coordinate normali (senza angolo è il genitore stesso)
+  function turned(parent, obj, cu, cv, key = 'angolo') {
+    const a = Number(obj && obj[key]) || 0;
+    if (!a) return parent;
+    const piv = new THREE.Group(), inner = new THREE.Group();
+    piv.position.set(cu, 0, -cv); piv.rotation.y = (a * Math.PI) / 180; inner.position.set(-cu, 0, cv);
+    piv.add(inner); parent.add(piv);
+    return inner;
+  }
   // acciaio verniciato marrone ruggine delle scale antincendio, come nel rilievo (non ocra: niente pareti piene)
   let stairMats = null;
   function fireStairMats() {
@@ -2603,7 +2613,7 @@
     if (old) { scene.remove(old); disposeTree(old); }
     const ring = closeRing(b.rings[0]);
     const holder = new THREE.Group(); holder.name = 'chimica-esterni';
-    const trav = travPhoto, bench = addBench, railing = addRailing, { ocra, ocraScura } = fireStairMats();
+    const trav = travPhoto, bench = (g, p, h) => addBench(turned(g, p, Number(p.u), Number(p.v)), p, h), railing = addRailing, { ocra, ocraScura } = fireStairMats();
     for (const [index, el] of (cfg.elementi || []).entries()) {
       if (!(el.lato >= 0 && el.lato < ring.length - 1)) continue;
       const g = sideFrame(ring, el.lato); g.userData.elemento = index; holder.add(g);
@@ -2636,9 +2646,9 @@
       } else if (el.tipo === 'area') {
         const a = localSlab(el.poligono, 0, 0.03, trav()); a.castShadow = false; g.add(a);
       } else if (el.tipo === 'pergolato') {
-        addPergola(g, el);
+        addPergola(turned(g, el, (el.u[0] + el.u[1]) / 2, (el.v[0] + el.v[1]) / 2), el);
       } else if (el.tipo === 'lampione') {
-        addLampione(g, el);
+        addLampione(turned(g, el, Number(el.u), Number(el.v)), el);
       } else if (el.tipo === 'pilastro') {
         g.add(localSlab(el.poligono, 0, Number(el.altezza) || 2.5, trav()));
       } else if (el.tipo === 'ingresso') {
@@ -2903,6 +2913,28 @@
       for (const [a, b] of [[-W / 2 - 0.28, -W / 2], [W / 2, W / 2 + 0.28]]) g.add(localSlab(rectPts(a, b, -0.08, 0.08), 0.02, Hd + 0.3, travPhoto(1.2))); // stipiti
       g.add(localSlab(rectPts(-W / 2 - 0.28, W / 2 + 0.28, -0.08, 0.08), Hd + 0.02, Hd + 0.3, travPhoto(1.2))); // architrave
     }) },
+    // porta antincendio a due ante in lamiera marrone, senza vetri, con vasistas sopra. Davanti (+z) classica maniglia a L in plastica nera,
+    // dietro (−z, contro il muro) maniglione antipanico rosso da spingere. Come il portone, l'editor la tiene poggiata a terra e attaccata a una parete.
+    portaAntincendio: { nome: 'Porta antincendio doppia (metallo marrone, vasistas)', crea: () => group((g) => {
+      const { add } = partAdder(g), metal = courtOnce('antincendio|anta', () => stdMat({ color: 0x6a4228, roughness: 0.5, metalness: 0.55 })), telaio = courtOnce('antincendio|telaio', () => stdMat({ color: 0x4a2f1e, roughness: 0.5, metalness: 0.55 }));
+      const red = courtOnce('antincendio|maniglione', () => stdMat({ color: 0xb3151c, roughness: 0.45, metalness: 0.3 })), plastic = courtOnce('antincendio|maniglia', () => plainMat('#1d1d1d', 0.5));
+      const glass = courtOnce('antincendio|vetro', () => stdMat({ color: 0x9fc3d8, roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.4 }));
+      const leaf = 0.9, Hd = 2.1, jamb = 0.06, top = 2.7, x0 = leaf + 0.01; // due ante da 0,9 m, vasistas fino a 2,7 m
+      for (const s of [-1, 1]) {
+        add(new THREE.BoxGeometry(leaf, Hd, 0.05), metal, s * (leaf / 2 + 0.01), Hd / 2 + 0.02, 0);
+        add(new THREE.BoxGeometry(leaf - 0.2, Hd - 0.3, 0.012), telaio, s * (leaf / 2 + 0.01), Hd / 2 + 0.02, 0.03); // specchiatura in rilievo sul fronte
+        add(new THREE.BoxGeometry(jamb, top, 0.1), telaio, s * (x0 + jamb / 2), top / 2, 0); // montante del telaio
+        const bar = add(new THREE.CylinderGeometry(0.022, 0.022, 0.72, 12), red, s * (leaf / 2 + 0.01), 1.05, -0.07); bar.rotation.z = Math.PI / 2; // maniglione rosso sul retro
+        for (const dx of [-0.3, 0.3]) add(new THREE.BoxGeometry(0.04, 0.04, 0.05), red, s * (leaf / 2 + 0.01) + dx, 1.05, -0.045);
+        add(new THREE.CylinderGeometry(0.03, 0.03, 0.012, 14), plastic, s * 0.14, 1.05, 0.031).rotation.x = Math.PI / 2; // rosetta della maniglia a L
+        add(new THREE.BoxGeometry(0.025, 0.025, 0.06), plastic, s * 0.14, 1.05, 0.06);                                      // gambo
+        add(new THREE.BoxGeometry(0.14, 0.025, 0.025), plastic, s * (0.14 + 0.055), 1.05, 0.09);                              // leva: la «L»
+      }
+      add(new THREE.BoxGeometry(2 * x0 + 2 * jamb, 0.07, 0.1), telaio, 0, Hd + 0.055, 0); // traverso sopra le ante
+      add(new THREE.BoxGeometry(2 * x0 + 2 * jamb, 0.06, 0.1), telaio, 0, top - 0.03, 0); // traverso alto del vasistas
+      add(new THREE.BoxGeometry(2 * x0, top - Hd - 0.16, 0.012), glass, 0, (Hd + 0.09 + top - 0.06) / 2, 0, false); // vetro del vasistas
+      add(new THREE.BoxGeometry(0.04, top - Hd - 0.16, 0.05), telaio, 0, (Hd + 0.09 + top - 0.06) / 2, 0); // montante centrale
+    }) },
     condizionatore: { nome: 'Condizionatore', crea: () => group((g) => {
       const white = courtOnce('condizionatore', () => plainMat('#e9e9e6', 0.5)), grille = courtOnce('condizionatore|griglia', () => new THREE.MeshStandardMaterial({ roughness: 0.5, map: canvasTex(160, 110, (ctx, w, h) => {
         ctx.fillStyle = '#e9e9e6'; ctx.fillRect(0, 0, w, h);
@@ -3036,6 +3068,10 @@
     const [sx, px] = axis(s.x, b.u0, b.u1, bb.min.x), [sy, py] = axis(s.y, b.h0, b.h1, bb.min.y), [sz, pz] = axis(s.z, -b.v1, -b.v0, bb.min.z);
     fit.scale.set(sx, sy, sz);
     fit.position.set(px, py, pz);
+    // «Specchia» dell'editor (pr.specchio: 'u', 'v' o 'uv'): scala −1 sull'asse, riflessa rispetto al centro della scatola (le normali le corregge il renderer)
+    const mi = String(pr.specchio || '');
+    if (mi.includes('u')) { fit.scale.x = -fit.scale.x; fit.position.x = b.u0 + b.u1 - fit.position.x; }
+    if (mi.includes('v')) { fit.scale.z = -fit.scale.z; fit.position.z = -(b.v0 + b.v1) - fit.position.z; }
     return fit;
   }
   // angolo libero (pr.angolo, gradi; positivo = antiorario visto dall'alto, come ruota) attorno al centro della scatola: un
@@ -3119,17 +3155,18 @@
     }
     for (const a of (el.aiuole || []).filter((x) => !x.rimosso)) { // prato rialzato con cordolo in travertino
       const [u0, u1] = a.u, [v0, v1] = a.v, k = 0.2, hk = Number(a.cordolo) || 0.18;
-      const lawn = localSlab(rect(u0, u1, v0, v1), 0, hk - 0.04, std('#5f8a3e', 1)); lawn.castShadow = false; g.add(lawn);
-      for (const pts of [rect(u0, u1, v0, v0 + k), rect(u0, u1, v1 - k, v1), rect(u0, u0 + k, v0, v1), rect(u1 - k, u1, v0, v1)]) g.add(localSlab(pts, 0, hk, bedKerbMaterial()));
+      const ga = turned(g, a, (u0 + u1) / 2, (v0 + v1) / 2);
+      const lawn = localSlab(rect(u0, u1, v0, v1), 0, hk - 0.04, std('#5f8a3e', 1)); lawn.castShadow = false; ga.add(lawn);
+      for (const pts of [rect(u0, u1, v0, v0 + k), rect(u0, u1, v1 - k, v1), rect(u0, u0 + k, v0, v1), rect(u1 - k, u1, v0, v1)]) ga.add(localSlab(pts, 0, hk, bedKerbMaterial()));
     }
     const F = el.fiori;
-    if (F && !F.rimosso) g.add(localSlab(rect(F.u[0], F.u[1], F.v[0], F.v[1]), 0.1, Number(F.altezza) || 0.4, flowerMaterial()));
+    if (F && !F.rimosso) turned(g, F, (F.u[0] + F.u[1]) / 2, (F.v[0] + F.v[1]) / 2).add(localSlab(rect(F.u[0], F.u[1], F.v[0], F.v[1]), 0.1, Number(F.altezza) || 0.4, flowerMaterial()));
     for (const p of (el.panchine || []).filter((x) => !x.rimosso)) bench(g, p, 0);
     railing(g, el.ringhiere || [], 0, el.ringhiera || { altezza: 0.9 });
-    for (const p of (el.palme || []).filter((x) => !x.rimosso)) g.add(albero(palmTree(p)));
-    for (const t of (el.totem || []).filter((x) => !x.rimosso)) addTotem(g, t);
+    for (const p of (el.palme || []).filter((x) => !x.rimosso)) turned(g, p, Number(p.u), Number(p.v)).add(albero(palmTree(p)));
+    for (const t of (el.totem || []).filter((x) => !x.rimosso)) addTotem(turned(g, t, Number(t.u), Number(t.v)), t);
     const RS = el.rastrelliera;
-    if (RS && !RS.rimosso) addBikeRack(g, RS);
+    if (RS && !RS.rimosso) addBikeRack(turned(g, RS, Number(RS.u), Number(RS.v)), RS);
   }
   // portone in legno a due ante con specchiature vetrate e sopraluce (texture in cache: l'editor ricostruisce spesso)
   function doorMaterial() {
@@ -3488,6 +3525,7 @@
     const curb = travMat(1, 0.2), soil = once('terra', () => std({ map: soilTex(), roughness: 1 }));
     const live = (arr) => (arr || []).filter((x) => !x.rimosso); // gli elementi eliminati dall'editor restano nel file con rimosso: true
     for (const a of live(M.aiuole)) {
+      const { add, box } = partAdder(turned(court, a, (a.u[0] + a.u[1]) / 2, (a.v[0] + a.v[1]) / 2)); // l'aiuola gira attorno al suo centro (angolo)
       const t = 0.16, h = a.altezza, cut = a.varco || null; // varco: tratto di cordolo abbassato (soglia della porticina)
       const side = (lato, u0, u1, v0, v1) => {
         if (!cut || cut.lato !== lato) { box(u0, u1, 0, h, v0, v1, curb); return; }
@@ -3500,9 +3538,9 @@
       s.rotation.x = -Math.PI / 2;
     }
 
-    live(M.magnolie).forEach((t, n) => court.add(albero(magnoliaTree(t, n))));
+    live(M.magnolie).forEach((t, n) => turned(court, t, Number(t.u), Number(t.v)).add(albero(magnoliaTree(t, n))));
 
-    court.add(nitrogenTank(M.serbatoio));
+    turned(court, M.serbatoio, Number(M.serbatoio.u), Number(M.serbatoio.v)).add(nitrogenTank(M.serbatoio));
 
     // tubo di scarico del serbatoio (foto del 19/10/2026): metallico, esce sotto il serbatoio, corre orizzontale
     // verso il lato della porticina, scavalca il cordolo, scende a terra con un gomito e poggia su una canaletta bianca
@@ -3535,7 +3573,7 @@
       }
     }
 
-    court.add(buildCage(M.gabbia, 0.42));
+    turned(court, M.gabbia, (M.gabbia.u[0] + M.gabbia.u[1]) / 2, (M.gabbia.v[0] + M.gabbia.v[1]) / 2).add(buildCage(M.gabbia, 0.42));
 
     // cancellata su strada: muretto, ringhiera a barre e due ante aperte verso l'interno
     const C = M.cancellata, rust = std({ color: 0x7a4b30, roughness: 0.55, metalness: 0.35 }), wallMat = travMat(2, 0.4);
@@ -3547,8 +3585,21 @@
       box(u0, u1, 0, C.muretto, C.v - 0.15, C.v + 0.15, wallMat);
       rail(u0, u1, C.muretto, C.muretto + C.ringhiera);
     }
+    // cassetta antincendio («bocciolone», vetro scuro in cornice di alluminio) addossata alla faccia su strada del muretto (commento con foto, 22/10):
+    // dati in cancellata.cassetta; dietro, nella foto, la ringhiera è a barre color crema (non ruggine) e un tubo rosso corre lungo il muro
+    const CS = C.cassetta;
+    if (CS) {
+      const cw = Number(CS.larghezza) || 1, ch = Number(CS.altezza) || 0.5, cd = Number(CS.profondita) || 0.23, c0 = Number(CS.h0) || 0.42, cu0 = CS.u - cw / 2, cu1 = CS.u + cw / 2, vf = C.v - 0.15;
+      const alu = once('cassetta-alu', () => std({ color: 0xb9bcc0, roughness: 0.4, metalness: 0.6 })), vetro = once('cassetta-vetro', () => std({ color: 0x1b2029, roughness: 0.12, metalness: 0.3 }));
+      box(cu0, cu1, c0, c0 + ch, vf - cd, vf, alu);                                        // corpo in alluminio
+      box(cu0 + 0.07, cu1 - 0.07, c0 + 0.07, c0 + ch - 0.07, vf - cd - 0.012, vf - cd + 0.004, vetro); // vetro scuro, leggermente sporgente dalla cornice
+      box(cu0 - 0.015, cu1 + 0.015, c0 + ch, c0 + ch + 0.025, vf - cd - 0.03, vf, once('cassetta-tetto', () => std({ color: 0x8d9298, roughness: 0.45, metalness: 0.6 }))); // copertina grigia sporgente
+      box(CS.u - 0.11, CS.u + 0.11, c0 + 0.1, c0 + 0.17, vf - cd - 0.016, vf - cd - 0.012, once('cassetta-adesivo', () => std({ color: 0xf2f2f0, roughness: 0.6 }))); // adesivo del costruttore
+      if (CS.tuboRosso) { const t = add(new THREE.CylinderGeometry(0.045, 0.045, 1, 10), once('tubo-rosso-cass', () => std({ color: 0xb3262e, roughness: 0.5, metalness: 0.2 })), cu0 - 0.5, Number(CS.tuboRosso), -(vf - 0.05)); t.rotation.z = Math.PI / 2; } // tubo rosso lungo 1 m che esce a sinistra dalla cassetta
+    }
+    const crema = once('ringhiera-crema', () => std({ color: 0xd8c690, roughness: 0.6, metalness: 0.15 })); // barre della ringhiera: giallo crema come nella foto
     const barGeo = new THREE.BoxGeometry(0.028, 1, 0.028);
-    const barMesh = new THREE.InstancedMesh(barGeo, rust, bars.length + 80);
+    const barMesh = new THREE.InstancedMesh(barGeo, crema, bars.length + 80);
     const mtx = new THREE.Matrix4(); let bi = 0;
     for (const [u, h0, h1, v] of bars) { mtx.makeScale(1, h1 - h0, 1).setPosition(u, (h0 + h1) / 2, -v); barMesh.setMatrixAt(bi++, mtx); }
     const gateH = Number(C.altezzaCancello) || 2.1, back = Number(C.rientro) || 0.9;
@@ -3574,7 +3625,7 @@
     }
 
     // portico: pilastri in travertino e soffitto scuro
-    for (const p of live(M.pilastri)) box(p.u[0], p.u[1], 0, p.altezza, p.v[0], p.v[1], travMat(0.6, 1.8));
+    for (const p of live(M.pilastri)) partAdder(turned(court, p, (p.u[0] + p.u[1]) / 2, (p.v[0] + p.v[1]) / 2)).box(p.u[0], p.u[1], 0, p.altezza, p.v[0], p.v[1], travMat(0.6, 1.8));
     const PO = M.portico;
     // il ponte (soffitto, fondo, corpo sopra) occupa tutta la larghezza fra le due ali, come il vuoto dei cortili (u 0.2 -> 16.6)
     const [pu0, pu1] = PO.corpoU || PO.u;
@@ -3584,17 +3635,10 @@
     const FD = M.fondo || {}, fv = Number(FD.v) || PO.v[1] - 0.12, gH = PO.soffitto - 0.02, wt = Number(FD.spessore) || 0.24;
     const [vA, vB] = Array.isArray(FD.varco) && FD.varco.length === 2 ? [Math.max(pu0, Math.min(...FD.varco)), Math.min(pu1, Math.max(...FD.varco))] : [pu0, pu1], fw = vB - vA;
     for (const [w0, w1] of [[pu0, vA], [vB, pu1]]) if (w1 > w0 + 0.01) box(w0, w1, 0, PO.soffitto, fv - wt / 2, fv + wt / 2, travMat((w1 - w0) / 2.4, PO.soffitto / 2.4)); // pareti ai lati del varco
-    add(new THREE.PlaneGeometry(fw, PO.soffitto), new THREE.MeshBasicMaterial({ map: canvasTex(512, 160, (ctx, w, h) => {
-      const g = ctx.createLinearGradient(0, 0, 0, h);
-      g.addColorStop(0, '#f3ecdc'); g.addColorStop(0.55, '#dccfb6'); g.addColorStop(0.57, '#b9ae9c'); g.addColorStop(1, '#9b9182');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
-      ctx.fillStyle = 'rgba(118,94,72,0.32)'; for (let x = 18; x < w; x += 64) ctx.fillRect(x, 16, 24, 42); // finestre lontane del cortile interno
-    }) }), (vA + vB) / 2, PO.soffitto / 2, -PO.v[1] + 0.02, false);
-    const gateU = [];
-    for (let u = vA + 0.08; u < vB - 0.04; u += Number(FD.passo) || 0.12) gateU.push(u);
-    const backBars = new THREE.InstancedMesh(new THREE.BoxGeometry(0.025, 1, 0.025), rust, gateU.length);
-    gateU.forEach((u, i) => { mtx.makeScale(1, gH, 1).setPosition(u, gH / 2, -fv); backBars.setMatrixAt(i, mtx); });
-    backBars.castShadow = true; court.add(backBars);
+    // niente fondale dipinto dietro il cancello: il cortile interno vero si vede attraverso la rete (commento 22/10)
+    // rete metallica fitta (maglia ~5 cm (4 maglie per tile di 20 cm), alphaTest, doppia faccia) dentro il telaio, al posto delle sole barre verticali: trasparente
+    const meshH = gH - 0.06, meshMat = once(`retefondo|${fw}|${meshH}`, () => { const m = new THREE.MeshStandardMaterial({ map: wireMeshTex('rgba(138,107,70,1)'), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.6, metalness: 0.35 }); m.map.repeat.set(fw / 0.2, meshH / 0.2); return m; });
+    add(new THREE.PlaneGeometry(fw, meshH), meshMat, (vA + vB) / 2, meshH / 2 + 0.03, -fv, false);
     for (const hh of FD.correnti || [0.12, 1.1, 2.3]) box(vA, vB, hh - 0.03, hh + 0.03, fv - 0.03, fv + 0.03, rust);
     box(vA, vB, gH - 0.06, gH, fv - 0.03, fv + 0.03, rust);
     const nLeaf = Math.max(1, Math.round(fw / 2.5)); // montanti delle ante
@@ -3634,7 +3678,7 @@
     }
 
     // tombini quadrati in ghisa con telaio, a filo del pavimento
-    for (const t of live(M.tombini)) { const m = manhole(Number(t.lato) || 0.6); m.position.set(t.u, 0, -t.v); court.add(m); }
+    for (const t of live(M.tombini)) { const m = manhole(Number(t.lato) || 0.6); m.position.set(t.u, Number(t.quota) || 0, -t.v); m.rotation.y = ((Number(t.angolo) || 0) * Math.PI) / 180; court.add(m); } // quota: superficie su cui poggia (a filo del pavimento)
 
     // transenne zincate accanto all'aiuola
     for (const t of live(M.transenne)) { const g = crowdBarrier(t.lunghezza); g.position.set(t.u, 0, -t.v); g.rotation.y = t.angoloDeg * Math.PI / 180; court.add(g); }

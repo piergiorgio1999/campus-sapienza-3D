@@ -145,8 +145,10 @@
   // tutto il resto usa il lato 0 di Chimica, allineato con gli edifici vicini
   function frameEsterni(i) { const h = scene.getObjectByName('chimica-esterni'); return h ? h.children.find((g) => g.userData.elemento === i) || null : null; }
   function frameCortile() { const h = scene.getObjectByName('cortile-modello'); return h ? h.children[0] : null; }
+  let tmpFrame = null; // cornice provvisoria durante lo spostamento di una porta (angolo preso dal muro agganciato)
   function frameBy(key) {
     if (key === 'cortile') return frameCortile();
+    if (key === 'tmp') return tmpFrame;
     const r = /^rot:(.+)$/.exec(key || ''); if (r) return frameRot(r[1]);
     const m = /^esterni:(\d+)$/.exec(key || ''); return frameEsterni(m ? Number(m[1]) : 'lato0');
   }
@@ -155,9 +157,29 @@
   // scatola sta fermo), così maniglie e scatola girano con l'oggetto; senza angolo è la cornice base stessa.
   const TURNABLE = ['box', 'cilindro', 'sfera', 'oggetto'];
   const angleOf = (pr) => (pr && pr.box && TURNABLE.includes(pr.forma) ? (((Number(pr.angolo) || 0) % 360) + 360) % 360 : 0);
-  const frameOfItem = (it) => (it.primitiva && angleOf(it.obj) ? 'rot:' + it.obj.id : it.frameKey);
+  // voci non primitive con un angolo proprio (it.angKey = campo in gradi dell'oggetto, it.angId = nome della cornice ruotata, per esempio i tubi del gas):
+  // la loro scatola è quella non ruotata, centrata sul punto (u, v), e gira attorno al centro come i solidi
+  const normAng = (x) => (((Number(x) || 0) % 360) + 360) % 360;
+  const angOfItem = (it) => (it.primitiva ? angleOf(it.obj) : it.angKey ? normAng(it.obj[it.angKey]) : 0);
+  // angolo mostrato dall'anello: per i poligoni (che ruotano i vertici, senza campo angolo) è la rotazione fatta durante il trascinamento
+  const ringCentre = (it, b) => (!it.primitiva && it.pivot ? it.pivot() : [(b.u0 + b.u1) / 2, (b.v0 + b.v1) / 2]);
+  const angShown = (it) => (it.verts && !it.angKey && !(it.primitiva && it.obj.box) ? (sel && sel.vAng) || 0 : angOfItem(it));
+  // perno della rotazione di una voce: il suo punto d'ancoraggio (it.pivot) o il centro della scatola
+  const pivotOf = (it) => { if (it.pivot) return it.pivot(); const b = it.box(); return [(b.u0 + b.u1) / 2, (b.v0 + b.v1) / 2]; };
+  const setAngItem = (it, a) => { if (it.primitiva) it.obj.angolo = a; else it.obj[it.angKey] = a; };
+  const frameBaseOfItem = (it) => (it.primitiva ? it.obj.cornice || 'lato0' : it.frameKey);
+  const frameOfItem = (it) => (angOfItem(it) ? 'rot:' + (it.primitiva ? it.obj.id : it.angId) : it.frameKey);
   function frameRot(id) {
-    const pr = ((C.esterni.cfg && C.esterni.cfg.primitive) || []).find((x) => x.id === id && !x.rimosso); if (!pr) return null;
+    const pr = ((C.esterni.cfg && C.esterni.cfg.primitive) || []).find((x) => x.id === id && !x.rimosso);
+    if (!pr) { // voce non primitiva con angolo (it.angId)
+      const it = liveItems().find((x) => x.angId === id && !x.primitiva); if (!it) return null;
+      const base = frameBy(it.frameKey), a = angOfItem(it), pv = pivotOf(it); if (!base || !a) return base;
+      let f = base.children.find((c) => c.userData.rotId === id);
+      if (!f) { f = new T.Object3D(); f.name = 'ed-rot'; f.userData.rotId = id; base.add(f); }
+      const rad = (a * Math.PI) / 180, c = new T.Vector3(pv[0], 0, -pv[1]);
+      f.rotation.set(0, rad, 0); f.position.copy(c).sub(c.clone().applyAxisAngle(new T.Vector3(0, 1, 0), rad)); f.updateMatrix();
+      return f;
+    }
     const base = frameBy(pr.cornice || 'lato0'), a = angleOf(pr); if (!base || !a) return base;
     let f = base.children.find((c) => c.userData.rotId === id);
     if (!f) { f = new T.Object3D(); f.name = 'ed-rot'; f.userData.rotId = id; base.add(f); }
@@ -166,8 +188,9 @@
     return f;
   }
   // una scatola trascinata nella cornice ruotata torna nella cornice base: stesse misure, centro riportato con la rotazione
-  function unturnBox(n, o, deg) {
-    const a = (deg * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a), cu = (o.u0 + o.u1) / 2, cv = (o.v0 + o.v1) / 2;
+  // (pv = perno della rotazione, se non è il centro della vecchia scatola)
+  function unturnBox(n, o, deg, pv) {
+    const a = (deg * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a), cu = pv ? pv[0] : (o.u0 + o.u1) / 2, cv = pv ? pv[1] : (o.v0 + o.v1) / 2;
     const du = (n.u0 + n.u1) / 2 - cu, dv = (n.v0 + n.v1) / 2 - cv, mu = cu + du * c - dv * s, mv = cv + du * s + dv * c, hu = (n.u1 - n.u0) / 2, hv = (n.v1 - n.v0) / 2;
     return { u0: mu - hu, u1: mu + hu, v0: mv - hv, v1: mv + hv, h0: n.h0, h1: n.h1 };
   }
@@ -213,23 +236,31 @@
   function defQuote(piani) { const out = []; for (let k = 1, prev = 0; k <= piani; k += 1) { const f = 5.25 + 3.95 * (k - 1); out.push(round((prev + f) / 2), round(f)); prev = f; } return out; }
 
   /* ---------- oggetti descritti nei file (cambiano i loro dati) ---------- */
+  // porte e portoni del catalogo: restano attaccati a una parete e poggiati al suolo (vedi snapParete)
+  const A_PARETE = ['portone', 'portaAntincendio'];
   const isPine = (t) => t.g === 'needleleaved' || /pinus|pino/i.test(t.g || '');
   function items(E, M, A) {
     const out = [];
     // ogni oggetto si può eliminare (rimosso: true nel file) salvo quelli "fixed"; parent: l'elemento che lo contiene
     const add = (it) => {
       const { fields, obj } = it;
+      if (it.giro && !it.verts) { // ruotabile attorno al perno: campo `angolo` (gradi, antiorario visto dall'alto) letto dal costruttore dell'oggetto
+        it.angKey = it.angKey || 'angolo'; it.angId = it.angId || `${it.sorgente}:${it.percorso}`;
+        if (!fields.includes(it.angKey)) fields.push(it.angKey);
+        const ap = it.apply; // la scatola trascinata sta nella cornice ruotata: torna nella cornice base prima di salvare
+        it.apply = (o, n) => { const a = normAng(obj[it.angKey]); ap(o, a ? unturnBox(n, o, a, pivotOf(it)) : n); };
+      }
       if (!it.fixed && !it.remove && !fields.includes('rimosso')) fields.push('rimosso');
       const own = it.gone || (() => !!obj.rimosso);
       out.push(Object.assign(it, {
         key: `${it.sorgente}:${it.percorso}`, lock: it.lock || {},
         get: () => { const r = {}; for (const k of fields) if (obj[k] !== undefined) r[k] = clone(obj[k]); return r; },
-        set: (val) => { for (const k of fields) { if (val && val[k] !== undefined) obj[k] = clone(val[k]); else if (k === 'rimosso' || k === 'angolo' || k === 'orienta') delete obj[k]; } },
+        set: (val) => { for (const k of fields) { if (val && val[k] !== undefined) obj[k] = clone(val[k]); else if (k === 'rimosso' || k === 'angolo' || k === 'orienta' || k === 'specchio' || k === 'quota') delete obj[k]; } },
         remove: it.fixed ? null : (it.remove || (() => { obj.rimosso = true; })),
         gone: () => own() || !!(it.parent && it.parent !== obj && it.parent.rimosso),
       }));
     };
-    const benchItems = (b, P, list, th) => (list || []).forEach((p, k) => add({ ...b, obj: p, percorso: `${P}.panchine.${k}`, label: `Panchina ${k + 1}`, fields: ['u', 'v', 'lunghezza', 'profondita', 'altezza', 'orienta'], lock: { h0: true },
+    const benchItems = (b, P, list, th) => (list || []).forEach((p, k) => add({ ...b, obj: p, percorso: `${P}.panchine.${k}`, label: `Panchina ${k + 1}`, fields: ['u', 'v', 'lunghezza', 'profondita', 'altezza', 'orienta'], lock: { h0: true }, giro: true, pivot: () => [p.u, p.v],
       box: () => { const L = Number(p.lunghezza) || 2.2, D = Number(p.profondita) || 0.45, av = p.orienta === 'v', du = av ? D : L, dv = av ? L : D; return { u0: p.u - du / 2, u1: p.u + du / 2, v0: p.v - dv / 2, v1: p.v + dv / 2, h0: th(), h1: th() + (Number(p.altezza) || 0.42) }; },
       apply: (o, n) => { const av = p.orienta === 'v'; p.u = round((n.u0 + n.u1) / 2); p.v = round((n.v0 + n.v1) / 2); p.lunghezza = round(av ? n.v1 - n.v0 : n.u1 - n.u0); p.profondita = round(av ? n.u1 - n.u0 : n.v1 - n.v0); p.altezza = round(n.h1 - th()); } }));
     const railItems = (b, P, e, th) => (e.ringhiere || []).forEach((l, k) => add({ ...b, percorso: `${P}.ringhiere.${k}`, label: `Ringhiera ${k + 1}`, fields: ['ringhiere', 'ringhiera'], lock: { h0: true },
@@ -275,33 +306,33 @@
         if (TT) add({ ...b, obj: TT, percorso: P + '.tattile', label: 'Percorso tattile', fields: ['u', 'v', 'larghezza'], lock: { h0: true, h1: true },
           box: () => { const w = Number(TT.larghezza) || 0.6, tu = TT.u != null ? Number(TT.u) : e.u; return { u0: tu - w / 2, u1: tu + w / 2, v0: TT.v[0], v1: TT.v[1], h0: 0, h1: 0.05 }; },
           apply: (o, n) => { TT.u = round((n.u0 + n.u1) / 2); TT.larghezza = round(n.u1 - n.u0); TT.v = [round(n.v0), round(n.v1)]; } });
-        (e.aiuole || []).forEach((a, k) => add({ ...b, obj: a, percorso: `${P}.aiuole.${k}`, label: `Prato ${k + 1} dell'ingresso`, fields: ['u', 'v', 'cordolo'], lock: { h0: true },
+        (e.aiuole || []).forEach((a, k) => add({ ...b, obj: a, percorso: `${P}.aiuole.${k}`, label: `Prato ${k + 1} dell'ingresso`, fields: ['u', 'v', 'cordolo'], lock: { h0: true }, giro: true, vincolo: 'suolo',
           box: () => ({ u0: a.u[0], u1: a.u[1], v0: a.v[0], v1: a.v[1], h0: 0, h1: Number(a.cordolo) || 0.18 }),
           apply: (o, n) => { a.u = [round(n.u0), round(n.u1)]; a.v = [round(n.v0), round(n.v1)]; a.cordolo = round(n.h1); } }));
         const FI = e.fiori;
-        if (FI) add({ ...b, obj: FI, percorso: P + '.fiori', label: 'Aiuola fiorita', fields: ['u', 'v', 'altezza'], lock: { h0: true },
+        if (FI) add({ ...b, obj: FI, percorso: P + '.fiori', label: 'Aiuola fiorita', fields: ['u', 'v', 'altezza'], lock: { h0: true }, giro: true, vincolo: 'suolo',
           box: () => ({ u0: FI.u[0], u1: FI.u[1], v0: FI.v[0], v1: FI.v[1], h0: 0.1, h1: Number(FI.altezza) || 0.4 }),
           apply: (o, n) => { FI.u = [round(n.u0), round(n.u1)]; FI.v = [round(n.v0), round(n.v1)]; FI.altezza = round(n.h1); } });
         benchItems(b, P, e.panchine, zero);
         railItems(b, P, e, zero);
-        (e.palme || []).forEach((p, k) => add({ ...b, obj: p, percorso: `${P}.palme.${k}`, label: `Palma ${k + 1}`, fields: ['u', 'v', 'altezza'], lock: { h0: true },
+        (e.palme || []).forEach((p, k) => add({ ...b, obj: p, percorso: `${P}.palme.${k}`, label: `Palma ${k + 1}`, fields: ['u', 'v', 'altezza'], lock: { h0: true }, giro: true, pivot: () => [p.u, p.v],
           box: () => ({ u0: p.u - 0.9, u1: p.u + 0.9, v0: p.v - 0.9, v1: p.v + 0.9, h0: 0, h1: Number(p.altezza) || 4 }),
           apply: (o, n) => { p.u = round((n.u0 + n.u1) / 2); p.v = round((n.v0 + n.v1) / 2); p.altezza = round(n.h1); } }));
-        (e.totem || []).forEach((t, k) => add({ ...b, obj: t, percorso: `${P}.totem.${k}`, label: `Totem ${k + 1}`, fields: ['u', 'v', 'altezza', 'larghezza', 'spessore', 'scritta', 'cartello', 'logoMuseo', 'orienta'], lock: { h0: true }, totem: true,
+        (e.totem || []).forEach((t, k) => add({ ...b, obj: t, percorso: `${P}.totem.${k}`, label: `Totem ${k + 1}`, fields: ['u', 'v', 'altezza', 'larghezza', 'spessore', 'scritta', 'cartello', 'logoMuseo', 'orienta'], lock: { h0: true }, totem: true, giro: true, pivot: () => [t.u, t.v],
           // larghezza: lato lungo (con la scritta), spessore: lato corto; orienta 'v' li gira lungo il vialetto
           box: () => { const w = (Number(t.larghezza) || 0.8) / 2 + 0.05, d = (Number(t.spessore) || 0.5) / 2, a = t.orienta === 'v' ? d : w, c = t.orienta === 'v' ? w : d; return { u0: t.u - a, u1: t.u + a, v0: t.v - c, v1: t.v + c, h0: 0, h1: Number(t.altezza) || 2.75 }; },
           apply: (o, n) => { const av = t.orienta === 'v'; t.u = round((n.u0 + n.u1) / 2); t.v = round((n.v0 + n.v1) / 2); t.altezza = round(n.h1); t.larghezza = round((av ? n.v1 - n.v0 : n.u1 - n.u0) - 0.1); t.spessore = round(av ? n.u1 - n.u0 : n.v1 - n.v0); } })); // la pedana sporge 5 cm per lato
         const RS = e.rastrelliera;
-        if (RS) add({ ...b, obj: RS, percorso: P + '.rastrelliera', label: 'Rastrelliera per bici', fields: ['u', 'v', 'posti'], lock: { h0: true, h1: true },
+        if (RS) add({ ...b, obj: RS, percorso: P + '.rastrelliera', label: 'Rastrelliera per bici', fields: ['u', 'v', 'posti'], lock: { h0: true, h1: true }, giro: true, pivot: () => [RS.u, RS.v],
           box: () => ({ u0: RS.u - 0.02, u1: RS.u + ((Number(RS.posti) || 3) - 1) * 0.6 + 0.02, v0: RS.v - 0.37, v1: RS.v + 0.37, h0: 0, h1: 0.8 }),
           apply: (o, n) => { RS.u = round(n.u0 + 0.02); RS.posti = Math.max(1, Math.round((n.u1 - n.u0 - 0.04) / 0.6) + 1); RS.v = round((n.v0 + n.v1) / 2); } });
       } else if (e.tipo === 'pergolato') {
         // scatola = galleria con la vite (0,4 m oltre gli archi per lato)
-        add({ ...b, percorso: P, label: b.nome, fields: ['u', 'v', 'altezza'], lock: { h0: true },
+        add({ ...b, percorso: P, label: b.nome, fields: ['u', 'v', 'altezza'], lock: { h0: true }, giro: true,
           box: () => ({ u0: e.u[0], u1: e.u[1], v0: e.v[0] - 0.4, v1: e.v[1] + 0.4, h0: 0, h1: Number(e.altezza) || 3 }),
           apply: (o, n) => { e.u = [round(n.u0), round(n.u1)]; e.v = [round(n.v0 + 0.4), round(n.v1 - 0.4)]; e.altezza = round(n.h1); } });
       } else if (e.tipo === 'lampione') {
-        add({ ...b, percorso: P, label: b.nome, fields: ['u', 'v', 'altezza'], lock: { h0: true },
+        add({ ...b, percorso: P, label: b.nome, fields: ['u', 'v', 'altezza'], lock: { h0: true }, giro: true, pivot: () => [e.u, e.v],
           box: () => ({ u0: e.u - 0.2, u1: e.u + 0.2, v0: e.v - 0.2, v1: e.v + 0.9, h0: 0, h1: (Number(e.altezza) || 4.6) + 0.2 }),
           apply: (o, n) => { e.u = round((n.u0 + n.u1) / 2); e.v = round(n.v0 + 0.2); e.altezza = round(n.h1 - 0.2); } });
       } else if (e.tipo === 'palo') {
@@ -318,24 +349,25 @@
       const mid = (n) => [round((n.u0 + n.u1) / 2), round((n.v0 + n.v1) / 2)];
       const side = (n) => round(Math.max(n.u1 - n.u0, n.v1 - n.v0));
       if (M.pavimento) add({ ...b, obj: M.pavimento, percorso: 'pavimento', label: 'Pavimento del cortile', fields: ['u', 'v'], lock: { h0: true, h1: true }, fixed: true, box: () => rect(M.pavimento, 0, 0.03), apply: (o, n) => setRect(M.pavimento, n) });
-      (M.aiuole || []).forEach((a, k) => add({ ...b, obj: a, percorso: `aiuole.${k}`, label: `Aiuola ${a.id || k + 1} del cortile`, fields: ['u', 'v', 'altezza'], lock: { h0: true }, box: () => rect(a, 0, Number(a.altezza) || 0.42), apply: (o, n) => { setRect(a, n); a.altezza = round(n.h1); } }));
+      (M.aiuole || []).forEach((a, k) => add({ ...b, obj: a, percorso: `aiuole.${k}`, label: `Aiuola ${a.id || k + 1} del cortile`, fields: ['u', 'v', 'altezza'], lock: { h0: true }, giro: true, vincolo: 'suolo', box: () => rect(a, 0, Number(a.altezza) || 0.42), apply: (o, n) => { setRect(a, n); a.altezza = round(n.h1); } }));
       const G = M.gabbia;
       if (G) {
-        add({ ...b, obj: G, percorso: 'gabbia', label: 'Gabbia del silos', fields: ['u', 'v', 'altezza'], lock: { h0: true }, fixed: true, box: () => rect(G, 0.42, 0.42 + (Number(G.altezza) || 2)), apply: (o, n) => { setRect(G, n); G.altezza = round(n.h1 - 0.42); } });
+        add({ ...b, obj: G, percorso: 'gabbia', label: 'Gabbia del silos', fields: ['u', 'v', 'altezza'], lock: { h0: true }, fixed: true, giro: true, box: () => rect(G, 0.42, 0.42 + (Number(G.altezza) || 2)), apply: (o, n) => { setRect(G, n); G.altezza = round(n.h1 - 0.42); } });
         if (G.porta && typeof G.porta === 'object') add({ ...b, obj: G, percorso: 'gabbia.porta', label: 'Porticina della gabbia', fields: ['porta'], fixed: true,
           box: () => ({ u0: G.u[0] - 0.07, u1: G.u[0] - 0.01, v0: G.porta.v[0], v1: G.porta.v[1], h0: Number(G.porta.soglia) || 0.12, h1: Number(G.porta.sommita) || 2.05 }),
           apply: (o, n) => { G.porta = Object.assign({}, G.porta, { v: [round(n.v0), round(n.v1)], soglia: round(n.h0), sommita: round(n.h1) }); } });
       }
-      (M.pilastri || []).forEach((p, k) => add({ ...b, obj: p, percorso: `pilastri.${k}`, label: `Pilastro ${k + 1} del portico`, fields: ['u', 'v', 'altezza'], lock: { h0: true }, box: () => rect(p, 0, Number(p.altezza) || 4.5), apply: (o, n) => { setRect(p, n); p.altezza = round(n.h1); } }));
+      (M.pilastri || []).forEach((p, k) => add({ ...b, obj: p, percorso: `pilastri.${k}`, label: `Pilastro ${k + 1} del portico`, fields: ['u', 'v', 'altezza'], lock: { h0: true }, giro: true, box: () => rect(p, 0, Number(p.altezza) || 4.5), apply: (o, n) => { setRect(p, n); p.altezza = round(n.h1); } }));
       if (M.portico) add({ ...b, obj: M.portico, percorso: 'portico', label: 'Portico', fields: ['u', 'v', 'soffitto'], lock: { h0: true }, fixed: true, box: () => rect(M.portico, 0, Number(M.portico.soffitto) || 4.5), apply: (o, n) => { setRect(M.portico, n); M.portico.soffitto = round(n.h1); } });
-      (M.magnolie || []).forEach((m, k) => add({ ...b, obj: m, percorso: `magnolie.${k}`, label: `Magnolia ${m.id || k + 1}`, fields: ['u', 'v', 'raggio', 'altezza'], lock: { h0: true }, box: () => ({ ...circ(m, Number(m.raggio) || 3), h0: 0, h1: Number(m.altezza) || 12 }), apply: (o, n) => { [m.u, m.v] = mid(n); m.raggio = round(side(n) / 2); m.altezza = round(n.h1); } }));
+      (M.magnolie || []).forEach((m, k) => add({ ...b, obj: m, percorso: `magnolie.${k}`, label: `Magnolia ${m.id || k + 1}`, fields: ['u', 'v', 'raggio', 'altezza'], lock: { h0: true }, giro: true, pivot: () => [m.u, m.v], box: () => ({ ...circ(m, Number(m.raggio) || 3), h0: 0, h1: Number(m.altezza) || 12 }), apply: (o, n) => { [m.u, m.v] = mid(n); m.raggio = round(side(n) / 2); m.altezza = round(n.h1); } }));
       const S = M.serbatoio;
-      if (S) add({ ...b, obj: S, percorso: 'serbatoio', label: "Silos dell'azoto", fields: ['u', 'v', 'raggio', 'altezza'], lock: { h0: true }, fixed: true, box: () => ({ ...circ(S, Number(S.raggio) || 0.8), h0: 0, h1: Number(S.altezza) || 4.2 }), apply: (o, n) => { [S.u, S.v] = mid(n); S.raggio = round(side(n) / 2); S.altezza = round(n.h1); } });
-      (M.tombini || []).forEach((t, k) => add({ ...b, obj: t, percorso: `tombini.${k}`, label: `Tombino ${k + 1}`, fields: ['u', 'v', 'lato'], lock: { h0: true, h1: true }, box: () => ({ ...circ(t, (Number(t.lato) || 0.6) / 2), h0: 0, h1: 0.04 }), apply: (o, n) => { [t.u, t.v] = mid(n); t.lato = side(n); } }));
-      (M.transenne || []).forEach((t, k) => add({ ...b, obj: t, percorso: `transenne.${k}`, label: `Transenna ${k + 1}`, fields: ['u', 'v', 'lunghezza'], lock: { h0: true, h1: true }, box: () => ({ u0: t.u, u1: t.u + (Number(t.lunghezza) || 2), v0: t.v - 0.05, v1: t.v + 0.05, h0: 0, h1: 1.1 }), apply: (o, n) => { t.u = round(n.u0); t.lunghezza = round(n.u1 - n.u0); t.v = round((n.v0 + n.v1) / 2); } }));
+      if (S) add({ ...b, obj: S, percorso: 'serbatoio', label: "Silos dell'azoto", fields: ['u', 'v', 'raggio', 'altezza'], lock: { h0: true }, fixed: true, giro: true, pivot: () => [S.u, S.v], box: () => ({ ...circ(S, Number(S.raggio) || 0.8), h0: 0, h1: Number(S.altezza) || 4.2 }), apply: (o, n) => { [S.u, S.v] = mid(n); S.raggio = round(side(n) / 2); S.altezza = round(n.h1); } });
+      (M.tombini || []).forEach((t, k) => add({ ...b, obj: t, percorso: `tombini.${k}`, label: `Tombino ${k + 1}`, fields: ['u', 'v', 'lato', 'quota'], lock: { h0: true, h1: true }, giro: true, vincolo: 'superficie', pivot: () => [t.u, t.v], box: () => ({ ...circ(t, (Number(t.lato) || 0.6) / 2), h0: Number(t.quota) || 0, h1: (Number(t.quota) || 0) + 0.04 }), apply: (o, n) => { [t.u, t.v] = mid(n); t.lato = side(n); t.quota = round(n.h0); } }));
+      (M.transenne || []).forEach((t, k) => add({ ...b, obj: t, percorso: `transenne.${k}`, label: `Transenna ${k + 1}`, fields: ['u', 'v', 'lunghezza', 'angoloDeg'], lock: { h0: true, h1: true }, giro: true, angKey: 'angoloDeg', pivot: () => [t.u, t.v], box: () => ({ u0: t.u, u1: t.u + (Number(t.lunghezza) || 2), v0: t.v - 0.05, v1: t.v + 0.05, h0: 0, h1: 1.1 }), apply: (o, n) => { t.u = round(n.u0); t.lunghezza = round(n.u1 - n.u0); t.v = round((n.v0 + n.v1) / 2); } }));
       const TB = M.tubi;
       if (TB) add({ ...b, obj: TB, percorso: 'tubi', label: 'Tubi del gas (3 bombole)', fields: ['u', 'v', 'ruota', 'scala'], lock: { h0: true, h1: true },
-        box: () => { const k = Number(TB.scala) || 1, along = 0.66 * k, across = 0.3 * k, turn = (Math.round((Number(TB.ruota) || 0) / 90) % 2) !== 0, du = (turn ? across : along) / 2, dv = (turn ? along : across) / 2; return { u0: TB.u - du, u1: TB.u + du, v0: TB.v - dv, v1: TB.v + dv, h0: 0, h1: 1.67 * k }; },
+        giro: true, angKey: 'ruota', angId: 'tubi', pivot: () => [TB.u, TB.v],
+        box: () => { const k = Number(TB.scala) || 1, du = (0.66 * k) / 2, dv = (0.3 * k) / 2; return { u0: TB.u - du, u1: TB.u + du, v0: TB.v - dv, v1: TB.v + dv, h0: 0, h1: 1.67 * k }; }, // non ruotata: gira la cornice «rot:tubi»
         apply: (o, n) => { [TB.u, TB.v] = mid(n); } });
       const TS = M.tuboScarico;
       if (TS && Array.isArray(TS.percorso)) {
@@ -368,10 +400,11 @@
     if (E) (E.primitive || []).forEach((pr) => {
       const poly = pr.forma === 'marciapiede' || (pr.forma === 'aiuola' && pr.tipo !== 'rotonda');
       const label = pr.forma === 'oggetto' ? nomeOggetto(pr.modello) : pr.forma === 'marciapiede' ? 'Marciapiede' : pr.forma === 'aiuola' ? `Aiuola ${TIPI_AIUOLA[pr.tipo] || ''} (${TERRENI[pr.terreno] || 'prato'})` : `${FORME[pr.forma] || FORME.box} in ${pr.materiale || 'travertino'}`;
-      add({ sorgente: 'aggiunta', frameKey: pr.cornice || 'lato0', obj: pr, percorso: pr.id, nome: pr.id, label, fields: ['id', 'forma', 'materiale', 'box', 'poligono', 'base', 'altezza', 'tipo', 'terreno', 'cordolo', 'discese', 'raggio', 'raggi', 'modello', 'ruota', 'angolo', 'scritta', 'cartello', 'logoMuseo', 'cornice'], primitiva: true,
-        lock: pr.forma === 'marciapiede' || pr.forma === 'aiuola' ? { h0: true } : {},
+      add({ sorgente: 'aggiunta', frameKey: pr.cornice || 'lato0', obj: pr, percorso: pr.id, nome: pr.id, label, fields: ['id', 'forma', 'materiale', 'box', 'poligono', 'base', 'altezza', 'tipo', 'terreno', 'cordolo', 'discese', 'raggio', 'raggi', 'modello', 'ruota', 'angolo', 'specchio', 'scritta', 'cartello', 'logoMuseo', 'cornice'], primitiva: true,
+        vincolo: pr.forma === 'marciapiede' || pr.forma === 'aiuola' ? 'suolo' : pr.forma === 'oggetto' && A_PARETE.includes(pr.modello) ? 'parete' : pr.forma === 'oggetto' && pr.modello === 'tombino' ? 'superficie' : undefined,
+        lock: pr.forma === 'marciapiede' || pr.forma === 'aiuola' ? { h0: true } : pr.forma === 'oggetto' && (A_PARETE.includes(pr.modello) || pr.modello === 'tombino') ? { h0: true } : {},
         box: poly ? () => ({ ...bboxPts(pr.poligono), h0: Number(pr.base) || 0, h1: (Number(pr.base) || 0) + (Number(pr.altezza) || 0.15) }) : () => pr.box,
-        apply: poly ? (o, n) => { pr.poligono = scalePts(pr.poligono, o, n); pr.altezza = round(Math.max(0.05, n.h1 - n.h0)); } : (o, n) => { pr.box = roundBox(angleOf(pr) ? unturnBox(n, o, angleOf(pr)) : n); }, // con un angolo la scatola è nella cornice ruotata
+        apply: poly ? (o, n) => { pr.poligono = scalePts(pr.poligono, o, n); pr.altezza = round(Math.max(0.05, n.h1 - n.h0)); if (pr.forma === 'marciapiede' || pr.forma === 'aiuola') pr.base = 0; } : (o, n) => { pr.box = roundBox(angleOf(pr) ? unturnBox(n, o, angleOf(pr)) : n); }, // con un angolo la scatola è nella cornice ruotata
         verts: poly ? { get: () => pr.poligono, set: (q) => { pr.poligono = q; } } : undefined });
     });
     return out;
@@ -515,11 +548,12 @@
     edges.renderOrder = 998; sel.vis.add(edges);
     const hs = [], rot = rotOn();
     if (rot) { // modo Ruota: al posto delle maniglie un anello orizzontale attorno alla scatola, con una maniglia all'angolo dell'oggetto
-      const pr = sel.it.obj, fb = frameBy(pr.cornice || 'lato0'); if (!fb) return;
-      const R = Math.max(0.6, 0.5 * Math.hypot(b.u1 - b.u0, b.v1 - b.v0) + 0.4), a = (angleOf(pr) * Math.PI) / 180, hr = b.h0 + 0.05, ring = [];
-      for (let i = 0; i < 96; i += 1) ring.push(toWorld(fb, um + R * Math.cos((i / 96) * 2 * Math.PI), vm + R * Math.sin((i / 96) * 2 * Math.PI), hr));
-      const hw = toWorld(fb, um + R * Math.cos(a), vm + R * Math.sin(a), hr), mat = () => new T.LineBasicMaterial({ color: 0x822433, depthTest: false, transparent: true });
-      const rl = new T.LineLoop(new T.BufferGeometry().setFromPoints(ring), mat()), sp = new T.LineSegments(new T.BufferGeometry().setFromPoints([toWorld(fb, um, vm, hr), hw]), mat());
+      const fb = frameBy(frameBaseOfItem(sel.it)); if (!fb) return;
+      const pvt = ringCentre(sel.it, b), rum = pvt[0], rvm = pvt[1]; // l'anello gira attorno al perno dell'oggetto
+      const R = Math.max(0.6, 0.5 * Math.hypot(b.u1 - b.u0, b.v1 - b.v0) + 0.4), a = (angShown(sel.it) * Math.PI) / 180, hr = b.h0 + 0.05, ring = [];
+      for (let i = 0; i < 96; i += 1) ring.push(toWorld(fb, rum + R * Math.cos((i / 96) * 2 * Math.PI), rvm + R * Math.sin((i / 96) * 2 * Math.PI), hr));
+      const hw = toWorld(fb, rum + R * Math.cos(a), rvm + R * Math.sin(a), hr), mat = () => new T.LineBasicMaterial({ color: 0x822433, depthTest: false, transparent: true });
+      const rl = new T.LineLoop(new T.BufferGeometry().setFromPoints(ring), mat()), sp = new T.LineSegments(new T.BufferGeometry().setFromPoints([toWorld(fb, rum, rvm, hr), hw]), mat());
       rl.renderOrder = sp.renderOrder = 998; sel.vis.add(rl, sp); sel.ring = { pts: ring };
       hs.push({ role: 'rotate', world: hw });
     } else {
@@ -568,18 +602,26 @@
   // «⤡ Sposta» (maniglie della scatola) / «⟳ Ruota» (anello con maniglia): selettore a due stati per l'oggetto selezionato.
   // 'angolo': solidi e oggetti del catalogo (anello libero, campo `angolo`); 'orienta': totem e panchine, dove Ruota alterna u↔v;
   // null: tutto il resto (nessuna rotazione libera inventata).
-  const ROT_STEP = 5, ROT_SNAP = 4, NO_TURN = 'Questo oggetto non si ruota: si ruotano i solidi e gli oggetti aggiunti dal catalogo.';
+  // 'angolo': oggetti con un campo angolo (gradi attorno al perno) letto dal costruttore; 'vertici': poligoni (marciapiedi, aiuole, aree, terrazze,
+  // ringhiere), che si ruotano girando i vertici attorno al centro della scatola; 'orienta': alterna u↔v; null: non si ruota
+  // (edifici, terreno, porte e portoni che restano attaccati al muro, scale antincendio, alberi del rilievo, parti di un altro oggetto)
+  const ROT_STEP = 5, ROT_SNAP = 4, NO_TURN = 'Questo oggetto non si ruota: edifici, terreno, scale antincendio, alberi del rilievo e parti di un altro oggetto restano come sono.';
+  const NO_TURN_PARETE = 'Le porte restano attaccate alla parete: si orientano da sole, parallele al muro più vicino, mentre le sposti (Ruota le staccherebbe dal muro).';
+  const noTurnMsg = () => (sel && sel.type === 'item' && sel.it.vincolo === 'parete' ? NO_TURN_PARETE : NO_TURN);
   function turnKind() {
     if (!sel || sel.type !== 'item') return null;
     const it = sel.it;
-    if (it.primitiva) { const pr = it.obj; return pr.box && TURNABLE.includes(pr.forma) ? 'angolo' : null; }
+    if (it.vincolo === 'parete') return null;
+    if (it.primitiva) { const pr = it.obj; if (pr.box && TURNABLE.includes(pr.forma)) return 'angolo'; return it.verts ? 'vertici' : null; }
+    if (it.angKey) return 'angolo';
+    if (it.verts) return 'vertici';
     return it.fields.includes('orienta') ? 'orienta' : null;
   }
-  const rotOn = () => !!(sel && sel.rot && turnKind() === 'angolo');
+  const rotOn = () => !!(sel && sel.rot && ['angolo', 'vertici'].includes(turnKind()));
   function toggleRot() {
     if (!sel || drag) return;
     const kind = turnKind();
-    if (!kind) { hint(NO_TURN); return; }
+    if (!kind) { hint(noTurnMsg()); return; }
     if (kind === 'orienta') { // lungo u ↔ lungo v, salvato come gli altri campi
       const o = sel.it.obj; o.orienta = o.orienta === 'v' ? 'u' : 'v';
       saveItem(sel.it); rebuild(sel.it.sorgente); hint('Orientamento: lato lungo ' + (o.orienta === 'v' ? 'lungo il vialetto (v)' : 'lungo u') + '.'); return;
@@ -591,7 +633,7 @@
     const kind = turnKind(), row = el('div', 'ed-row ed-seg'), rot = rotOn();
     const mv = button('⤡ Sposta', () => { if (rotOn()) toggleRot(); }), rt = button('⟳ Ruota', toggleRot);
     mv.setAttribute('aria-pressed', String(!rot)); rt.setAttribute('aria-pressed', String(rot));
-    if (!kind) { rt.classList.add('ed-off'); rt.setAttribute('aria-disabled', 'true'); rt.title = NO_TURN; }
+    if (!kind) { rt.classList.add('ed-off'); rt.setAttribute('aria-disabled', 'true'); rt.title = noTurnMsg(); }
     else if (kind === 'orienta') rt.title = 'Alterna l’orientamento (lungo u / lungo v)';
     row.append(mv, rt); return row;
   }
@@ -601,7 +643,7 @@
     if (!r.near) {
       r.near = [];
       for (const it of liveItems()) {
-        if (it.key === sel.it.key || !it.primitiva || it.gone() || (it.obj.cornice || 'lato0') !== (sel.it.obj.cornice || 'lato0') || !angleOf(it.obj)) continue;
+        if (it.key === sel.it.key || !it.primitiva || it.gone() || it.frameKey !== sel.it.frameKey || !angleOf(it.obj)) continue;
         let nb = null; try { nb = it.box(); } catch (_) { /* scatola non calcolabile */ }
         if (nb && Math.hypot(mid(nb, 'u') - r.um, mid(nb, 'v') - r.vm) <= MAG_RANGE) r.near.push({ a: angleOf(it.obj), label: it.label });
       }
@@ -617,8 +659,15 @@
     const r = drag.rot, q = toLocal(r.fb, p), pr = sel.it.obj;
     const raw = r.a0 + ((Math.atan2(q.v - r.vm, q.u - r.um) - r.ang0) * 180) / Math.PI, hit = turnMagnet(raw, r);
     const a = ((Math.round(hit ? hit.a : Math.round(raw / ROT_STEP) * ROT_STEP) % 360) + 360) % 360;
-    r.cur = a; pr.angolo = a; sel.frameKey = frameOfItem(sel.it);
-    if (!slideTimer) slideTimer = setTimeout(() => { slideTimer = 0; rebuild('aggiunta'); }, 90); // l'oggetto gira mentre trascini, come col cursore
+    if (r.vts0) { // poligoni: ruotano i vertici dal valore di partenza, attorno al centro della scatola
+      const rad = (a * Math.PI) / 180, co = Math.cos(rad), si = Math.sin(rad);
+      sel.it.verts.set(r.vts0.map((pt) => { const du = pt[0] - r.um, dv = pt[1] - r.vm, o = [round(r.um + du * co - dv * si), round(r.vm + du * si + dv * co)]; return pt.length > 2 ? o.concat(pt.slice(2)) : o; }));
+      r.cur = a; sel.vAng = a; sel.box = selBox();
+      if (!slideTimer) slideTimer = setTimeout(() => { slideTimer = 0; rebuild(sel.it.sorgente); }, 90);
+      drawSel(); hint(`Rotazione ${a}°` + (hit ? ' · ' + hit.text : '')); return;
+    }
+    r.cur = a; setAngItem(sel.it, a); sel.frameKey
+    if (!slideTimer) slideTimer = setTimeout(() => { slideTimer = 0; rebuild(sel.it.sorgente); }, 90); // l'oggetto gira mentre trascini, come col cursore
     drawSel();
     hint(`Rotazione ${a}°` + (hit ? ' · ' + hit.text + ' (Alt sospende l’aggancio)' : ''));
   }
@@ -692,8 +741,12 @@
           inp.addEventListener('change', () => change('scritta', inp.value.trim()));
           nodes.push(el('label', '', 'Testo della scritta'), inp);
         }
-        const r2 = el('div', 'ed-row'); r2.append(button('Ruota di 90°', redo(turn90)), button('Misure originali', redo(fitNatural))); nodes.push(r2);
-        nodes.push(...angleSlider(pr)); // angolo libero oltre ai 90° di «ruota»
+        const wall = A_PARETE.includes(pr.modello), r2 = el('div', 'ed-row'); // le porte restano parallele al muro: niente rotazione a mano
+        if (!wall) r2.append(button('Ruota di 90°', redo(turn90)));
+        r2.append(button('Misure originali', redo(fitNatural))); nodes.push(r2);
+        if (wall) nodes.push(el('p', 'ed-meta', 'Porta: poggiata al suolo e attaccata alla parete più vicina (entro 1 m), con la faccia posteriore a filo del muro e parallela ad esso; si orienta da sola quando la sposti.'));
+        else nodes.push(...angleSlider(pr)); // angolo libero oltre ai 90° di «ruota»
+        const mr = el('div', 'ed-row'); mr.append(mirrorButton('Specchia ↔', 'u'), mirrorButton('Specchia ↕', 'v')); nodes.push(mr);
       } else if (pr.forma === 'aiuola') {
         nodes.push(...pick('Forma dell’aiuola', Object.entries(TIPI_AIUOLA), pr.tipo || 'squadrata', (v) => { reshapeBed(pr, v); saveItem(sel.it); rebuild('aggiunta'); }));
         nodes.push(...pick('Terreno', Object.entries(TERRENI), pr.terreno || 'prato', (v) => change('terreno', v)));
@@ -712,6 +765,7 @@
             pr.raggi[sel.corner] = v;
           }));
         } else nodes.push(el('p', 'ed-meta', 'Tocca una maniglia gialla (senza trascinarla) per cambiare il raggio di un solo angolo.'));
+        const mr = el('div', 'ed-row'); mr.append(mirrorButton('Specchia ↔', 'u'), mirrorButton('Specchia ↕', 'v')); nodes.push(mr);
         const tr = el('div', 'ed-row');
         if (pr.forma === 'marciapiede') tr.append(tool('discesa', 'Discese'));
         tr.append(tool('angolo+', 'Aggiungi angolo'), tool('angolo-', 'Togli angolo'));
@@ -726,6 +780,20 @@
     row.append(button('Fine', () => deselect(), true));
     nodes.push(row); openCard(nodes, 'dock');
   }
+  // «Specchia»: poligoni (marciapiedi, aiuole) → vertici, raggi e discese specchiati rispetto al centro della scatola; oggetti del catalogo → campo
+  // `specchio` ('u', 'v' o 'uv': scala −1 sull'asse, il costruttore la applica con le normali corrette)
+  function mirrorPoly(pr, ax) {
+    const P = pr.poligono, b = bboxPts(P), n = P.length, i = ax === 'u' ? 0 : 1, c = ax === 'u' ? b.u0 + b.u1 : b.v0 + b.v1;
+    pr.poligono = P.map((q) => { const o = q.slice(); o[i] = round(c - q[i]); return o; }).reverse(); // l'ordine si inverte per tenere il verso del contorno
+    if (Array.isArray(pr.raggi)) pr.raggi = pr.raggi.slice().reverse();
+    if (Array.isArray(pr.discese)) pr.discese = pr.discese.map((d) => Object.assign({}, d, { lato: (2 * n - 2 - d.lato) % n, t: round(1 - d.t) })); // il lato k diventa n−2−k, percorso al contrario
+  }
+  const mirrorButton = (label, ax) => button(label, () => {
+    const it = sel.it, pr = it.obj;
+    if (pr.forma === 'oggetto') { const m = String(pr.specchio || ''), has = m.includes(ax), next = (has ? m.replace(ax, '') : m + ax).split('').sort().join(''); if (next) pr.specchio = next; else delete pr.specchio; } // 'uv' in ordine fisso
+    else mirrorPoly(pr, ax);
+    saveItem(it); rebuild(it.sorgente); hint('Specchiato ' + (ax === 'u' ? 'lungo u (↔)' : 'lungo v (↕)') + '.');
+  });
   const TOOL_HINT = { discesa: 'Tocca un lato del marciapiede dove mettere la discesa verso la strada; tocca una discesa per toglierla.', 'angolo+': 'Tocca un lato: lì nasce un nuovo angolo, poi trascina la sua maniglia gialla.', 'angolo-': 'Tocca un angolo (maniglia gialla) per toglierlo.' };
   const segParam = (q, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((q.u - a[0]) * dx + (q.v - a[1]) * dy) / L)); return { t, d: Math.hypot(q.u - a[0] - t * dx, q.v - a[1] - t * dy) }; };
   function nearestEdge(P, q) { let best = null; P.forEach((a, i) => { const r = segParam(q, a, P[(i + 1) % P.length]); if (!best || r.d < best.d) best = { i, t: r.t, d: r.d }; }); return best; }
@@ -825,36 +893,109 @@
 
   /* ---------- trascinamento ---------- */
   function startDrag(m, e) {
-    const h = m.userData.handle, wp = m.position.clone(), f = frameBy(sel.frameKey);
+    const h = m.userData.handle, wp = m.position.clone(), baseMove = h.role === 'move' && sel.type === 'item' && sel.it.vincolo === 'parete', f = frameBy(baseMove ? frameBaseOfItem(sel.it) : sel.frameKey);
     let plane;
     if (h.role === 'rotate') { // l'angolo segue il puntatore proiettato sul piano orizzontale dell'anello, a partire da dove lo si afferra
-      const pr = sel.it.obj, fb = frameBy(pr.cornice || 'lato0'), b = sel.box, p0 = new T.Vector3();
+      const pr = sel.it.obj, fb = frameBy(frameBaseOfItem(sel.it)), b = sel.box, p0 = new T.Vector3(), vert = turnKind() === 'vertici';
       plane = new T.Plane(new T.Vector3(0, 1, 0), -wp.y); if (!fb || !rayFrom(e).ray.intersectPlane(plane, p0)) return false;
-      const um = (b.u0 + b.u1) / 2, vm = (b.v0 + b.v1) / 2, q = toLocal(fb, p0);
-      drag = { h, plane, box0: clone(b), pointerId: e.pointerId, rot: { fb, um, vm, ang0: Math.atan2(q.v - vm, q.u - um), a0: angleOf(pr), cur: angleOf(pr), raw0: pr.angolo } };
+      const [um, vm] = ringCentre(sel.it, b), q = toLocal(fb, p0);
+      drag = { h, plane, box0: clone(b), pointerId: e.pointerId, rot: { fb, um, vm, ang0: Math.atan2(q.v - vm, q.u - um), a0: vert ? 0 : angOfItem(sel.it), cur: vert ? 0 : angOfItem(sel.it), raw0: vert ? undefined : sel.it.primitiva ? pr.angolo : pr[sel.it.angKey], vts0: vert ? clone(sel.it.verts.get()) : null } };
+      if (vert) sel.vAng = 0;
       return true;
     }
     if (h.role === 'face' && h.axis === 'h') { const dir = new T.Vector3(); camera.getWorldDirection(dir); dir.y = 0; if (dir.lengthSq() < 1e-6) dir.set(0, 0, 1); plane = new T.Plane().setFromNormalAndCoplanarPoint(dir.normalize(), wp); }
     else plane = new T.Plane(new T.Vector3(0, 1, 0), -wp.y);
     const p0 = new T.Vector3(); if (!rayFrom(e).ray.intersectPlane(plane, p0)) return false;
-    drag = { h, plane, q0: toLocal(f, p0), box0: clone(sel.box), verts: sel.type === 'item' && sel.it.verts ? clone(sel.it.verts.get()) : null, pointerId: e.pointerId };
+    drag = { h, plane, q0: toLocal(f, p0), box0: clone(sel.box), verts: sel.type === 'item' && sel.it.verts ? clone(sel.it.verts.get()) : null, pointerId: e.pointerId, baseMove, pv: sel.type === 'item' && sel.it.vincolo && !sel.it.primitiva ? pivotOf(sel.it) : null };
     return true;
   }
   function moveDrag(e) {
     if (drag.h.role === 'rotate') { rotMove(e); return; }
     const p = new T.Vector3(); if (!rayFrom(e).ray.intersectPlane(drag.plane, p)) return;
-    const q = toLocal(frameBy(sel.frameKey), p), d = { u: q.u - drag.q0.u, v: q.v - drag.q0.v, h: q.h - drag.q0.h }, h = drag.h, b = clone(drag.box0);
+    const q = toLocal(frameBy(drag.baseMove ? frameBaseOfItem(sel.it) : sel.frameKey), p), d = { u: q.u - drag.q0.u, v: q.v - drag.q0.v, h: q.h - drag.q0.h }, h = drag.h, b = clone(drag.box0);
     const setSide = (ax, s) => { const k = ax + s, val = snap(drag.box0[k] + d[ax]); b[k] = s === '0' ? Math.min(val, b[ax + '1'] - MIN) : Math.max(val, b[ax + '0'] + MIN); };
     if (h.role === 'face') setSide(h.axis, h.side);
     else if (h.role === 'corner') { setSide('u', h.u); setSide('v', h.v); }
     else if (h.role === 'move') { const du = snap(d.u), dv = snap(d.v); b.u0 += du; b.u1 += du; b.v0 += dv; b.v1 += dv; }
     else if (h.role === 'vertex') { drag.vNew = clone(drag.verts); drag.vNew[h.k] = [round(snap(q.u)), round(snap(q.v))]; }
-    const caught = magnet(h, b);
+    if (drag.baseMove) { // porte e portoni: poggiati al suolo e attaccati al muro più vicino, con l'angolo preso dal muro
+      const w = snapParete(b, drag.box0); drag.wall = w; sel.box = roundBox(w.box); sel.frameKey = 'tmp'; placeTmpFrame(w);
+      drawSel(); drawGuides([]); hint(sel.it.label + ': ' + dims(sel.box) + (w.hit ? ` · attaccata al muro, ruotata di ${w.ang}°` : ' · nessun muro entro 1 m') + ' · poggiata a terra');
+      return;
+    }
+    const vinc = sel.type === 'item' && sel.it.vincolo, caught = vinc ? [] : magnet(h, b); // con un vincolo niente calamita
+    if (vinc) { const c = constrainBox(b); Object.assign(b, c); }
     sel.box = roundBox(b);
     if (sel.type === 'prim') primApply(sel.p, sel.orig, sel.box); // le primitive si deformano subito
     if (h.role === 'vertex') { const vb = bboxPts(drag.vNew); Object.assign(sel.box, roundBox({ ...vb, h0: b.h0, h1: b.h1 })); }
     drawSel(); drawGuides(caught);
     hint((sel.type === 'item' ? sel.it.label : 'Pezzo') + ': ' + dims(sel.box) + caught.map((g) => ' · ' + g.text).join('') + (caught.length ? ' (Alt sospende la calamita)' : ''));
+  }
+  /* ---------- vincoli: suolo, superficie sottostante, parete ---------- */
+  // raggi verso la scena (senza gli strati dell'editor): solo superfici vere, non il guscio dell'oggetto che si sta muovendo né le chiome degli alberi
+  const castTargets = () => scene.children.filter((o) => o !== fx && o !== pins && o !== patchGroup && o.visible);
+  const okHit = (h) => { const o = h.object, mat = Array.isArray(o.material) ? o.material[(h.face && h.face.materialIndex) || 0] : o.material; return o.isMesh && !!h.face && shown(o) && !(mat && mat.visible === false); };
+  function ownHit(o, box, fb) {
+    for (let x = o; x; x = x.parent) { if (x.name === 'alberi') return true; if (sel.it.primitiva && x.userData && x.userData.primitiva === sel.it.obj.id) return true; }
+    const bb = new T.Box3().setFromObject(o); if (bb.isEmpty()) return false;
+    return inBox(box, toLocal(fb, bb.getCenter(new T.Vector3())), 0.05); // un pezzo con il centro dentro la scatola è dell'oggetto stesso
+  }
+  // quota (nella cornice fb) della prima superficie orizzontale sotto il punto (u, v), partendo da `from`
+  function floorAt(fb, u, v, from, box) {
+    const rc = new T.Raycaster(toWorld(fb, u, v, from), new T.Vector3(0, -1, 0), 0, 60);
+    for (const h of rc.intersectObjects(castTargets(), true)) {
+      if (!okHit(h) || ownHit(h.object, box, fb)) continue;
+      if (h.face.normal.clone().transformDirection(h.object.matrixWorld).y < 0.5) continue; // solo piani quasi orizzontali
+      return toLocal(fb, h.point).h;
+    }
+    return null;
+  }
+  // scatola vincolata, nella cornice della selezione: 'suolo' = base alla quota 0 della cornice (terreno / pavimento del cortile, mai sopra altri oggetti);
+  // 'superficie' = base sulla superficie orizzontale sotto l'oggetto (a filo del pavimento), senza uscire dal piano orizzontale
+  function constrainBox(b) {
+    const it = sel.it, hh = b.h1 - b.h0, fb = frameBy(frameBaseOfItem(it)); if (!fb) return b;
+    if (it.vincolo === 'suolo') return { ...b, h0: 0, h1: hh };
+    if (it.vincolo === 'superficie') {
+      const a = angOfItem(it), bb = a ? unturnBox(b, drag.box0, a, drag.pv || undefined) : b, cu = (bb.u0 + bb.u1) / 2, cv = (bb.v0 + bb.v1) / 2;
+      const f = floorAt(fb, cu, cv, Math.max(drag.box0.h0, b.h0) + 0.6, { ...bb, h0: bb.h0 - 0.3, h1: bb.h1 + 0.3 });
+      return f == null ? b : { ...b, h0: round(f), h1: round(f + hh) };
+    }
+    return b;
+  }
+  // porta o portone: base sulla superficie sotto, faccia posteriore a filo del muro più vicino (raggi orizzontali entro 1 m dal bordo), parallela al muro.
+  // «Davanti» = +z locale dell'oggetto, cioè verso −v a angolo 0: l'angolo è quindi atan2(nu, −nv) con (nu, nv) la normale uscente dal muro.
+  function snapParete(b, box0) {
+    const it = sel.it, pr = it.obj, fb = frameBy(frameBaseOfItem(it)), odd = (((Number(pr.ruota) || 0) % 180) + 180) % 180 === 90;
+    const w0 = (b.u1 - b.u0), d0 = (b.v1 - b.v0), sw = odd ? d0 : w0, sd = odd ? w0 : d0, hh = b.h1 - b.h0, cu = (b.u0 + b.u1) / 2, cv = (b.v0 + b.v1) / 2;
+    const f = floorAt(fb, cu, cv, b.h0 + 0.6, { ...b, h0: b.h0 - 0.3, h1: b.h1 + 0.3 }), h0 = f == null ? b.h0 : f;
+    const cur = angOfItem(it), out = { box: { u0: b.u0, u1: b.u1, v0: b.v0, v1: b.v1, h0, h1: h0 + hh }, ang: cur, hit: false };
+    const selBx = { u0: cu - sw / 2 - 0.05, u1: cu + sw / 2 + 0.05, v0: cv - sd / 2 - 0.05, v1: cv + sd / 2 + 0.05, h0: h0 - 0.1, h1: h0 + hh + 0.1 };
+    const o = toWorld(fb, cu, cv, h0 + 1), range = sd / 2 + 1, targets = castTargets();
+    let best = null;
+    for (let k = 0; k < 16; k += 1) {
+      const dir = new T.Vector3(Math.cos((k * Math.PI) / 8), 0, Math.sin((k * Math.PI) / 8));
+      for (const h of new T.Raycaster(o, dir, 0, range).intersectObjects(targets, true)) {
+        if (!okHit(h) || ownHit(h.object, selBx, fb)) continue;
+        const n = h.face.normal.clone().transformDirection(h.object.matrixWorld);
+        if (Math.abs(n.y) > 0.35) continue; // solo pareti verticali
+        if (n.dot(dir) > 0) n.negate();
+        if (!best || h.distance < best.d) best = { d: h.distance, n, pt: h.point };
+        break;
+      }
+    }
+    if (!best) return out;
+    const nl = fb.worldToLocal(o.clone().add(best.n)).sub(fb.worldToLocal(o.clone())), L = Math.hypot(nl.x, nl.z) || 1, nu = nl.x / L, nv = -nl.z / L;
+    const W = toLocal(fb, best.pt), c0 = W.u + nu * (sd / 2), c1 = W.v + nv * (sd / 2); // centro: faccia posteriore a filo del muro
+    out.ang = normAng(Math.round((Math.atan2(nu, -nv) * 180) / Math.PI * 2) / 2); out.hit = true;
+    out.box = { u0: c0 - sw / 2, u1: c0 + sw / 2, v0: c1 - sd / 2, v1: c1 + sd / 2, h0, h1: h0 + hh };
+    return out;
+  }
+  // cornice provvisoria durante lo spostamento di una porta: ruotata dell'angolo del muro agganciato attorno al centro della scatola
+  function placeTmpFrame(w) {
+    const base = frameBy(frameBaseOfItem(sel.it)); if (!base) return;
+    if (!tmpFrame || tmpFrame.parent !== base) { if (tmpFrame && tmpFrame.parent) tmpFrame.parent.remove(tmpFrame); tmpFrame = new T.Object3D(); tmpFrame.name = 'ed-tmp'; base.add(tmpFrame); }
+    const rad = (w.ang * Math.PI) / 180, c = new T.Vector3((w.box.u0 + w.box.u1) / 2, 0, -(w.box.v0 + w.box.v1) / 2);
+    tmpFrame.rotation.set(0, rad, 0); tmpFrame.position.copy(c).sub(c.clone().applyAxisAngle(new T.Vector3(0, 1, 0), rad)); tmpFrame.updateMatrix();
   }
   /* ---------- calamita: allineamenti e proporzioni con gli oggetti vicini ---------- */
   // Mentre si sposta o si ridimensiona una scatola, bordi, centro e quota si agganciano a quelli degli oggetti vicini
@@ -968,8 +1109,16 @@
     drawGuides([]);
     if (drag.h.role === 'rotate') { // salva come il cursore «Rotazione»: stesso campo `angolo`
       const r = drag.rot; drag = null; freeView(); clearTimeout(slideTimer); slideTimer = 0;
-      if (r.cur !== r.a0) { saveItem(sel.it); rebuild('aggiunta'); }
-      sel.frameKey = frameOfItem(sel.it); drawSel(); return;
+      if (r.vts0) sel.vAng = 0;
+      if (r.cur !== r.a0) { saveItem(sel.it); rebuild(sel.it.sorgente); }
+      sel.frameKey = frameOfItem(sel.it); sel.box = selBox(); drawSel(); return;
+    }
+    if (drag.baseMove && drag.wall) { // porta: scatola e angolo presi dal muro agganciato
+      const w = drag.wall, it = sel.it, pr = it.obj; drag = null; freeView();
+      if (tmpFrame) { if (tmpFrame.parent) tmpFrame.parent.remove(tmpFrame); tmpFrame = null; }
+      const moved = KEYS.some((k) => pr.box[k] !== roundBox(w.box)[k]) || angleOf(pr) !== w.ang || (w.hit && Number(pr.ruota));
+      if (moved) { pr.box = roundBox(w.box); if (w.ang) pr.angolo = w.ang; else delete pr.angolo; if (w.hit) pr.ruota = 0; saveItem(it); rebuild(it.sorgente); }
+      sel.frameKey = frameOfItem(it); sel.box = selBox(); drawSel(); infoCard(); return;
     }
     const h = drag.h, changed = h.role === 'vertex' ? !!drag.vNew && JSON.stringify(drag.vNew) !== JSON.stringify(drag.verts) : KEYS.some((k) => sel.box[k] !== drag.box0[k]);
     const box0 = drag.box0, vNew = drag.vNew; drag = null; freeView();
@@ -1372,11 +1521,15 @@
     down = null;
     if (!drag || (e && e.pointerId !== drag.pointerId)) return;
     sel.box = drag.box0; if (sel.type === 'prim') primApply(sel.p, sel.orig, sel.box);
-    if (drag.rot) { // rotazione interrotta: torna l'angolo di prima
+    if (drag.rot && drag.rot.vts0) { clearTimeout(slideTimer); slideTimer = 0; sel.it.verts.set(drag.rot.vts0); sel.vAng = 0; sel.box = selBox(); rebuild(sel.it.sorgente); }
+    else if (drag.rot) { // rotazione interrotta: torna l'angolo di prima
       const pr = sel.it.obj; clearTimeout(slideTimer); slideTimer = 0;
-      if (drag.rot.raw0 === undefined) delete pr.angolo; else pr.angolo = drag.rot.raw0;
-      sel.frameKey = frameOfItem(sel.it); rebuild('aggiunta');
+      const k = sel.it.primitiva ? 'angolo' : sel.it.angKey;
+      if (drag.rot.raw0 === undefined) delete pr[k]; else pr[k] = drag.rot.raw0;
+      sel.frameKey = frameOfItem(sel.it); rebuild(sel.it.sorgente);
     }
+    if (tmpFrame) { if (tmpFrame.parent) tmpFrame.parent.remove(tmpFrame); tmpFrame = null; }
+    if (sel.type === 'item') sel.frameKey = frameOfItem(sel.it);
     drag = null; freeView(); drawGuides([]); drawSel(); infoCard();
   }
   function onUp(e) {

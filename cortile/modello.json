@@ -127,6 +127,15 @@
     "rientro": 0.9,
     "altezzaCancello": 2.1,
     "sporgenza": 0.4,
+    "cassetta": {
+      "u": 5.09,
+      "larghezza": 1.0,
+      "altezza": 0.5,
+      "profondita": 0.23,
+      "h0": 0.42,
+      "tuboRosso": 0.78
+    },
+    "nota_cassetta": "Cassetta antincendio (bocciolone, vetro scuro in cornice di alluminio) addossata alla faccia su strada del muretto, a sinistra del varco (commento con foto 22/10: u 5.09, h 0.67). Misure stimate dalla foto (cassetta circa 100 x 50 cm, a filo con la sommita del muretto) da confermare; il tubo rosso a sinistra corre a h 0.78. Nella foto le barre della ringhiera sono color crema.",
     "nota_sporgenza": "Muretto e ringhiera si prolungano di \"sporgenza\" metri oltre i muri del cortile (u 0.2 e 16.6), con lo stesso passo delle barre (3 barre per lato), per chiudere il vuoto fra cancellata e ala (commento utente 21/10/2026).",
     "nota": "Cancello a U: anta principale arretrata di \"rientro\" metri verso il cortile, collegata al muretto da due cancelletti pedonali perpendicolari."
   },

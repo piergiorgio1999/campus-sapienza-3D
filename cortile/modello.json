@@ -86,6 +86,13 @@
     "raggio": 0.8,
     "altezza": 4.2
   },
+  "tubi": {
+    "u": 13.4,
+    "v": 0.8,
+    "ruota": 0,
+    "scala": 1,
+    "nota": "Fila di 3 bombole/tubi del gas (models/tubi-glb.json, dall'USDZ dell'utente: meta' della matrice 3x2). Modello in metri, fila lunga circa 0.66 m, profonda 0.3 m, alta circa 1.67 m. Dietro il silos dal lato della cancellata (lato opposto al portico), a destra del silos nella striscia fra il muretto (v 0.15) e il cordolo dell'aiuola B (v 1.45), a terra e parallela alla cancellata (ruota 0 = fila lungo u; 90 = lungo v). STIMA della posizione, da confermare."
+  },
   "gabbia": {
     "u": [
       10.65,

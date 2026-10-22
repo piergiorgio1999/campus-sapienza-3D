@@ -3593,8 +3593,40 @@
     // primitive aggiunte dall'editor nelle coordinate del cortile (duplicati dei suoi oggetti)
     for (const pr of (exteriorsCfg && exteriorsCfg.primitive) || []) if (pr.cornice === 'cortile' && !pr.rimosso && (pr.box || pr.poligono)) court.add(buildPrimitive(pr));
 
+    // bombole/tubi del gas dietro il silos (models/tubi-glb.json): 3 tubi in fila, a terra, parallela alla cancellata
+    const TB = M.tubi && !M.tubi.rimosso ? M.tubi : null;
+    if (TB) {
+      const slot = new THREE.Group(); slot.name = 'tubi';
+      slot.position.set(Number(TB.u) || 0, 0, -(Number(TB.v) || 0));
+      slot.rotation.y = (Number(TB.ruota) || 0) * Math.PI / 180;
+      slot.scale.setScalar(Number(TB.scala) || 1);
+      court.add(slot);
+      loadTubiModel().then((src) => {
+        if (!src || courtyardModel !== holder) return; // modello non disponibile o cortile già ricostruito
+        const m = src.clone(true);
+        m.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+        slot.add(m);
+      });
+    }
+
     scene.add(holder);
     courtyardModel = holder;
+  }
+  // GLB dei tubi: letto una volta sola, centrato sulla fila e appoggiato a terra (unità del file = metri, nessuna scala)
+  let tubiPromise = null;
+  function loadTubiModel() {
+    if (!tubiPromise) tubiPromise = (async () => {
+      await loadDependency('vendor/GLTFLoader.js', () => typeof THREE.GLTFLoader === 'function');
+      const data = await fetch('models/tubi-glb.json').then((r) => (r.ok ? r.json() : Promise.reject(new Error('tubi'))));
+      const bin = Uint8Array.from(atob(data.glb_base64), (ch) => ch.charCodeAt(0));
+      const gltf = await new Promise((resolve, reject) => new THREE.GLTFLoader().parse(bin.buffer, 'models/', resolve, reject));
+      const model = gltf.scene, box = new THREE.Box3().setFromObject(model), c = box.getCenter(new THREE.Vector3());
+      model.position.set(-c.x, -box.min.y, -c.z);
+      model.traverse((o) => { if (o.isMesh && o.material) { o.material.metalness = Math.min(o.material.metalness ?? 0.35, 0.35); o.material.needsUpdate = true; } });
+      const root = new THREE.Group(); root.add(model);
+      return root;
+    })().catch(() => { tubiPromise = null; return null; });
+    return tubiPromise;
   }
   /* ---------- alberi da OpenStreetMap (natural=tree, tree_row), in istanze ---------- */
   function rnd(i, k) { const s = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return s - Math.floor(s); }

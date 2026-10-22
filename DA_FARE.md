@@ -278,3 +278,13 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
 - **Cortili di CU014 rettificati** in `courtyards.json` (indici 4 e 5, quelli sotto i punti u 42,53 v −68,8 e u 12,29 v −72,32 del
   lato 0): sostituiti dal rettangolo allineato al lato 0 con l'ingombro del poligono originale: n. 4 circa 6,2 × 9,0 m
   (u 40,8–47,0, v −73,2…−64,2), n. 5 circa 7,8 × 7,5 m (u 10,3–18,2, v −73,9…−66,3). Gli altri poligoni sono invariati.
+
+## Cortile dell'azoto: tubi del gas (22/10/2026) — da verificare con il render
+- Modello dell'utente (USDZ, 6 tubi in matrice 3×2) tagliato a metà: restano 3 tubi in linea, GLB in `models/tubi-glb.json`
+  (1,6 MB), campo `tubi` in `cortile/modello.json` (`u` 13.4, `v` 0.8, `ruota` 0, `scala` 1), voce «Tubi del gas» nell'editor.
+- Posizione STIMATA: dietro il silos dal lato della cancellata (opposto al portico, v basso), a destra del silos, nella striscia fra
+  il muretto (v 0.15) e il cordolo dell'aiuola B (v 1.45), fuori dal tubo di scarico (u 10.48) e dal varco del cancello (u 6–10.6);
+  fila parallela alla cancellata. Da confermare con le foto.
+- Dimensioni: unità in metri (`metersPerUnit` 1), tubi Ø ≈ 0,19 m e alti 1,67 m con la valvola: plausibili per bombole, ma la scala non
+  è verificata sul posto (campo `scala`). Solo uno dei 3 tubi conserva la valvola, come nel modello originale (nessuna valvola in mezzo).
+- Non verificato nulla a schermo (niente render): controllare orientamento, ombre e aspetto dei materiali (metallo limitato a 0,35).

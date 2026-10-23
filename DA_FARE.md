@@ -470,3 +470,7 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
 - Lamiera del kit (`kitSteel`: texture colore, normali, metallo/rugosità del GLB, UV in metri ogni 1,2 m) su UTA, raccordi, unità esterne e nuova «cassetta» da tetto.
 - Unità esterna unica con due ventole (il «ventilatore» mette una ventola per ogni quadrato lungo il lato lungo) accanto al canale, lato est; cassetta accanto alla testa della UTA.
 - Tolti il canale lungo il bordo nord, la griglia e il camino (non ci sono nelle foto): la fascia a 16 m dell'STL è un gradino del tetto, ora ala `ventaglio-retro` in cu014-solido.json.
+
+## v71 — cavedio est dal disegno a colori dell'utente
+- Rifatto come da disegno dell'utente sulla mappa delle quote (giallo terra < viola < rosso < blu < verde): fondo a terra a L (u 42,5-45,5 da v −60, allargato fino a u 47,5 fra v −65,5 e −71,2; buco n. 3 di courtyards.json), viola 3,2 m (u 45,5-47,5, v −60/−65,5), rosso 4,5 m (u 38,5-42,5, v −66,2/−71,2), blu 8 m (u 38,5-42,5, v −60/−66,2 e cuneo lungo il fianco del ventaglio fino a v −77), verde = corpo basso a 10,7 m. Tolte le ali cavedio-… della v69 e basso-cortile-3.
+- Le ali di cu014-solido.json accettano `poligono` ([[u, v], …]) oltre a `rect` (che resta come ingombro).

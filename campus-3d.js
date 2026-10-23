@@ -1983,7 +1983,7 @@
     const out = [];
     for (const ala of cuSolido.ali.slice().reverse()) {
       if (!Array.isArray(ala.rect) || !(Number(ala.altezza) > 0) || !rest.length) continue;
-      const cut = [rectRing(ala.rect)];
+      const cut = [alaRing(ala)];
       out.push({ multi: pc.intersection(rest, cut), h: Number(ala.altezza) });
       rest = pc.difference(rest, cut);
     }
@@ -2009,11 +2009,17 @@
       buildingGroup.add(mesh);
     }
   }
+  // contorno di un'ala: il poligono `poligono` ([[u, v], …]) se c'è, altrimenti il rettangolo `rect` (che resta come ingombro)
+  function alaRing(ala) {
+    const P = ala.poligono;
+    return Array.isArray(P) && P.length >= 3 ? closeRing(P.map(([u, v]) => [Number(u), Number(v)])) : rectRing(ala.rect);
+  }
   // altezza dell'ala che copre il punto (u, v) del lato 0, con la stessa regola di cuSolidoParts (l'ultima ala della lista vince)
   function cuAltezzaIn(u, v) {
     for (const ala of (cuSolido.ali || []).slice().reverse()) {
       const r = ala.rect;
-      if (Array.isArray(r) && Number(ala.altezza) > 0 && u >= Math.min(r[0], r[2]) && u <= Math.max(r[0], r[2]) && v >= Math.min(r[1], r[3]) && v <= Math.max(r[1], r[3])) return Number(ala.altezza);
+      if (Array.isArray(r) && Number(ala.altezza) > 0 && u >= Math.min(r[0], r[2]) && u <= Math.max(r[0], r[2]) && v >= Math.min(r[1], r[3]) && v <= Math.max(r[1], r[3])
+        && (!Array.isArray(ala.poligono) || pointInRing([u, v], alaRing(ala)))) return Number(ala.altezza);
     }
     return Number(cuSolido.altezzaBase) || 15;
   }

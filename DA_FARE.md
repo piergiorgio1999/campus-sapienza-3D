@@ -479,3 +479,10 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
 - Editor: pulsante «◇ Angoli» accanto a Sposta / Ingrandisci / Ruota: solo le maniglie dei vertici (tolte da Ingrandisci) per tutto ciò che ha una pianta a vertici (solidi a pianta libera, strade, marciapiedi, aiuole, terrazze, cavedio); un parallelepipedo diventa solido a pianta libera al primo uso. «Aggiungi angolo» / «Togli angolo» portano nel modo Angoli.
 - Cavedio est modificabile: forma `cavedio` (vuoto nel solido di CU014 fino a terra, poligono nel lato 0; `rebuildCu014` rifà il solido quando cambia) + 4 terrazzini `prisma` in materiale `edificio` (pareti con le finestre della facciata, tetto scuro). Tolti il buco n. 3 di courtyards.json e le ali cavedio-…; corretta la parete sottile (striscia di 1 mm fra buco e zone).
 - Precedenza in pianta aiuola > marciapiede > strada: maschera vista dall'alto con le impronte (`updateClipMask`), i materiali dei marciapiedi scartano i pixel dentro le aiuole, quelli delle strade dentro marciapiedi e aiuole (anche le pareti dei cordoli).
+
+## v73 — commenti del 23/10
+- Passaggio coperto (forma `cavedio` con `coperto`: vuoto fino a quella quota, sopra l'edificio continua con un soffitto) dal cavedio est all'uscita sulla facciata sud, con doppio cancello a barre (commenti 18 e 20). Tipo di vuoto scelto nella scheda; angoli con «◇ Angoli».
+- Tubi rossi uniti (commenti 4 e 5): il tubo aggiunto dall'utente portato a 0,78 m (quota del tubo della cassetta) e allungato fino al muro del cortile dell'azoto, montante verticale fino al tubo a 2,03 m. Il «tubo rosso» del catalogo diventa verticale se la scatola è più alta che lunga.
+- Scala antincendio della facciata sud specchiata (campo `specchio` degli elementi scala) + pulsante «Specchia ↔» nella sua scheda (commento 19).
+- Cancellata al posto della finestra sull'arco della Ginestra (commento 15).
+- CU035 non si disegna più (commento 16): restano CU014 e CU032 (`DISEGNATI`).

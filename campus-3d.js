@@ -3,6 +3,7 @@
   const SOURCE = 'campus-buildings.json';
   const CONTEXT_SOURCE = 'campus-context.geojson';
   const CHEMISTRY = new Set(['CU014', 'CU032', 'CU035']);
+  const DISEGNATI = new Set(['CU014', 'CU032']); // edifici disegnati nella scena (CU035 tolto su richiesta, commento del 23/10)
   // Scena: Città Universitaria al centro, dintorni come cartina 2D muta.
   const bounds = { west: 12.5040, south: 41.8946, east: 12.5257, north: 41.9108 };
   // sfumatura circolare della cartina muta attorno al baricentro della CU (metri)
@@ -462,7 +463,7 @@
     planMeshesByCode.clear(); planOutlinesByCode.clear(); planPointsByCode.clear(); planMask = [];
     for (const feature of plan.features) {
       const code = String(feature.code || '').toUpperCase();
-      if (!code || !CHEMISTRY.has(code)) continue; // solo Chimica
+      if (!code || !DISEGNATI.has(code)) continue; // solo Chimica
       const parsed = planShape(feature.path);
       if (!parsed?.shapes?.length) continue;
       const osmBuilding = baseBuildings.find((building) => building.code.toUpperCase() === code);
@@ -1904,7 +1905,7 @@
     if (outer.length < 4 || !insideMap(polygonCentroid(outer)) || !nearFocusRing(outer)) return;
     const props = feature.properties || {};
     const code = String(props['addr:housenumber'] || props.ref || '').trim().toUpperCase();
-    if (!CHEMISTRY.has(code)) return; // solo gli edifici di Chimica: il resto del campus non si disegna
+    if (!DISEGNATI.has(code)) return; // solo gli edifici di Chimica: il resto del campus non si disegna
     const holes = (code && courtyardHoles[code]) || [];
     const solido = code === 'CU014' && cuSolidoParts(rings, holes);
     const parts = solido || shapesFor(rings, holes).map((shape) => ({ shape }));
@@ -1912,7 +1913,7 @@
     if (code && officialPlanCodes.has(code)) return;
     if (code === 'CU014') { cuDisegnato = true; if (solido) cuSolidoUsato = true; }
     const b = lookup.get(code), n0 = buildingGroup.children.length;
-    if (code === 'CU014' && b) { for (const { shape, h } of parts) addCodedShape(shape, feature, props, code, b, h); for (const o of buildingGroup.children.slice(n0)) o.userData.cuCorpo = true; return; }
+    if (code === 'CU014' && b) { for (const { shape, h, y0 } of parts) addCodedShape(shape, feature, props, code, b, h, y0); for (const o of buildingGroup.children.slice(n0)) o.userData.cuCorpo = true; return; }
     if (!b) { if (insideCampus(polygonCentroid(outer))) for (const { shape } of parts) addContextPolygon(shape, props); return; } // edifici del quartiere: volumi uniti, non selezionabili
     for (const { shape, h } of parts) addCodedShape(shape, feature, props, code, b, h);
   }
@@ -1920,7 +1921,7 @@
      il solido si ricostruisce quando cambiano (anche al primo caricamento del file, che arriva dopo la scena) */
   let cavediFatti = '[]';
   const cavediCu = () => ((exteriorsCfg && exteriorsCfg.primitive) || []).filter((p) => p.forma === 'cavedio' && !p.rimosso && (!p.cornice || p.cornice === 'lato0') && Array.isArray(p.poligono) && p.poligono.length >= 3)
-    .map((p) => p.poligono.map((q) => [Number(q[0]), Number(q[1])]));
+    .map((p) => ({ P: p.poligono.map((q) => [Number(q[0]), Number(q[1])]), coperto: Math.max(0, Number(p.coperto) || 0) }));
   function rebuildCu014() {
     if (!buildingGroup || !cuSolido) return;
     for (const o of buildingGroup.children.filter((x) => x.userData.cuCorpo)) { buildingGroup.remove(o); o.geometry?.dispose(); }
@@ -1979,7 +1980,12 @@
       const cuts = holes.map((h) => [loc(h)]).filter((q) => q[0].length >= 4);
       let rest = cuts.length ? pc.difference(subject, ...cuts) : [subject];
       const cav = cavediCu(); cavediFatti = JSON.stringify(cav); // vuoti dell'editor (forma 'cavedio', lato 0): tagliano il solido fino a terra
-      if (cav.length) rest = pc.difference(rest, ...cav.map((P) => [closeRing(P)]));
+      const aperti = cav.filter((c) => !(c.coperto > 0)), coperti = cav.filter((c) => c.coperto > 0), sotto = [];
+      if (aperti.length) rest = pc.difference(rest, ...aperti.map((c) => [closeRing(c.P)]));
+      for (const c of coperti) { // passaggio coperto: sotto la quota `coperto` vuoto, sopra l'edificio continua (con un soffitto)
+        const ring = [closeRing(c.P)], inter = pc.intersection(rest, ring);
+        if (inter.length) { sotto.push({ multi: inter, y0: c.coperto }); rest = pc.difference(rest, ring); }
+      }
       const vent = cuSolido.ventaglio; // fronte sud a ventaglio: oltre la facciata ad arco ci sono scale e pensiline, non il corpo (addCuVentaglio)
       if (vent && Array.isArray(vent.settori) && vent.settori.length) {
         const fuori = vent.settori.map((st) => [cuCorona(vent.centro, vent.raggioFacciata, vent.raggioEsterno + 0.6, st.a0, st.a1)]);
@@ -1996,6 +2002,7 @@
         }
       };
       for (const { multi, h } of cuAliSplit(rest, pc)) push(multi, h);
+      for (const sc of sotto) { const n0 = out.length; for (const { multi, h } of cuAliSplit(sc.multi, pc)) push(multi, h); for (const o of out.slice(n0)) o.y0 = sc.y0; }
       return out;
     } catch (_) { return null; }
   }
@@ -2160,7 +2167,7 @@
       return result.map((poly) => makeShape(poly)).filter(Boolean);
     } catch (_) { return plain(); }
   }
-  function addCodedShape(shape, feature, props, code, b, heightOverride) {
+  function addCodedShape(shape, feature, props, code, b, heightOverride, y0Sotto = 0) {
     let rawHeight = b?.height || props.height;
     let rawLevels = b?.levels || props['building:levels'];
     if (heightOverride > 0) rawHeight = heightOverride; // ala a quota propria (cu014-solido.json)
@@ -2171,7 +2178,14 @@
     // ExtrudeGeometry uses material 0 for caps and 1 for walls.
     const set = facadeSetFor(code);
     const levelCount = Number(String(rawLevels ?? '').replace(',', '.'));
-    const pieceList = heightOverride > 0 ? cuPieces(height) : buildingPieces(height, levelCount);
+    let pieceList = heightOverride > 0 ? cuPieces(height) : buildingPieces(height, levelCount);
+    if (y0Sotto > 0) { // sopra un passaggio coperto: i pezzi partono dalla quota del soffitto, che si vede da sotto
+      pieceList = pieceList.filter((p) => p.y0 + p.h > y0Sotto + 0.01).map((p) => (p.y0 < y0Sotto ? { ...p, y0: y0Sotto, h: p.y0 + p.h - y0Sotto } : p));
+      const cg = new THREE.ExtrudeGeometry(shape, { depth: 0.06, bevelEnabled: false, curveSegments: 1 });
+      cg.rotateX(-Math.PI / 2); cg.translate(0, 0.04 + y0Sotto - 0.06, 0); cg.computeVertexNormals(); planarUVs(cg, 2);
+      const ceil = new THREE.Mesh(cg, courtOnce('soffitto passaggio', () => stdMat({ color: '#d9d3c8', roughness: 0.9 })));
+      ceil.receiveShadow = true; buildingGroup.add(ceil);
+    }
     for (const [pieceIndex, piece] of pieceList.entries()) {
       const g = new THREE.ExtrudeGeometry(shape, { depth: piece.h, bevelEnabled: false, curveSegments: 1 });
       g.rotateX(-Math.PI / 2);
@@ -2845,7 +2859,9 @@
       } else if (el.tipo === 'palo') {
         g.add(flagPole(el));
       } else if (el.tipo === 'scala') {
-        addFireStair(g, Number(el.u), Math.max(1, Number(el.piani) || 2), ocra, { lunghezza: el.lunghezza, larghezza: el.larghezza, distacco: el.distacco, pianerottoli: el.pianerottoli, quote: el.quote, pedate: ocraScura });
+        let gs = g;
+        if (el.specchio) { gs = new THREE.Group(); gs.position.x = 2 * Number(el.u); gs.scale.x = -1; g.add(gs); } // specchiata attorno al suo centro (u)
+        addFireStair(gs, Number(el.u), Math.max(1, Number(el.piani) || 2), ocra, { lunghezza: el.lunghezza, larghezza: el.larghezza, distacco: el.distacco, pianerottoli: el.pianerottoli, quote: el.quote, pedate: ocraScura });
       }
     }
     // primitive aggiunte dall'editor: nelle coordinate del lato 0, oppure in quelle di un elemento (cornice 'esterni:N');
@@ -3429,7 +3445,14 @@
       box(-W / 2 + 0.1, W / 2 - 0.1, 0.1, H - 0.1, -0.02, 0.02, glass);
       box(-0.02, 0.02, 0.1, H - 0.1, -0.035, 0.035, frame);
     }) },
-    tuboRosso: { nome: 'Tubo rosso a muro', crea: () => group((g) => { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 3, 10), courtOnce('tubo rosso', () => stdMat({ color: 0xb3262e, roughness: 0.5, metalness: 0.2 }))); p.rotation.z = Math.PI / 2; p.position.y = 0.045; p.castShadow = true; g.add(p); }) },
+    // tubo rosso: orizzontale lungo x, oppure verticale se la scatola è più alta che lunga (montante); sfere ai capi per unirsi ai tubi vicini
+    tuboRosso: { nome: 'Tubo rosso a muro', crea: (pr) => group((g) => {
+      const [L, , H] = ductDims(pr, 3, 0.09, 0.09), up = H > L, n = up ? H : L, red = courtOnce('tubo rosso', () => stdMat({ color: 0xb3262e, roughness: 0.5, metalness: 0.2 }));
+      const k = pr && pr.box ? n : 3, p = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, k, 10), red);
+      if (up) p.position.y = k / 2; else { p.rotation.z = Math.PI / 2; p.position.y = 0.045; }
+      p.castShadow = true; g.add(p);
+      for (const e of [-k / 2, k / 2]) { const j = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), red); if (up) j.position.set(0, k / 2 + e, 0); else j.position.set(e, 0.045, 0); g.add(j); }
+    }) },
     cartello: { nome: 'Cartello di sicurezza', crea: () => group((g) => {
       const sign = courtOnce('cartello', () => stdMat({ roughness: 0.6, map: canvasTex(180, 280, (ctx, w, h) => {
         ctx.fillStyle = '#f4f4f2'; ctx.fillRect(0, 0, w, h);

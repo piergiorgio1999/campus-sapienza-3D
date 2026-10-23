@@ -1121,12 +1121,12 @@
    "id": "gin-pilone-1",
    "forma": "box",
    "materiale": "intonaco arancione",
-   "angolo": 349.4,
+   "angolo": 350.35,
    "box": {
-    "u0": 21.5,
-    "u1": 22.39,
-    "v0": -87.05,
-    "v1": -86.15,
+    "u0": 22.1,
+    "u1": 22.99,
+    "v0": -87.16,
+    "v1": -86.26,
     "h0": 3.25,
     "h1": 15.2
    },
@@ -1136,12 +1136,12 @@
    "id": "gin-pilone-2",
    "forma": "box",
    "materiale": "intonaco arancione",
-   "angolo": 354.63,
+   "angolo": 355.05,
    "box": {
-    "u0": 24.83,
-    "u1": 25.72,
-    "v0": -87.52,
-    "v1": -86.62,
+    "u0": 25.1,
+    "u1": 25.99,
+    "v0": -87.54,
+    "v1": -86.64,
     "h0": 3.25,
     "h1": 15.3
    },
@@ -1151,10 +1151,10 @@
    "id": "gin-pilone-3",
    "forma": "box",
    "materiale": "intonaco arancione",
-   "angolo": 359.87,
+   "angolo": 359.45,
    "box": {
-    "u0": 28.19,
-    "u1": 29.08,
+    "u0": 27.92,
+    "u1": 28.81,
     "v0": -87.68,
     "v1": -86.78,
     "h0": 3.25,
@@ -1166,12 +1166,12 @@
    "id": "gin-pilone-4",
    "forma": "box",
    "materiale": "intonaco arancione",
-   "angolo": 5.1,
+   "angolo": 4.15,
    "box": {
-    "u0": 31.55,
-    "u1": 32.44,
-    "v0": -87.53,
-    "v1": -86.63,
+    "u0": 30.94,
+    "u1": 31.83,
+    "v0": -87.58,
+    "v1": -86.68,
     "h0": 3.25,
     "h1": 15.4
    },
@@ -1182,12 +1182,12 @@
    "forma": "oggetto",
    "modello": "balaustra",
    "ruota": 0,
-   "angolo": 352.01,
+   "angolo": 352.7,
    "box": {
-    "u0": 22.31,
-    "u1": 24.81,
-    "v0": -87.32,
-    "v1": -87.02,
+    "u0": 22.92,
+    "u1": 25.08,
+    "v0": -87.38,
+    "v1": -87.08,
     "h0": 3.25,
     "h1": 4.25
    },
@@ -1200,8 +1200,8 @@
    "ruota": 0,
    "angolo": 357.25,
    "box": {
-    "u0": 25.68,
-    "u1": 28.19,
+    "u0": 25.96,
+    "u1": 27.92,
     "v0": -87.64,
     "v1": -87.34,
     "h0": 3.25,
@@ -1214,12 +1214,12 @@
    "forma": "oggetto",
    "modello": "balaustra",
    "ruota": 0,
-   "angolo": 2.48,
+   "angolo": 1.8,
    "box": {
-    "u0": 29.08,
-    "u1": 31.58,
-    "v0": -87.65,
-    "v1": -87.35,
+    "u0": 28.81,
+    "u1": 30.97,
+    "v0": -87.66,
+    "v1": -87.36,
     "h0": 3.25,
     "h1": 4.25
    },
@@ -1230,12 +1230,12 @@
    "forma": "oggetto",
    "modello": "portaVetri",
    "ruota": 0,
-   "angolo": 352.01,
+   "angolo": 352.7,
    "box": {
-    "u0": 23.25,
-    "u1": 24.91,
-    "v0": -83.49,
-    "v1": -83.41,
+    "u0": 23.65,
+    "u1": 25.31,
+    "v0": -83.54,
+    "v1": -83.46,
     "h0": 3.25,
     "h1": 6.03
    },
@@ -1262,12 +1262,12 @@
    "forma": "oggetto",
    "modello": "portaVetri",
    "ruota": 0,
-   "angolo": 2.48,
+   "angolo": 1.8,
    "box": {
-    "u0": 29.34,
-    "u1": 31.0,
-    "v0": -83.78,
-    "v1": -83.7,
+    "u0": 28.94,
+    "u1": 30.6,
+    "v0": -83.79,
+    "v1": -83.71,
     "h0": 3.25,
     "h1": 6.03
    },
@@ -1617,14 +1617,14 @@
    "forma": "oggetto",
    "modello": "cancelloScala",
    "ruota": 0,
-   "angolo": 337.85,
+   "angolo": 340.85,
    "box": {
-    "u0": 14.19,
-    "u1": 16.82,
-    "v0": -82.87,
-    "v1": -82.82,
+    "u0": 16.52,
+    "u1": 17.93,
+    "v0": -83.52,
+    "v1": -83.47,
     "h0": 1.23,
-    "h1": 3.18
+    "h1": 3.75
    },
    "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
@@ -1695,12 +1695,12 @@
    "rimosso": true
   },
   {
-   "angolo": 343.85,
+   "angolo": 344.8,
    "box": {
-    "u0": 16.62,
-    "u1": 21.32,
-    "v0": -84.3,
-    "v1": -83.8,
+    "u0": 17.76,
+    "u1": 21.3,
+    "v0": -84.45,
+    "v1": -83.95,
     "h0": 0,
     "h1": 4.1
    },
@@ -2069,14 +2069,14 @@
    "forma": "oggetto",
    "modello": "cancelloScala",
    "ruota": 0,
-   "angolo": 196.65,
+   "angolo": 193.65,
    "box": {
-    "u0": 37.45,
-    "u1": 40.08,
-    "v0": -83.99,
-    "v1": -83.94,
+    "u0": 36.28,
+    "u1": 37.69,
+    "v0": -84.47,
+    "v1": -84.42,
     "h0": 1.23,
-    "h1": 3.18
+    "h1": 3.75
    },
    "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
@@ -2147,12 +2147,12 @@
    "rimosso": true
   },
   {
-   "angolo": 190.65,
+   "angolo": 189.7,
    "box": {
-    "u0": 32.85,
-    "u1": 37.55,
-    "v0": -85.08,
-    "v1": -84.58,
+    "u0": 32.86,
+    "u1": 36.4,
+    "v0": -85.18,
+    "v1": -84.68,
     "h0": 0,
     "h1": 4.1
    },

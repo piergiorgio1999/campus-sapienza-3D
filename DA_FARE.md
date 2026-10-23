@@ -493,3 +493,6 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
 - cu014-solido.json → ventaglio: balconata a0/a1 −101,3/−84,2, quota 3,25, margine colonne 0,46; scale pedata 0,42, sottoscala [33,3, 37,3], cancello 2,63 m a r 35,05, pensilina 4,1. La soletta della loggia si apre sopra rampe e pianerottolo.
 - Generatore: tools/ginestra_scale_da_scansione.py. Modifiche del db superate (gin-ovest-cancello, gin-ovest-pianerottolo, pmvk7o45ss9, gin-pilone-2, gin-ovest-staccionata-corsia) segnate «applicata».
 - La scala antincendio nella scansione non c'è (finisce alle pensiline).
+
+## v75 — retro della Ginestra dal disegno dell'utente sull'alzato della scansione
+- Colori del disegno: rosso colonne, blu masse di travertino, nero pensiline, giallo rampe, verde cancelli. Colonne della balconata a −99,65 / −94,95 / −90,55 / −85,85° (esterne a ±4,5 m dall'asse, interne a ±1,4 m), balaustre e porte nelle campate. Cancello fra le rampe largo ~1,4 m al piede della seconda rampa (−108° → −110,3°, fino a 3,75 m); il pilone finisce lì (−102,3° → −108,1°). Pensiline confermate a 4,0–4,3 m dai punti della scansione.

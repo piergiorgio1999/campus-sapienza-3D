@@ -22,12 +22,12 @@ west={}
 # scale (lato ovest; il lato est è lo specchio rispetto all'asse −92,75°)
 b,a=piece(33.4,34.8,-110.0,-101.8,LAND,Q,rise_to=-101.8); west['rampa-2']=dict(forma='oggetto',modello='rampaScala',ruota=0,angolo=a,box=b)
 b,a=piece(33.4,34.8,-110.0,-101.8,0,LAND); west['rampa-2-sotto']=dict(forma='box',materiale='travertino',angolo=a,box=b)
-b,a=piece(34.8,35.3,-110.0,-102.3,0,PEN); west['pilone']=dict(forma='box',materiale='travertino',angolo=a,box=b)
+b,a=piece(34.8,35.3,-108.1,-102.3,0,PEN); west['pilone']=dict(forma='box',materiale='travertino',angolo=a,box=b)
 b,a=piece(35.3,37.3,-110.0,-103.6,0,LAND,rise_to=-110.0); west['rampa-1']=dict(forma='oggetto',modello='rampaScala',ruota=0,angolo=a,box=b)
 am=-103.6+0.7/36.3/rad; b,a=piece(35.6,37.0,am-0.7/36.3/rad,am+0.7/36.3/rad,0,0.34); west['base']=dict(forma='box',materiale='travertino',angolo=a,box=b)
 b,a=piece(35.0,38.0,-103.2,-100.8,0,0.15); west['gradino-angolo']=dict(forma='box',materiale='travertino',angolo=a,box=b)
 west['pianerottolo']=dict(forma='prisma',materiale='travertino',poligono=sector(32.3,37.3,-110.0,-114.3),base=0,altezza=LAND)
-b,a=thin(35.05,-110.0,-114.3,LAND,LAND+1.95); west['cancello']=dict(forma='oggetto',modello='cancelloScala',ruota=0,angolo=a,box=b)
+b,a=thin(35.05,-108.0,-110.3,LAND,3.75); west['cancello']=dict(forma='oggetto',modello='cancelloScala',ruota=0,angolo=a,box=b)
 west['pensilina']=dict(forma='prisma',materiale='travertino',poligono=sector(33.3,37.6,-101.3,-117.0),base=PEN,altezza=0.35)
 b,a=thin(37.25,-110.0,-103.6,0.0,LAND+1.0,rise_to=-110.0); west['staccionata-rampa1']=dict(forma='oggetto',modello='staccionata',ruota=0,angolo=a,box=b)
 b,a=thin(37.25,-110.0,-114.3,LAND,LAND+1.0); west['staccionata-pianerottolo']=dict(forma='oggetto',modello='staccionata',ruota=0,angolo=a,box=b)
@@ -54,7 +54,7 @@ RIMOSSI=['gin-ovest-pianerottolo-dentro','gin-est-pianerottolo-dentro','gin-oves
 out={}
 for k,(w,e) in IDS.items(): out[w]=west[k]; out[e]=mirror(west[k])
 # balconata: 4 colonne ai bordi (scansione: interasse ~3,4 m), balaustre e porte nelle 3 campate
-cols=[-100.6,-95.37,-90.13,-84.9]
+cols=[-99.65,-94.95,-90.55,-85.85]  # disegno dell'utente sull'alzato: esterne a ±4,5 m, interne a ±1,4 m dall'asse
 for i,a in enumerate(cols,1):
     b,ang=piece(36.4,37.3,a-0.89/36.85/rad/2,a+0.89/36.85/rad/2,Q,None); out[f'gin-pilone-{i}']=dict(box=b,angolo=ang)
 for i in range(3):

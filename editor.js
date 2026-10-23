@@ -113,7 +113,7 @@
       close.addEventListener('click', hideCard); ui.card.prepend(close);
     }
     const r = ui.host.getBoundingClientRect(), w = ui.card.offsetWidth, h = ui.card.offsetHeight;
-    if (x === 'dock') { ui.card.style.left = '12px'; ui.card.style.top = Math.max(12, r.height - h - 68) + 'px'; return; } // in basso a sinistra: non copre le maniglie
+    if (x === 'dock') { ui.card.style.left = '12px'; ui.card.style.top = Math.max(ui.host.classList.contains('cm-on') ? 76 : 12, r.height - h - 68) + 'px'; return; } // in basso a sinistra: non copre le maniglie
     const left = Math.max(12, Math.min(r.width - w - 12, (x ?? r.width / 2) - r.left - w / 2));
     const top = Math.max(12, Math.min(r.height - h - 68, (y ?? r.height / 2) - r.top + 16));
     ui.card.style.left = left + 'px'; ui.card.style.top = top + 'px';
@@ -535,9 +535,9 @@
     sel = null; closeCard(); ui.show.hidden = true;
   }
   function select(t) {
-    const rot = !!(sel && sel.rot && sel.type === 'item' && t.type === 'item' && sel.it.key === t.it.key); // stesso oggetto toccato di nuovo: resta in Ruota
+    const same = !!(sel && sel.type === 'item' && t.type === 'item' && sel.it.key === t.it.key), rot = same && !!sel.rot, scala = same && !!sel.scala; // stesso oggetto toccato di nuovo: resta nel suo modo
     deselect();
-    sel = Object.assign({ vis: new T.Group(), handles: [], rot }, t);
+    sel = Object.assign({ vis: new T.Group(), handles: [], rot, scala }, t);
     sel.frameKey = t.type === 'item' ? frameOfItem(t.it) : t.p.frameKey;
     sel.box = selBox();
     if (t.type === 'prim') sel.orig = primBox(t.p, true);
@@ -563,6 +563,16 @@
       const rl = new T.LineLoop(new T.BufferGeometry().setFromPoints(ring), mat()), sp = new T.LineSegments(new T.BufferGeometry().setFromPoints([toWorld(fb, rum, rvm, hr), hw]), mat());
       rl.renderOrder = sp.renderOrder = 998; sel.vis.add(rl, sp); sel.ring = { pts: ring };
       hs.push({ role: 'rotate', world: hw });
+    } else if (!sel.scala) { // modo Sposta: tre frecce lungo gli assi dell'oggetto (u rossa, v verde, h blu) e il cubo rosso per spostarlo in piano
+      const ext = Math.max(0.6, 0.25 * Math.max(b.u1 - b.u0, b.v1 - b.v0, b.h1 - b.h0)), o = [um, vm, hm];
+      const tips = { u: [b.u1 + ext, vm, hm], v: [um, b.v1 + ext, hm], h: [um, vm, b.h1 + ext] };
+      for (const axis of sel.type === 'item' && sel.it.vincolo === 'parete' ? [] : ['u', 'v', 'h']) { // porte: si spostano solo col cubo, restano sul muro
+        if (axis === 'h' && (lock.h0 || lock.h1 || (sel.type === 'item' && sel.it.vincolo))) continue; // poggiato a terra o a una parete: niente su e giù
+        const tp = tips[axis], line = new T.Line(new T.BufferGeometry().setFromPoints([toWorld(f, ...o), toWorld(f, ...tp)]), new T.LineBasicMaterial({ color: AXIS_COL[axis], depthTest: false, transparent: true }));
+        line.renderOrder = 998; sel.vis.add(line);
+        hs.push({ role: 'axis', axis, u: tp[0], v: tp[1], h: tp[2] });
+      }
+      hs.push({ role: 'move', u: um, v: vm, h: b.h1 + 0.45 });
     } else {
     for (const [axis, val] of [['u', [b.u0, b.u1]], ['v', [b.v0, b.v1]], ['h', [b.h0, b.h1]]]) val.forEach((x, i) => {
       if (axis === 'h' && lock['h' + i]) return;
@@ -570,21 +580,21 @@
     });
     const flat = b.h1 - b.h0 < 0.3;
     for (const i of [0, 1]) for (const j of [0, 1]) for (const k of flat ? [1] : [0, 1]) hs.push({ role: 'corner', u: String(i), v: String(j), pu: i ? b.u1 : b.u0, pv: j ? b.v1 : b.v0, ph: k ? b.h1 : b.h0 });
-    hs.push({ role: 'move', u: um, v: vm, h: b.h1 + 0.45 });
     if (sel.type === 'item' && sel.it.verts) sel.it.verts.get().forEach((q, k) => hs.push({ role: 'vertex', k, u: q[0], v: q[1], h: b.h1 }));
     }
     for (const h of hs) {
-      const geo = h.role === 'vertex' ? new T.SphereGeometry(0.5, 12, 8) : new T.BoxGeometry(1, 1, 1);
-      const m = new T.Mesh(geo, new T.MeshBasicMaterial({ color: h.role === 'move' || h.role === 'rotate' ? 0x822433 : h.role === 'vertex' ? (sel.corner === h.k ? 0x2f7de1 : 0xf2c84b) : 0xffffff, depthTest: false, transparent: true }));
-      if (h.role !== 'vertex') { const ed = new T.LineSegments(new T.EdgesGeometry(geo), new T.LineBasicMaterial({ color: 0x822433, depthTest: false, transparent: true })); ed.renderOrder = 1000; m.add(ed); }
+      const geo = h.role === 'vertex' || h.role === 'axis' ? new T.SphereGeometry(0.5, 12, 8) : new T.BoxGeometry(1, 1, 1);
+      const m = new T.Mesh(geo, new T.MeshBasicMaterial({ color: h.role === 'axis' ? AXIS_COL[h.axis] : h.role === 'move' || h.role === 'rotate' ? 0x822433 : h.role === 'vertex' ? (sel.corner === h.k ? 0x2f7de1 : 0xf2c84b) : 0xffffff, depthTest: false, transparent: true }));
+      if (h.role !== 'vertex' && h.role !== 'axis') { const ed = new T.LineSegments(new T.EdgesGeometry(geo), new T.LineBasicMaterial({ color: 0x822433, depthTest: false, transparent: true })); ed.renderOrder = 1000; m.add(ed); }
       m.position.copy(h.world ? h.world : h.role === 'corner' ? toWorld(f, h.pu, h.pv, h.ph) : toWorld(f, h.u, h.v, h.h)); m.renderOrder = 999; m.userData.handle = h;
       sel.vis.add(m); sel.handles.push(m);
     }
     scaleHandles();
   }
+  const AXIS_COL = { u: 0xd33a2c, v: 0x2e9b4f, h: 0x2f6fe1 };
   function scaleHandles() {
     if (!boxed()) return;
-    for (const m of sel.handles) { const r = m.userData.handle.role, d = camera.position.distanceTo(m.position); m.scale.setScalar(Math.max(0.08, d * 0.016) * (r === 'move' || r === 'rotate' ? 1.3 : r === 'corner' ? 0.75 : r === 'vertex' ? 0.8 : 1)); }
+    for (const m of sel.handles) { const r = m.userData.handle.role, d = camera.position.distanceTo(m.position); m.scale.setScalar(Math.max(0.08, d * 0.016) * (r === 'move' || r === 'rotate' || r === 'axis' ? 1.3 : r === 'corner' ? 0.75 : r === 'vertex' ? 0.8 : 1)); }
   }
   function handleAt(e) {
     if (!boxed()) return null;
@@ -636,13 +646,15 @@
     sel.rot = !sel.rot; sel.tool = null; drawSel(); infoCard();
     hint(sel.rot ? 'Ruota: trascina la maniglia sull’anello (passo 5°, Alt sospende l’aggancio). R o «⤡ Sposta» tornano alle maniglie.' : '');
   }
+  // Sposta (frecce degli assi), Ingrandisci (facce, angoli, vertici), Ruota (anello): tre modi separati
+  function setScala(on) { if (!sel || drag) return; if (on && rotOn()) toggleRot(); sel.scala = !!on; drawSel(); infoCard(); hint(on ? 'Ingrandisci: trascina facce e angoli della scatola (gialle: vertici).' : 'Sposta: trascina una freccia per muovere lungo quell’asse (u rossa, v verde, alto blu) o il cubo rosso per muovere in piano.'); }
   function modeSwitch() {
-    const kind = turnKind(), row = el('div', 'ed-row ed-seg'), rot = rotOn();
-    const mv = button('⤡ Sposta', () => { if (rotOn()) toggleRot(); }), rt = button('⟳ Ruota', toggleRot);
-    mv.setAttribute('aria-pressed', String(!rot)); rt.setAttribute('aria-pressed', String(rot));
+    const kind = turnKind(), row = el('div', 'ed-row ed-seg'), rot = rotOn(), sc = !rot && !!sel.scala;
+    const mv = button('⤡ Sposta', () => { if (rotOn()) toggleRot(); setScala(false); }), gr = button('⤢ Ingrandisci', () => { setScala(true); }), rt = button('⟳ Ruota', () => { if (!rotOn()) { sel.scala = false; } toggleRot(); });
+    mv.setAttribute('aria-pressed', String(!rot && !sc)); gr.setAttribute('aria-pressed', String(sc)); rt.setAttribute('aria-pressed', String(rot));
     if (!kind) { rt.classList.add('ed-off'); rt.setAttribute('aria-disabled', 'true'); rt.title = noTurnMsg(); }
     else if (kind === 'orienta') rt.title = 'Alterna l’orientamento (lungo u / lungo v)';
-    row.append(mv, rt); return row;
+    row.append(mv, gr, rt); return row;
   }
   // aggancio magnetico dell'angolo grezzo (gradi): 0/90/180/270° e gli angoli, a passi di 90°, dei solidi vicini già ruotati
   function turnMagnet(raw, r) {
@@ -737,7 +749,7 @@
     if (!sel || !cardWanted()) return;
     const title = sel.type === 'item' ? sel.it.label : `Pezzo: ${describe(sel.p.mesh)}`;
     const nodes = [el('h3', '', title), ...(sel.type === 'item' ? [modeSwitch()] : []), el('p', 'ed-meta', dims(sel.box)),
-      rotOn() ? el('p', 'ed-meta', 'Modo Ruota: trascina la maniglia (o l’anello) per girare l’oggetto, passo 5° con aggancio a 0/90/180/270° e agli oggetti vicini; Alt lo sospende. R torna a Sposta.') : el('p', 'ed-meta', 'Facce: un lato · angoli: due lati · rossa in alto: sposta' + (sel.type === 'item' && sel.it.verts ? ' · gialle: vertici' : '') + (sel.type === 'item' && sel.it.lock.h0 ? ' · la base resta ferma' : '') + '.')];
+      rotOn() ? el('p', 'ed-meta', 'Modo Ruota: trascina la maniglia (o l’anello) per girare l’oggetto, passo 5° con aggancio a 0/90/180/270° e agli oggetti vicini; Alt lo sospende. R torna a Sposta.') : sel.scala ? el('p', 'ed-meta', 'Ingrandisci: facce = un lato · angoli = due lati' + (sel.type === 'item' && sel.it.verts ? ' · gialle: vertici' : '') + (sel.type === 'item' && sel.it.lock.h0 ? ' · la base resta ferma' : '') + '.') : el('p', 'ed-meta', 'Sposta: frecce lungo gli assi (u rossa, v verde, alto blu) · cubo rosso: in piano.')];
     const row = el('div', 'ed-row');
     if (sel.alt) { const alt = sel.alt, back = sel.type === 'item' ? { type: 'item', it: sel.it } : { type: 'prim', p: sel.p }; row.append(button(alt.type === 'prim' ? 'Solo questo pezzo' : 'Oggetto intero', () => select(Object.assign({}, alt, { alt: back })))); }
     if (sel.type === 'item' && sel.it.primitiva) {
@@ -930,7 +942,7 @@
       if (vert) sel.vAng = 0;
       return true;
     }
-    if (h.role === 'face' && h.axis === 'h') { const dir = new T.Vector3(); camera.getWorldDirection(dir); dir.y = 0; if (dir.lengthSq() < 1e-6) dir.set(0, 0, 1); plane = new T.Plane().setFromNormalAndCoplanarPoint(dir.normalize(), wp); }
+    if ((h.role === 'face' || h.role === 'axis') && h.axis === 'h') { const dir = new T.Vector3(); camera.getWorldDirection(dir); dir.y = 0; if (dir.lengthSq() < 1e-6) dir.set(0, 0, 1); plane = new T.Plane().setFromNormalAndCoplanarPoint(dir.normalize(), wp); }
     else plane = new T.Plane(new T.Vector3(0, 1, 0), -wp.y);
     const p0 = new T.Vector3(); if (!rayFrom(e).ray.intersectPlane(plane, p0)) return false;
     drag = { h, plane, q0: toLocal(f, p0), box0: clone(sel.box), verts: sel.type === 'item' && sel.it.verts ? clone(sel.it.verts.get()) : null, pointerId: e.pointerId, baseMove, pv: sel.type === 'item' && sel.it.vincolo && !sel.it.primitiva ? pivotOf(sel.it) : null };
@@ -944,6 +956,7 @@
     if (h.role === 'face') setSide(h.axis, h.side);
     else if (h.role === 'corner') { setSide('u', h.u); setSide('v', h.v); }
     else if (h.role === 'move') { const du = snap(d.u), dv = snap(d.v); b.u0 += du; b.u1 += du; b.v0 += dv; b.v1 += dv; }
+    else if (h.role === 'axis') { const dd = snap(d[h.axis]); b[h.axis + '0'] += dd; b[h.axis + '1'] += dd; } // solo lungo la freccia
     else if (h.role === 'vertex') { drag.vNew = clone(drag.verts); drag.vNew[h.k] = [round(snap(q.u)), round(snap(q.v))]; }
     if (drag.baseMove) { // porte e portoni: poggiati al suolo e attaccati al muro più vicino, con l'angolo preso dal muro
       const w = snapParete(b, drag.box0); drag.wall = w; sel.box = roundBox(w.box); sel.frameKey = 'tmp'; placeTmpFrame(w);
@@ -1088,7 +1101,7 @@
     const take = (c) => { if (c) caught.push(c); return c; };
     if (h.role === 'face') { const c = take(closest(edgeCands(h.axis, h.side, b, near), thr)); if (c) b[h.axis + h.side] += c.delta; }
     else if (h.role === 'corner') for (const [a, side] of [['u', h.u], ['v', h.v]]) { const c = take(closest(edgeCands(a, side, b, near), thr)); if (c) b[a + side] += c.delta; }
-    else if (h.role === 'move') for (const a of ['u', 'v']) { const c = take(closest(moveCands(a, b, near), thr)); if (c) { b[a + '0'] += c.delta; b[a + '1'] += c.delta; } }
+    else if (h.role === 'move' || (h.role === 'axis' && h.axis !== 'h')) for (const a of h.role === 'axis' ? [h.axis] : ['u', 'v']) { const c = take(closest(moveCands(a, b, near), thr)); if (c) { b[a + '0'] += c.delta; b[a + '1'] += c.delta; } }
     else if (h.role === 'vertex' && drag.vNew) {
       const q = drag.vNew[h.k];
       ['u', 'v'].forEach((a, i) => {

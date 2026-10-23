@@ -434,3 +434,12 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
   cardine agli estremi del varco e si aprono verso la strada, commento 3), cancello del fondo del portico rifatto in due ante con griglia di barre
   vere da 3,5 cm ogni 15 cm (commento 2: barre più spesse, si aprono verso il cortile esterno), porticina della gabbia, `cancelloScala` della Ginestra.
 
+## Retro della Ginestra: modifiche dell'utente nel file, staccionata, lato est speculare; editor a tre modi; si cammina modificando (23/10/2026)
+- Riportate nel file le modifiche dell'utente al lato ovest (gin-ovest-gradino-angolo, -rampa-1 larga 3,76 e lunga 5,76, -pilone, -pensilina,
+  staccionata della rampa tolta) e le sue due aggiunte `pmvk7o45ss9` (secondo pilone) e `pmvk7skt3lh` (staccionata). La staccionata ora
+  corre sul bordo esterno della rampa, dal primo all'ultimo gradino. Il lato est (`gin-est-…`) è rigenerato come specchio del lato ovest
+  rispetto all'asse del fronte (−92,75°): centri e poligoni riflessi, angolo → 2·asse − angolo.
+- Editor (commento «frecce dei versori»): modi Sposta (frecce u rossa, v verde, alto blu: si muove solo lungo quell'asse, con la calamita;
+  cubo rosso in piano), Ingrandisci (facce, angoli, vertici) e Ruota, scelti in cima alla scheda.
+- Passeggiata: con la scheda dell'editor aperta si continua a camminare (tastiera e levetta); scheda sotto la barra in alto, suggerimento spostato.
+

@@ -7,8 +7,8 @@
   //   come in un videogioco: muovendolo ti guardi intorno; Esc lo libera (clic per riprenderlo), un secondo Esc esce.
   //   Se il browser non lo cattura si guarda trascinando.
   // · Cancelli: F (o il tasto «🚪 Apri» a schermo) apre o chiude l'anta più vicina che hai davanti, entro 3 m; aperta non blocca più.
-  // · Mirino al centro: E modifica e C commenta quello che miri (tasti «Modifica» e «Commenta» anche a schermo). La
-  //   passeggiata si ferma, il mouse si libera per la scheda dell'editor; chiusa la scheda si riprende a camminare.
+  // · Mirino al centro: E modifica e C commenta quello che miri (tasti «Modifica» e «Commenta» anche a schermo). Il mouse si
+  //   libera per la scheda dell'editor e le maniglie, ma si continua a camminare con tastiera e levetta; chiusa la scheda torna lo sguardo.
   // · Telefono e iPad (schermo touch): levetta in basso a sinistra per camminare (spinta fino in fondo corre), tasti «Corri»
   //   e «Salta», trascina altrove per guardarti intorno. Da computer levetta e tasti non compaiono.
   // Le collisioni usano una copia dei triangoli vicini (edifici, esterni di Chimica, cortile), divisa in celle di 2 m:
@@ -201,7 +201,7 @@
     if (Math.hypot(st.x - soup.cx, st.z - soup.cz) > HALF / 2 || (now - soup.checked > 1000 && ((soup.checked = now), signature() !== soup.sig))) buildSoup(st.x, st.z);
     refreshTrunks(now);
     if (swings.size) swingGates(now);
-    const k = paused ? new Set() : st.keys;
+    const k = st.keys; // anche in pausa (scheda dell'editor aperta) si cammina con tastiera e levetta
     if (k.has('ArrowLeft')) st.yaw += TURN * dt;
     if (k.has('ArrowRight')) st.yaw -= TURN * dt;
     let f = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0) - st.stick.y;
@@ -214,7 +214,7 @@
     if (moved) { tryMove(dx, dz); trunksOut(); }
     // terreno sotto i piedi: si sale fino a STEP, si scende a scalini restando attaccati, altrimenti si cade
     const g = groundAt(st.x, st.z, st.feet + STEP + 0.05), gy = g === null ? 0 : g;
-    if (st.jump && st.grounded && !paused) { st.vy = JUMP; st.grounded = false; }
+    if (st.jump && st.grounded) { st.vy = JUMP; st.grounded = false; }
     st.jump = false;
     if (st.vy > 0 || st.feet > gy + (st.grounded ? STEP : 0.001)) {
       st.vy -= GRAVITY * dt; st.feet += st.vy * dt;
@@ -339,7 +339,7 @@
     if (!on) return;
     const typing = e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
     if (e.type === 'keydown' && e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); if (paused) resume(true); else exit(); return; }
-    if (typing || paused) return;
+    if (typing) return;
     if (e.code === 'KeyE' || e.code === 'KeyC') { e.preventDefault(); e.stopImmediatePropagation(); if (e.type === 'keydown' && !e.repeat) aim(e.code === 'KeyE' ? 'modifica' : 'commenta'); return; }
     if (e.code === 'KeyF') { e.preventDefault(); e.stopImmediatePropagation(); if (e.type === 'keydown' && !e.repeat) toggleGate(); return; }
     const digit = /^(?:Digit|Numpad)([1-9])$/.exec(e.code);
@@ -353,7 +353,10 @@
     s.textContent = `
     .cm-on .ed-bar,.cm-on:not(.cm-pausa) .ed-card,.cm-on:not(.cm-pausa) .ed-hint{display:none!important}
     .cm-layer.cm-pause{pointer-events:none;cursor:default}
-    .cm-layer.cm-pause .cm-acts,.cm-layer.cm-pause .cm-stick,.cm-layer.cm-pause .cm-aim,.cm-layer.cm-pause .cm-help{display:none}
+    .cm-layer.cm-pause .cm-aim,.cm-layer.cm-pause .cm-help{display:none}
+    .cm-layer.cm-pause .cm-stick{pointer-events:auto}
+    .cm-pausa .ed-card{max-height:calc(100% - 96px);overflow:auto}
+    .cm-pausa .ed-hint{top:72px}
     .cm-layer.cm-pause .cm-cross{opacity:.35}
     .cm-layer{position:absolute;inset:0;z-index:30;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
     .cm-layer:active{cursor:grabbing}
@@ -371,7 +374,7 @@
     .cm-cross::before,.cm-cross::after{content:'';position:absolute;background:#fff;box-shadow:0 0 0 1px #000a}
     .cm-cross::before{left:10px;top:0;width:2px;height:22px}
     .cm-cross::after{left:0;top:10px;width:22px;height:2px}
-    .cm-tools{display:flex;gap:8px;pointer-events:none}
+    .cm-tools{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-left:auto;pointer-events:none}
     .cm-layer:not(.cm-touch) .cm-stick,.cm-layer:not(.cm-touch) .cm-acts{display:none}
     .cm-speed{position:absolute;left:50%;top:38%;transform:translateX(-50%);padding:10px 18px;border-radius:12px;background:#211d1dd9;color:#fff;font:700 20px/1.2 Arial,Helvetica,sans-serif;opacity:0;transition:opacity .25s;pointer-events:none}
     .cm-speed.cm-show{opacity:1}`;

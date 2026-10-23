@@ -1,0 +1,28 @@
+{
+  "aggiornato": "2026-10-21T12:53:06.470Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cornice": "cortile",
+  "istanza": 15,
+  "nota_claude": "Non applicata: una barra della cancellata spostata di 3 m. Chiesto all'utente.",
+  "oggetto": "pezzo di cortile dell'azoto",
+  "originale": {
+    "h0": 0,
+    "h1": 4.48,
+    "u0": 11.97,
+    "u1": 11.99,
+    "v0": 12.87,
+    "v1": 12.89
+  },
+  "percorso": "cortile-modello/0/104",
+  "sorgente": "primitiva",
+  "stato": "sospesa",
+  "tipo": "primitiva",
+  "valore": {
+    "h0": 0,
+    "h1": 4.48,
+    "u0": 8.97,
+    "u1": 8.99,
+    "v0": 15.02,
+    "v1": 15.04
+  }
+}

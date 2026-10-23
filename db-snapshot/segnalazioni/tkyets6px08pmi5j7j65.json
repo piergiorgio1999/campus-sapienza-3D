@@ -1,0 +1,44 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T14:40:00Z",
+  "cortile": null,
+  "creato": "2026-10-21T13:28:12.014Z",
+  "elemento": {
+    "chiave": "esterni:elementi.6.totem.0",
+    "etichetta": "Totem 1",
+    "nome": "Ingresso principale (Istituto Chimico)",
+    "percorso": "elementi.6.totem.0",
+    "sorgente": "esterni"
+  },
+  "lato0": {
+    "h": 1.53,
+    "u": 51.1,
+    "v": 21.15
+  },
+  "lonLat": [
+    12.5137821,
+    41.9025887
+  ],
+  "oggetto": "esterni di Chimica: Ingresso principale (Istituto Chimico)",
+  "punto": {
+    "x": -88.48,
+    "y": 1.56,
+    "z": 12.37
+  },
+  "quota": 1.56,
+  "risposta": "Versione 32: il totem si allarga e si assottiglia dalle facce laterali della scatola (campi larghezza e spessore).",
+  "stato": "fatta",
+  "testo": "Non mi fa modificare i lati",
+  "vista": {
+    "camera": [
+      -105.31,
+      24.48,
+      14.09
+    ],
+    "target": [
+      -60.4,
+      -39.43,
+      13.41
+    ]
+  }
+}

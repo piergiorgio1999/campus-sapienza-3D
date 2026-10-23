@@ -1,0 +1,42 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cortile": null,
+  "creato": "2026-10-23T00:18:25.963Z",
+  "elemento": {
+    "chiave": "aggiunta:gin-pilone-2",
+    "etichetta": "Parallelepipedo in intonaco arancione",
+    "nome": "gin-pilone-2",
+    "percorso": "gin-pilone-2",
+    "sorgente": "aggiunta"
+  },
+  "lato0": {
+    "h": 6.04,
+    "u": 25.41,
+    "v": -87.53
+  },
+  "lonLat": [
+    12.5139622,
+    41.9015929
+  ],
+  "oggetto": "esterni di Chimica",
+  "punto": {
+    "x": -73.55,
+    "y": 6.07,
+    "z": 123.04
+  },
+  "quota": 6.07,
+  "stato": "aperta",
+  "testo": "che e sto skifo le colonne son 4 ci son pezzi che escono dal palazzo e che nonson colonne ma chiudono la vista e sembran colonne toglile e poi la balconata non sporge e tutta interna",
+  "vista": {
+    "camera": [
+      -70.15,
+      10.24,
+      132.25
+    ],
+    "target": [
+      -70.88,
+      8.39,
+      126.63
+    ]
+  }
+}

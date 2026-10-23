@@ -1,0 +1,37 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-22T08:39:30.171Z",
+  "cortile": null,
+  "creato": "2026-10-21T18:04:32.488Z",
+  "elemento": null,
+  "lato0": {
+    "h": 3.29,
+    "u": 43.36,
+    "v": 8
+  },
+  "lonLat": [
+    12.5137517,
+    41.9024533
+  ],
+  "oggetto": "esterni di Chimica: Ingresso principale (Istituto Chimico)",
+  "punto": {
+    "x": -91,
+    "y": 3.32,
+    "z": 27.41
+  },
+  "quota": 3.32,
+  "stato": "fatta",
+  "testo": "fai sparire sto solido bianco che avevi messo nella facciata nso cosa sia ma fa schifo",
+  "vista": {
+    "camera": [
+      -110.79,
+      73.46,
+      -46.41
+    ],
+    "target": [
+      -82.49,
+      -16.31,
+      69.12
+    ]
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T18:20:00.000Z",
+  "cortile": {
+    "h": 0.01,
+    "u": 6.26,
+    "v": -2.67
+  },
+  "creato": "2026-10-21T15:38:19.199Z",
+  "elemento": {
+    "chiave": "aggiunta:pmvi77470sy",
+    "etichetta": "Marciapiede",
+    "nome": "pmvi77470sy",
+    "percorso": "pmvi77470sy",
+    "sorgente": "aggiunta"
+  },
+  "lato0": {
+    "h": 0.01,
+    "u": -2.1,
+    "v": -41.1
+  },
+  "lonLat": [
+    12.5134515,
+    41.9018943
+  ],
+  "oggetto": "esterni di Chimica",
+  "punto": {
+    "x": -115.87,
+    "y": 0.04,
+    "z": 89.54
+  },
+  "quota": 0.04,
+  "stato": "fatta",
+  "testo": "le discese devono essere interne al marciapied3 non esterne",
+  "vista": {
+    "camera": [
+      -117.81,
+      2.59,
+      90.6
+    ],
+    "target": [
+      -98.87,
+      -17.47,
+      82.13
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "aggiornato": "2026-10-21T12:51:53.646Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cornice": "cortile",
+  "istanza": null,
+  "nota_claude": "Non applicata: fondo del portico allungato di 58 m. Chiesto all'utente.",
+  "oggetto": "pezzo di cortile dell'azoto",
+  "originale": {
+    "h0": 0,
+    "h1": 4.5,
+    "u0": 1.5,
+    "u1": 16.6,
+    "v0": 12.98,
+    "v1": 12.98
+  },
+  "percorso": "cortile-modello/0/103",
+  "sorgente": "primitiva",
+  "stato": "sospesa",
+  "tipo": "primitiva",
+  "valore": {
+    "h0": 0,
+    "h1": 4.5,
+    "u0": 1.5,
+    "u1": 16.6,
+    "v0": 12.98,
+    "v1": 71.25
+  }
+}

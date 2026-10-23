@@ -1,0 +1,36 @@
+{
+  "aggiornato": "2026-10-23T00:14:19.345Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "pmvk7skt3lh",
+  "nota_claude": "spostata sul bordo esterno della prima rampa ovest (v65)",
+  "oggetto": "Staccionata metallica (in pendenza se la scatola è alta più di 1 m)",
+  "originale": null,
+  "percorso": "pmvk7skt3lh",
+  "scatola": {
+    "h0": 0.51,
+    "h1": 3.03,
+    "u0": 18.82,
+    "u1": 22.07,
+    "v0": -89.8,
+    "v1": -89.75
+  },
+  "sorgente": "aggiunta",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "angolo": 355,
+    "box": {
+      "h0": 0.51,
+      "h1": 3.03,
+      "u0": 18.82,
+      "u1": 22.07,
+      "v0": -89.8,
+      "v1": -89.75
+    },
+    "forma": "oggetto",
+    "id": "pmvk7skt3lh",
+    "modello": "staccionata",
+    "ruota": 0,
+    "specchio": "uv"
+  }
+}

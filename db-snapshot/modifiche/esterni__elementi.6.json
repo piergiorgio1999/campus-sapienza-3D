@@ -1,0 +1,40 @@
+{
+  "aggiornato": "2026-10-21T12:44:08.386Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "Scala antincendio (facciata ovest, cortile azoto) — rilievo Scaniverse 16/10/2026",
+  "nota_claude": "Ripristinata la scala ovest originale, come chiesto nel commento; tutte e quattro le scale salgono ora fino al quarto piano (versione 27).",
+  "oggetto": "Scala antincendio (facciata ovest, cortile azoto) — rilievo Scaniverse 16/10/2026",
+  "originale": {
+    "quote": [
+      2.85,
+      5.25,
+      7.4,
+      9.2
+    ],
+    "u": 15.8
+  },
+  "percorso": "elementi.6",
+  "scatola": {
+    "h0": 0,
+    "h1": 14.5,
+    "u0": 11.6,
+    "u1": 20,
+    "v0": 0.05,
+    "v1": 4.35
+  },
+  "sorgente": "esterni",
+  "stato": "scartata",
+  "tipo": "oggetto",
+  "valore": {
+    "distacco": 0.05,
+    "larghezza": 4.3,
+    "lunghezza": 8.4,
+    "quote": [
+      4.18,
+      7.7,
+      10.86,
+      13.5
+    ],
+    "u": 15.8
+  }
+}

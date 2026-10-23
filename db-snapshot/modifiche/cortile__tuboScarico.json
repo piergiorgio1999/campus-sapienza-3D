@@ -1,0 +1,84 @@
+{
+  "aggiornato": "2026-10-21T12:47:26.892Z",
+  "applicata": "2026-10-21T13:45:00Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "",
+  "nota_claude": "Riportata in cortile/modello.json (versione 27).",
+  "oggetto": "Tubo di scarico del silos",
+  "originale": {
+    "canaletta": {
+      "larghezza": 0.16,
+      "u": 11.8,
+      "v": [
+        4.3,
+        5.85
+      ]
+    },
+    "percorso": [
+      [
+        13.35,
+        6.15,
+        0.68
+      ],
+      [
+        13.35,
+        5.75,
+        0.68
+      ],
+      [
+        11.78,
+        5.75,
+        0.68
+      ],
+      [
+        11.78,
+        5.75,
+        0.02
+      ]
+    ]
+  },
+  "percorso": "tuboScarico",
+  "scatola": {
+    "h0": -0.1,
+    "h1": 0.76,
+    "u0": 10.4,
+    "u1": 11.45,
+    "v0": 5.87,
+    "v1": 7.45
+  },
+  "sorgente": "cortile",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "canaletta": {
+      "larghezza": 0.18,
+      "u": 10.5,
+      "v": [
+        4.5,
+        6.05
+      ]
+    },
+    "percorso": [
+      [
+        11.37,
+        7.37,
+        0.68
+      ],
+      [
+        11.37,
+        5.95,
+        0.68
+      ],
+      [
+        10.48,
+        5.95,
+        0.68
+      ],
+      [
+        10.48,
+        5.95,
+        -0.02
+      ]
+    ]
+  }
+}

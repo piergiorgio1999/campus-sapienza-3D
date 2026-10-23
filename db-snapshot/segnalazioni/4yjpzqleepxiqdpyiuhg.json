@@ -1,0 +1,47 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-22T09:50:00.000Z",
+  "cortile": {
+    "h": 1.53,
+    "u": 8.63,
+    "v": 12.87
+  },
+  "creato": "2026-10-22T08:46:31.539Z",
+  "elemento": {
+    "chiave": "cortile:portico",
+    "etichetta": "Portico",
+    "nome": "",
+    "percorso": "portico",
+    "sorgente": "cortile"
+  },
+  "lato0": {
+    "h": 1.53,
+    "u": 13.47,
+    "v": -43.25
+  },
+  "lonLat": [
+    12.5136363,
+    41.9019264
+  ],
+  "oggetto": "cortile dell'azoto",
+  "punto": {
+    "x": -100.56,
+    "y": 1.56,
+    "z": 85.97
+  },
+  "quota": 1.56,
+  "stato": "fatta",
+  "testo": "Il cancello ha una trama a rete fitta non e solo sbarre perpendicolari al suolo e deve essere trasparente che si veda oltre la griglia",
+  "vista": {
+    "camera": [
+      -111.51,
+      4.18,
+      89.45
+    ],
+    "target": [
+      -102.75,
+      2.45,
+      86.06
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "aggiornato": "2026-10-21T15:37:12.482Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cornice": "cortile",
+  "istanza": null,
+  "nota": "Superata da cancellata.sporgenza = 0.4 in cortile/modello.json.",
+  "oggetto": "pezzo di cortile dell'azoto",
+  "originale": {
+    "h0": 0.9,
+    "h1": 0.95,
+    "u0": 0.2,
+    "u1": 6,
+    "v0": -0.03,
+    "v1": 0.03
+  },
+  "percorso": "cortile-modello/0/35",
+  "sorgente": "primitiva",
+  "stato": "applicata",
+  "tipo": "primitiva",
+  "valore": {
+    "h0": 0.9,
+    "h1": 0.95,
+    "u0": -0.05,
+    "u1": 6,
+    "v0": -0.03,
+    "v1": 0.03
+  }
+}

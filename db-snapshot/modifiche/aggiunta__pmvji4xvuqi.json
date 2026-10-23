@@ -1,0 +1,33 @@
+{
+  "aggiornato": "2026-10-22T12:13:09.695Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "pmvji4xvuqi",
+  "oggetto": "Transenna a strisce bianche e rosse",
+  "originale": null,
+  "percorso": "pmvji4xvuqi",
+  "scatola": {
+    "h0": 0.01,
+    "h1": 1.13,
+    "u0": 4.62,
+    "u1": 6.68,
+    "v0": -41.65,
+    "v1": -41.05
+  },
+  "sorgente": "aggiunta",
+  "stato": "da applicare",
+  "tipo": "oggetto",
+  "valore": {
+    "box": {
+      "h0": 0.01,
+      "h1": 1.13,
+      "u0": 4.62,
+      "u1": 6.68,
+      "v0": -41.65,
+      "v1": -41.05
+    },
+    "forma": "oggetto",
+    "id": "pmvji4xvuqi",
+    "modello": "transennaStrisce",
+    "ruota": 0
+  }
+}

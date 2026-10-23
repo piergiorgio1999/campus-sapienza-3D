@@ -1,0 +1,36 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cortile": null,
+  "creato": "2026-10-22T12:28:26.527Z",
+  "elemento": null,
+  "lato0": {
+    "h": -0.09,
+    "u": -4.19,
+    "v": -90.5
+  },
+  "lonLat": [
+    12.5136415,
+    41.9014725
+  ],
+  "oggetto": "terreno o contesto",
+  "punto": {
+    "x": -100.13,
+    "y": -0.06,
+    "z": 136.41
+  },
+  "quota": -0.06,
+  "stato": "aperta",
+  "testo": "aggiungi lafunzione ctrl zeta per annullare le modifiche",
+  "vista": {
+    "camera": [
+      -164.28,
+      105.83,
+      64.79
+    ],
+    "target": [
+      -46.49,
+      -20.34,
+      108.43
+    ]
+  }
+}

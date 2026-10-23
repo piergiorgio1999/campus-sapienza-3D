@@ -1,0 +1,44 @@
+{
+  "aggiornato": "2026-10-23T00:07:29.313Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "gin-ovest-pilone",
+  "oggetto": "Parallelepipedo in travertino",
+  "originale": {
+    "angolo": 345.23,
+    "box": {
+      "h0": 0,
+      "h1": 4.3,
+      "u0": 17.29,
+      "u1": 20.29,
+      "v0": -88.34,
+      "v1": -87.74
+    },
+    "forma": "box",
+    "id": "gin-ovest-pilone"
+  },
+  "percorso": "gin-ovest-pilone",
+  "scatola": {
+    "h0": 0,
+    "h1": 4.3,
+    "u0": 16.6,
+    "u1": 18.81,
+    "v0": -89.5,
+    "v1": -88.9
+  },
+  "sorgente": "aggiunta",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "angolo": 345.23,
+    "box": {
+      "h0": 0,
+      "h1": 4.3,
+      "u0": 16.6,
+      "u1": 18.81,
+      "v0": -89.5,
+      "v1": -88.9
+    },
+    "forma": "box",
+    "id": "gin-ovest-pilone"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T13:45:00Z",
+  "cortile": null,
+  "creato": "2026-10-21T12:29:57.200Z",
+  "elemento": null,
+  "lato0": {
+    "h": 1.39,
+    "u": 47.63,
+    "v": 0
+  },
+  "lonLat": [
+    12.5138344,
+    41.9023999
+  ],
+  "oggetto": "edificio CU014",
+  "punto": {
+    "x": -84.15,
+    "y": 1.42,
+    "z": 33.35
+  },
+  "quota": 1.42,
+  "risposta": "Ingresso principale a u 47,6 dalle foto.",
+  "stato": "fatta",
+  "testo": "qua abbiamo l'entrata principale ora ti allego le foto",
+  "vista": {
+    "camera": [
+      -94.39,
+      8.57,
+      12.54
+    ],
+    "target": [
+      -88.08,
+      8.06,
+      27.69
+    ]
+  }
+}

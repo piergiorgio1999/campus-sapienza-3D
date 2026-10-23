@@ -1,0 +1,28 @@
+{
+  "aggiornato": "2026-10-21T12:50:40.824Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cornice": "lato0",
+  "istanza": null,
+  "nota_claude": "Gli edifici non si deformano più (solo texture e finestre), come chiesto nel commento.",
+  "oggetto": "pezzo di edificio",
+  "originale": {
+    "h0": 8.81,
+    "h1": 15.11,
+    "u0": 4.88,
+    "u1": 36.99,
+    "v0": -58.53,
+    "v1": -28.59
+  },
+  "percorso": "edifici/56",
+  "sorgente": "primitiva",
+  "stato": "scartata",
+  "tipo": "primitiva",
+  "valore": {
+    "h0": 8.81,
+    "h1": 15.11,
+    "u0": 27.85,
+    "u1": 36.98,
+    "v0": -58.53,
+    "v1": -28.59
+  }
+}

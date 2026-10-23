@@ -1,0 +1,47 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T18:00:00.000Z",
+  "cortile": {
+    "h": 0.01,
+    "u": 6.01,
+    "v": 3.29
+  },
+  "creato": "2026-10-21T14:16:58.888Z",
+  "elemento": {
+    "chiave": "cortile:pavimento",
+    "etichetta": "Pavimento del cortile",
+    "nome": "",
+    "percorso": "pavimento",
+    "sorgente": "cortile"
+  },
+  "lato0": {
+    "h": 0.01,
+    "u": 3.86,
+    "v": -40.76
+  },
+  "lonLat": [
+    12.5135172,
+    41.9019164
+  ],
+  "oggetto": "cortile dell'azoto",
+  "punto": {
+    "x": -110.43,
+    "y": 0.04,
+    "z": 87.09
+  },
+  "quota": 0.04,
+  "stato": "fatta",
+  "testo": "aggiungi ai solidi non primitivi tipo cubi sfere e cilindrila funzione ruota richiamabile con pulsante dopo averli selezionati e aggiungi anche ilmodello di una tranzenna con le barre bianche e rosseinclinate a 35 gradi in senso orario",
+  "vista": {
+    "camera": [
+      -118.02,
+      16.98,
+      94.42
+    ],
+    "target": [
+      -98.54,
+      -15.74,
+      78.34
+    ]
+  }
+}

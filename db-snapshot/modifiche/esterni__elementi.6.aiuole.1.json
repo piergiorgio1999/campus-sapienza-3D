@@ -1,0 +1,39 @@
+{
+  "aggiornato": "2026-10-21T13:29:25.102Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "Ingresso principale (Istituto Chimico)",
+  "oggetto": "Prato 2 dell'ingresso",
+  "originale": {
+    "u": [
+      50.6,
+      56
+    ],
+    "v": [
+      6.4,
+      20.6
+    ]
+  },
+  "percorso": "elementi.6.aiuole.1",
+  "scatola": {
+    "h0": 0,
+    "h1": 0.18,
+    "u0": 50.6,
+    "u1": 85.55,
+    "v0": 4.9,
+    "v1": 20.6
+  },
+  "sorgente": "esterni",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "cordolo": 0.18,
+    "u": [
+      50.6,
+      85.55
+    ],
+    "v": [
+      4.9,
+      20.6
+    ]
+  }
+}

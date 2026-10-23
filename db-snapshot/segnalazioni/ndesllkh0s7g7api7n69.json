@@ -1,0 +1,44 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T13:45:00Z",
+  "cortile": null,
+  "creato": "2026-10-21T12:45:19.167Z",
+  "elemento": {
+    "chiave": "esterni:elementi.8",
+    "etichetta": "Scala antincendio (facciata sud, accanto all'anfiteatro)",
+    "nome": "Scala antincendio (facciata sud, accanto all'anfiteatro)",
+    "percorso": "elementi.8",
+    "sorgente": "esterni"
+  },
+  "lato0": {
+    "h": 8.66,
+    "u": 55.03,
+    "v": -94.49
+  },
+  "lonLat": [
+    12.5143261,
+    41.9016298
+  ],
+  "oggetto": "esterni di Chimica: Scala antincendio (facciata sud, accanto all'anfiteatro)",
+  "punto": {
+    "x": -43.4,
+    "y": 8.69,
+    "z": 118.93
+  },
+  "quota": 8.69,
+  "risposta": "Scala ovest ripristinata; tutte e quattro le scale salgono fino al quarto piano (17,1 m). L'edificio è a 5 livelli come nelle foto.",
+  "stato": "fatta",
+  "testo": "ripristina originale \nmettilo pero ripetuto una seconda volta in altezza fino ad ultimo piano e cosi per le altre 3",
+  "vista": {
+    "camera": [
+      -65.61,
+      134.96,
+      157.21
+    ],
+    "target": [
+      -67.08,
+      15.45,
+      112.07
+    ]
+  }
+}

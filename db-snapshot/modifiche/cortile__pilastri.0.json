@@ -1,0 +1,40 @@
+{
+  "aggiornato": "2026-10-21T14:23:57.001Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "",
+  "oggetto": "Pilastro 1 del portico",
+  "originale": {
+    "altezza": 4.5,
+    "u": [
+      0.2,
+      1.5
+    ],
+    "v": [
+      9.3,
+      10.1
+    ]
+  },
+  "percorso": "pilastri.0",
+  "scatola": {
+    "h0": 0,
+    "h1": 5,
+    "u0": 3.2,
+    "u1": 4.25,
+    "v0": 8.45,
+    "v1": 9.25
+  },
+  "sorgente": "cortile",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "altezza": 5,
+    "u": [
+      3.2,
+      4.25
+    ],
+    "v": [
+      8.45,
+      9.25
+    ]
+  }
+}

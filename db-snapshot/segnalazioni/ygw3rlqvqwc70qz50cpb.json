@@ -1,0 +1,41 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T18:10:00.000Z",
+  "cortile": {
+    "h": 0.94,
+    "u": 0.11,
+    "v": -0.03
+  },
+  "creato": "2026-10-21T15:37:54.032Z",
+  "elemento": null,
+  "lato0": {
+    "h": 0.94,
+    "u": 0.46,
+    "v": -34.91
+  },
+  "lonLat": [
+    12.5134536,
+    41.9019545
+  ],
+  "oggetto": "cortile dell'azoto",
+  "punto": {
+    "x": -115.69,
+    "y": 0.97,
+    "z": 82.84
+  },
+  "quota": 0.97,
+  "stato": "fatta",
+  "testo": "piena questo spazio del cancello con le sparre una due o tre che necessita",
+  "vista": {
+    "camera": [
+      -118.61,
+      4.08,
+      85.28
+    ],
+    "target": [
+      -99.66,
+      -15.98,
+      76.8
+    ]
+  }
+}

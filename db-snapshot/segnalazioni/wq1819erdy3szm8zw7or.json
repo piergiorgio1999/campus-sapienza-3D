@@ -1,0 +1,42 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cortile": null,
+  "creato": "2026-10-23T00:15:34.332Z",
+  "elemento": {
+    "chiave": "aggiunta:pmvk7skt3lh",
+    "etichetta": "Staccionata metallica (in pendenza se la scatola è alta più di 1 m)",
+    "nome": "pmvk7skt3lh",
+    "percorso": "pmvk7skt3lh",
+    "sorgente": "aggiunta"
+  },
+  "lato0": {
+    "h": 2.19,
+    "u": 20.6,
+    "v": -89.81
+  },
+  "lonLat": [
+    12.5139179,
+    41.9015582
+  ],
+  "oggetto": "esterni di Chimica",
+  "punto": {
+    "x": -77.23,
+    "y": 2.22,
+    "z": 126.89
+  },
+  "quota": 2.22,
+  "stato": "aperta",
+  "testo": "mettimi in sposta le tre freccie dei versori per devidere il verso se x y o z e poi fai che ingrandire come ruotare va selezionate ed e a parte in modifica",
+  "vista": {
+    "camera": [
+      -84.21,
+      6.17,
+      135.3
+    ],
+    "target": [
+      -80.82,
+      0.76,
+      125.6
+    ]
+  }
+}

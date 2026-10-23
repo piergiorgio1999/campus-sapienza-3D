@@ -1,0 +1,45 @@
+{
+  "aggiornato": "2026-10-21T14:30:30.493Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "pmvi7k8iv1y",
+  "oggetto": "Aiuola squadrata (prato)",
+  "originale": null,
+  "percorso": "pmvi7k8iv1y",
+  "scatola": {
+    "h0": -0.09,
+    "h1": 0.21,
+    "u0": 92.1,
+    "u1": 107.05,
+    "v0": -88.9,
+    "v1": -21.35
+  },
+  "sorgente": "aggiunta",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "altezza": 0.3,
+    "base": -0.09,
+    "forma": "aiuola",
+    "id": "pmvi7k8iv1y",
+    "poligono": [
+      [
+        92.1,
+        -88.9
+      ],
+      [
+        107.05,
+        -88.9
+      ],
+      [
+        107.05,
+        -21.35
+      ],
+      [
+        92.1,
+        -21.35
+      ]
+    ],
+    "terreno": "prato",
+    "tipo": "squadrata"
+  }
+}

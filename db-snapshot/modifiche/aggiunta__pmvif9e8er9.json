@@ -1,0 +1,35 @@
+{
+  "aggiornato": "2026-10-21T18:04:55.870Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "pmvif9e8er9",
+  "nota": "Aggiunta eliminata dall'utente; non è nei file.",
+  "oggetto": "Parallelepipedo in travertino",
+  "originale": null,
+  "percorso": "pmvif9e8er9",
+  "scatola": {
+    "h0": 0,
+    "h1": 3,
+    "u0": 44.9,
+    "u1": 72.8,
+    "v0": 11.7,
+    "v1": 15.1
+  },
+  "sorgente": "aggiunta",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "box": {
+      "h0": 0,
+      "h1": 3,
+      "u0": 44.9,
+      "u1": 72.8,
+      "v0": 11.7,
+      "v1": 15.1
+    },
+    "cornice": "esterni:11",
+    "forma": "box",
+    "id": "pmvif9e8er9",
+    "materiale": "travertino",
+    "rimosso": true
+  }
+}

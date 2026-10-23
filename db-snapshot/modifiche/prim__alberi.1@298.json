@@ -1,0 +1,29 @@
+{
+  "aggiornato": "2026-10-21T12:39:14.571Z",
+  "applicata": "2026-10-21T13:45:00Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cornice": "lato0",
+  "istanza": 298,
+  "nota_claude": "Albero eliminato da trees.json (versione 26).",
+  "oggetto": "pezzo di albero",
+  "originale": {
+    "h0": 4.34,
+    "h1": 7.01,
+    "u0": -3.35,
+    "u1": 1.07,
+    "v0": -16.34,
+    "v1": -11.9
+  },
+  "percorso": "alberi/1",
+  "sorgente": "primitiva",
+  "stato": "applicata",
+  "tipo": "primitiva",
+  "valore": {
+    "h0": 4.34,
+    "h1": 49.6,
+    "u0": -3.35,
+    "u1": 1.07,
+    "v0": -16.34,
+    "v1": -11.9
+  }
+}

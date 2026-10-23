@@ -1,0 +1,46 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cortile": {
+    "h": 2.03,
+    "u": 8.49,
+    "v": 12.88
+  },
+  "creato": "2026-10-22T12:14:32.830Z",
+  "elemento": {
+    "chiave": "cortile:portico",
+    "etichetta": "Portico",
+    "nome": "",
+    "percorso": "portico",
+    "sorgente": "cortile"
+  },
+  "lato0": {
+    "h": 2.03,
+    "u": 13.48,
+    "v": -43.11
+  },
+  "lonLat": [
+    12.5136358,
+    41.9019276
+  ],
+  "oggetto": "cortile dell'azoto",
+  "punto": {
+    "x": -100.6,
+    "y": 2.06,
+    "z": 85.84
+  },
+  "quota": 2.06,
+  "stato": "aperta",
+  "testo": "questo innmod csmmina si deve aprire con transizione delle due porte che si aprono verso il cortile esterno e fai la griglia con le barre piu spesse che senno non si vedono",
+  "vista": {
+    "camera": [
+      -110.5,
+      3.05,
+      90.39
+    ],
+    "target": [
+      -107.21,
+      2.16,
+      88.3
+    ]
+  }
+}

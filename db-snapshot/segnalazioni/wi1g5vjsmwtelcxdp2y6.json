@@ -1,0 +1,41 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T18:00:00.000Z",
+  "cortile": {
+    "h": 21.01,
+    "u": 3.8,
+    "v": 9.47
+  },
+  "creato": "2026-10-21T15:39:34.599Z",
+  "elemento": null,
+  "lato0": {
+    "h": 21.01,
+    "u": 10,
+    "v": -38.47
+  },
+  "lonLat": [
+    12.5135765,
+    41.9019554
+  ],
+  "oggetto": "edificio",
+  "punto": {
+    "x": -105.51,
+    "y": 21.04,
+    "z": 82.75
+  },
+  "quota": 21.04,
+  "stato": "fatta",
+  "testo": "la parte soprail cancello e un solo piano quindi iu bassa rispetto al resto edificio",
+  "vista": {
+    "camera": [
+      -120.38,
+      79.12,
+      87.1
+    ],
+    "target": [
+      -97.01,
+      -16.91,
+      84.57
+    ]
+  }
+}

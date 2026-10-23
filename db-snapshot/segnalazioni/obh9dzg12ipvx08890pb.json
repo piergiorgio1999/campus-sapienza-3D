@@ -1,0 +1,43 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T18:40:00.000Z",
+  "cortile": null,
+  "creato": "2026-10-21T18:07:40.903Z",
+  "elemento": {
+    "chiave": "esterni:elementi.6.aiuole.1",
+    "etichetta": "Prato 2 dell'ingresso",
+    "nome": "Ingresso principale (Istituto Chimico)",
+    "percorso": "elementi.6.aiuole.1",
+    "sorgente": "esterni"
+  },
+  "lato0": {
+    "h": 0.14,
+    "u": 52.61,
+    "v": 12.68
+  },
+  "lonLat": [
+    12.5138356,
+    41.9025224
+  ],
+  "oggetto": "esterni di Chimica: Ingresso principale (Istituto Chimico)",
+  "punto": {
+    "x": -84.04,
+    "y": 0.17,
+    "z": 19.73
+  },
+  "quota": 0.17,
+  "stato": "fatta",
+  "testo": "qua secondo pergolato",
+  "vista": {
+    "camera": [
+      -83.78,
+      90,
+      21.04
+    ],
+    "target": [
+      -92.7,
+      -24.94,
+      23.37
+    ]
+  }
+}

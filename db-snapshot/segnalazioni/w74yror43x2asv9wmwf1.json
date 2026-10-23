@@ -1,0 +1,46 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cortile": {
+    "h": 0.05,
+    "u": 9.64,
+    "v": -4.66
+  },
+  "creato": "2026-10-22T12:05:57.599Z",
+  "elemento": {
+    "chiave": "aggiunta:pmvjhs7m6nc",
+    "etichetta": "Parallelepipedo in asfalto",
+    "nome": "pmvjhs7m6nc",
+    "percorso": "pmvjhs7m6nc",
+    "sorgente": "aggiunta"
+  },
+  "lato0": {
+    "h": 0.05,
+    "u": -4.04,
+    "v": -44.51
+  },
+  "lonLat": [
+    12.5134445,
+    41.9018594
+  ],
+  "oggetto": "esterni di Chimica",
+  "punto": {
+    "x": -116.45,
+    "y": 0.08,
+    "z": 93.41
+  },
+  "quota": 0.08,
+  "stato": "aperta",
+  "testo": "asfalto quando piatto deve stare ben sotto ai marciapiedi e quando ce un marciapiede si elimina la parte sotto senno sfarfalla",
+  "vista": {
+    "camera": [
+      -124.7,
+      23.15,
+      88.7
+    ],
+    "target": [
+      -123.98,
+      -0.15,
+      90.42
+    ]
+  }
+}

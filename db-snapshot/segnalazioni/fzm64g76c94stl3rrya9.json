@@ -1,0 +1,38 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T13:45:00Z",
+  "cortile": null,
+  "creato": "2026-10-21T12:32:26.056Z",
+  "elemento": null,
+  "lato0": {
+    "h": 0.48,
+    "u": -1.84,
+    "v": -8.39
+  },
+  "lonLat": [
+    12.5133132,
+    41.90217
+  ],
+  "oggetto": "albero",
+  "punto": {
+    "x": -127.33,
+    "y": 0.51,
+    "z": 58.9
+  },
+  "quota": 0.51,
+  "risposta": "Gli alberi si selezionano interi, si spostano, si eliminano (con Annulla) e si aggiungono.",
+  "stato": "fatta",
+  "testo": "devo poter selezionare rimuovere e spostare anche gli alberi",
+  "vista": {
+    "camera": [
+      -150.23,
+      38.82,
+      79.51
+    ],
+    "target": [
+      -132.57,
+      10.29,
+      76.75
+    ]
+  }
+}

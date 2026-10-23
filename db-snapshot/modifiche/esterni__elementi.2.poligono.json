@@ -1,0 +1,48 @@
+{
+  "aggiornato": "2026-10-21T12:27:24.632Z",
+  "applicata": "2026-10-21T13:45:00Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "Rientranza a livello terra (angolo sud-est della terrazza)",
+  "nota_claude": "Riportata in cortile/chimica-esterni.json (versione 26).",
+  "oggetto": "Rientranza a livello terra (angolo sud-est della terrazza)",
+  "originale": [
+    [
+      69.4,
+      -20.4
+    ],
+    [
+      85.3,
+      -20.4
+    ],
+    [
+      85.3,
+      -15.5
+    ],
+    [
+      69.4,
+      -15.5
+    ]
+  ],
+  "percorso": "elementi.2.poligono",
+  "sorgente": "esterni",
+  "stato": "applicata",
+  "tipo": "poly",
+  "valore": [
+    [
+      69.4,
+      -20.65
+    ],
+    [
+      85.75,
+      -20.65
+    ],
+    [
+      85.75,
+      -15.5
+    ],
+    [
+      69.4,
+      -15.5
+    ]
+  ]
+}

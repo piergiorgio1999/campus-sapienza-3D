@@ -1,0 +1,47 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T18:00:00.000Z",
+  "cortile": {
+    "h": 1.06,
+    "u": 9.01,
+    "v": 12.84
+  },
+  "creato": "2026-10-21T14:14:27.407Z",
+  "elemento": {
+    "chiave": "cortile:portico",
+    "etichetta": "Portico",
+    "nome": "",
+    "percorso": "portico",
+    "sorgente": "cortile"
+  },
+  "lato0": {
+    "h": 1.06,
+    "u": 13.45,
+    "v": -43.63
+  },
+  "lonLat": [
+    12.5136377,
+    41.9019232
+  ],
+  "oggetto": "cortile dell'azoto",
+  "punto": {
+    "x": -100.44,
+    "y": 1.09,
+    "z": 86.33
+  },
+  "quota": 1.09,
+  "stato": "fatta",
+  "testo": "qua il cancelloche divide i due cortili non è cosi esteso ma e dentro ad una parete ora nel mess successivo ti allego foto di referenza",
+  "vista": {
+    "camera": [
+      -138.44,
+      31.49,
+      97.43
+    ],
+    "target": [
+      -91.65,
+      -13.77,
+      89.42
+    ]
+  }
+}

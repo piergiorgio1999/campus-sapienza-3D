@@ -1,0 +1,33 @@
+{
+  "aggiornato": "2026-10-21T14:18:54.386Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "pmvi579i36b",
+  "oggetto": "Parallelepipedo in asfalto",
+  "originale": null,
+  "percorso": "pmvi579i36b",
+  "scatola": {
+    "h0": -0.09,
+    "h1": -0.04,
+    "u0": -6.15,
+    "u1": 1.85,
+    "v0": -94.25,
+    "v1": 20.5
+  },
+  "sorgente": "aggiunta",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "box": {
+      "h0": -0.09,
+      "h1": -0.04,
+      "u0": -6.15,
+      "u1": 1.85,
+      "v0": -94.25,
+      "v1": 20.5
+    },
+    "forma": "box",
+    "id": "pmvi579i36b",
+    "materiale": "asfalto",
+    "rimosso": true
+  }
+}

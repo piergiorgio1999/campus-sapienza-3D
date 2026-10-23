@@ -1,0 +1,47 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-22T09:50:00.000Z",
+  "cortile": {
+    "h": 2.46,
+    "u": 0.51,
+    "v": 10.78
+  },
+  "creato": "2026-10-22T08:45:40.502Z",
+  "elemento": {
+    "chiave": "aggiunta:pmvjamz7iwe",
+    "etichetta": "Portone in legno con stipiti",
+    "nome": "pmvjamz7iwe",
+    "percorso": "pmvjamz7iwe",
+    "sorgente": "aggiunta"
+  },
+  "lato0": {
+    "h": 2.46,
+    "u": 11.26,
+    "v": -35.16
+  },
+  "lonLat": [
+    12.5135765,
+    41.9019873
+  ],
+  "oggetto": "esterni di Chimica",
+  "punto": {
+    "x": -105.52,
+    "y": 2.49,
+    "z": 79.21
+  },
+  "quota": 2.49,
+  "stato": "fatta",
+  "testo": "Il portone deve sempre rimanere attaccato ad una parete e poggiato al suoloquamdo lo si muove e questo fallo in variante senza vetri ma solo due porte marroni metallico tipo antincendio come maniglia sul retro ha una rossa da spingere e davanti una classica maniglia ad l in plastica e ha sopra una finestra vasistas",
+  "vista": {
+    "camera": [
+      -111.24,
+      4.21,
+      89.18
+    ],
+    "target": [
+      -108.79,
+      3.95,
+      81.08
+    ]
+  }
+}

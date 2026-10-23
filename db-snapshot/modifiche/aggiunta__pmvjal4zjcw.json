@@ -1,0 +1,33 @@
+{
+  "aggiornato": "2026-10-22T12:16:04.728Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "pmvjal4zjcw",
+  "oggetto": "Tubo rosso a muro",
+  "originale": null,
+  "percorso": "pmvjal4zjcw",
+  "scatola": {
+    "h0": 0.63,
+    "h1": 0.68,
+    "u0": 0.32,
+    "u1": 0.42,
+    "v0": -39.43,
+    "v1": -35.37
+  },
+  "sorgente": "aggiunta",
+  "stato": "da applicare",
+  "tipo": "oggetto",
+  "valore": {
+    "box": {
+      "h0": 0.63,
+      "h1": 0.68,
+      "u0": 0.32,
+      "u1": 0.42,
+      "v0": -39.43,
+      "v1": -35.37
+    },
+    "forma": "oggetto",
+    "id": "pmvjal4zjcw",
+    "modello": "tuboRosso",
+    "ruota": 90
+  }
+}

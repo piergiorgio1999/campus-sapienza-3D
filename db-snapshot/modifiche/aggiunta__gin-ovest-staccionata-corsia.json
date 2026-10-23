@@ -1,0 +1,49 @@
+{
+  "aggiornato": "2026-10-23T00:18:43.694Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "gin-ovest-staccionata-corsia",
+  "oggetto": "Staccionata metallica (in pendenza se la scatola è alta più di 1 m)",
+  "originale": {
+    "angolo": 254.02,
+    "box": {
+      "h0": 2.2,
+      "h1": 3.2,
+      "u0": 17.64,
+      "u1": 18.89,
+      "v0": -86.91,
+      "v1": -86.86
+    },
+    "forma": "oggetto",
+    "id": "gin-ovest-staccionata-corsia",
+    "modello": "staccionata",
+    "ruota": 0
+  },
+  "percorso": "gin-ovest-staccionata-corsia",
+  "scatola": {
+    "h0": 2.2,
+    "h1": 3.2,
+    "u0": 17.64,
+    "u1": 18.89,
+    "v0": -86.91,
+    "v1": -86.86
+  },
+  "sorgente": "aggiunta",
+  "stato": "da applicare",
+  "tipo": "oggetto",
+  "valore": {
+    "angolo": 254.02,
+    "box": {
+      "h0": 2.2,
+      "h1": 3.2,
+      "u0": 17.64,
+      "u1": 18.89,
+      "v0": -86.91,
+      "v1": -86.86
+    },
+    "forma": "oggetto",
+    "id": "gin-ovest-staccionata-corsia",
+    "modello": "staccionata",
+    "rimosso": true,
+    "ruota": 0
+  }
+}

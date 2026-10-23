@@ -1,0 +1,36 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cortile": null,
+  "creato": "2026-10-22T16:47:19.898Z",
+  "elemento": null,
+  "lato0": {
+    "h": 9.38,
+    "u": 46.54,
+    "v": -64.19
+  },
+  "lonLat": [
+    12.5140995,
+    41.901857
+  ],
+  "oggetto": "edificio CU014",
+  "punto": {
+    "x": -62.18,
+    "y": 9.41,
+    "z": 93.68
+  },
+  "quota": 9.41,
+  "stato": "aperta",
+  "testo": "anche qua non ha fora ad angoli retti il buco",
+  "vista": {
+    "camera": [
+      -73.45,
+      74.28,
+      191.8
+    ],
+    "target": [
+      -73.88,
+      0,
+      79.68
+    ]
+  }
+}

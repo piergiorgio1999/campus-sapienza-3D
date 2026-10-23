@@ -1,0 +1,37 @@
+{
+  "aggiornato": "2026-10-22T16:47:37.264Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "Scala antincendio (facciata sud, accanto all'anfiteatro)",
+  "oggetto": "Scala antincendio (facciata sud, accanto all'anfiteatro)",
+  "originale": {
+    "u": 5.7
+  },
+  "percorso": "elementi.10",
+  "scatola": {
+    "h0": 0,
+    "h1": 16.85,
+    "u0": -1.35,
+    "u1": 7.05,
+    "v0": 0.25,
+    "v1": 4.55
+  },
+  "sorgente": "esterni",
+  "stato": "da applicare",
+  "tipo": "oggetto",
+  "valore": {
+    "distacco": 0.25,
+    "larghezza": 4.3,
+    "lunghezza": 8.4,
+    "quote": [
+      2.43,
+      4.87,
+      6.7,
+      8.53,
+      10.36,
+      12.19,
+      14.02,
+      15.85
+    ],
+    "u": 2.85
+  }
+}

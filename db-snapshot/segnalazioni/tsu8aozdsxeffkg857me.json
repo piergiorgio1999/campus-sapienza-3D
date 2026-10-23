@@ -1,0 +1,42 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T12:45:00Z",
+  "cortile": {
+    "h": -0.09,
+    "u": 11.48,
+    "v": 13.3
+  },
+  "creato": "2026-10-21T12:21:09.971Z",
+  "elemento": null,
+  "lato0": {
+    "h": -0.09,
+    "u": 13.95,
+    "v": -46.09
+  },
+  "lonLat": [
+    12.513654,
+    41.9019041
+  ],
+  "oggetto": "terreno o contesto",
+  "punto": {
+    "x": -99.1,
+    "y": -0.06,
+    "z": 88.45
+  },
+  "quota": -0.06,
+  "risposta": "Il buco dietro il portico è coperto: cancellata e fondo del cortile interno su tutta la larghezza (versione 24).",
+  "stato": "fatta",
+  "testo": "qua ce un buco di texture",
+  "vista": {
+    "camera": [
+      -108.74,
+      4.08,
+      83.41
+    ],
+    "target": [
+      -77.45,
+      -6.87,
+      95.92
+    ]
+  }
+}

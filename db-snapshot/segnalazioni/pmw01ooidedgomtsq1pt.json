@@ -1,0 +1,37 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T18:20:00.000Z",
+  "cortile": null,
+  "creato": "2026-10-21T15:42:45.998Z",
+  "elemento": null,
+  "lato0": {
+    "h": -0.09,
+    "u": 12.29,
+    "v": -72.32
+  },
+  "lonLat": [
+    12.5137487,
+    41.9016784
+  ],
+  "oggetto": "terreno o contesto",
+  "punto": {
+    "x": -91.25,
+    "y": -0.06,
+    "z": 113.53
+  },
+  "quota": -0.06,
+  "stato": "fatta",
+  "testo": "qua il volume negativo non e a pianta rettangolare",
+  "vista": {
+    "camera": [
+      -68.08,
+      274.9,
+      100.95
+    ],
+    "target": [
+      -73.88,
+      0,
+      79.68
+    ]
+  }
+}

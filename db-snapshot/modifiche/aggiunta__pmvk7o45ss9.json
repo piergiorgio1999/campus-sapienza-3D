@@ -1,0 +1,32 @@
+{
+  "aggiornato": "2026-10-23T00:23:53.676Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "pmvk7o45ss9",
+  "oggetto": "Parallelepipedo in travertino",
+  "originale": null,
+  "percorso": "pmvk7o45ss9",
+  "scatola": {
+    "h0": 0,
+    "h1": 4.3,
+    "u0": 18.54,
+    "u1": 23.74,
+    "v0": -86.87,
+    "v1": -86.64
+  },
+  "sorgente": "aggiunta",
+  "stato": "da applicare",
+  "tipo": "oggetto",
+  "valore": {
+    "angolo": 345.23,
+    "box": {
+      "h0": 0,
+      "h1": 4.3,
+      "u0": 18.54,
+      "u1": 23.74,
+      "v0": -86.87,
+      "v1": -86.64
+    },
+    "forma": "box",
+    "id": "pmvk7o45ss9"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "aggiornato": "2026-10-21T13:30:49.219Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "Ingresso principale (Istituto Chimico)",
+  "oggetto": "Aiuola fiorita",
+  "originale": {
+    "u": [
+      38,
+      44.2
+    ],
+    "v": [
+      18.8,
+      20.3
+    ]
+  },
+  "percorso": "elementi.6.fiori",
+  "scatola": {
+    "h0": 0.1,
+    "h1": 0.4,
+    "u0": 10.95,
+    "u1": 44.2,
+    "v0": 18.8,
+    "v1": 20.3
+  },
+  "sorgente": "esterni",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "altezza": 0.4,
+    "u": [
+      10.95,
+      44.2
+    ],
+    "v": [
+      18.8,
+      20.3
+    ]
+  }
+}

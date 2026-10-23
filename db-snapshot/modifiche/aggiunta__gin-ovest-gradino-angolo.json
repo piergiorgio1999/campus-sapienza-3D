@@ -1,0 +1,44 @@
+{
+  "aggiornato": "2026-10-23T00:09:51.062Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "gin-ovest-gradino-angolo",
+  "oggetto": "Parallelepipedo in travertino",
+  "originale": {
+    "angolo": 348.84,
+    "box": {
+      "h0": 0,
+      "h1": 0.17,
+      "u0": 20.09,
+      "u1": 21.82,
+      "v0": -90.59,
+      "v1": -88.87
+    },
+    "forma": "box",
+    "id": "gin-ovest-gradino-angolo"
+  },
+  "percorso": "gin-ovest-gradino-angolo",
+  "scatola": {
+    "h0": 0,
+    "h1": 0.15,
+    "u0": 20.3,
+    "u1": 23.33,
+    "v0": -90.74,
+    "v1": -86.66
+  },
+  "sorgente": "aggiunta",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "angolo": 348.84,
+    "box": {
+      "h0": 0,
+      "h1": 0.15,
+      "u0": 20.3,
+      "u1": 23.33,
+      "v0": -90.74,
+      "v1": -86.66
+    },
+    "forma": "box",
+    "id": "gin-ovest-gradino-angolo"
+  }
+}

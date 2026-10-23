@@ -1,0 +1,32 @@
+{
+  "aggiornato": "2026-10-21T13:29:33.211Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "pmvi5eehk4w",
+  "oggetto": "Parallelepipedo in asfalto",
+  "originale": null,
+  "percorso": "pmvi5eehk4w",
+  "scatola": {
+    "h0": -0.09,
+    "h1": -0.04,
+    "u0": 56.25,
+    "u1": 85.55,
+    "v0": 3.5,
+    "v1": 5.15
+  },
+  "sorgente": "aggiunta",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "box": {
+      "h0": -0.09,
+      "h1": -0.04,
+      "u0": 56.25,
+      "u1": 85.55,
+      "v0": 3.5,
+      "v1": 5.15
+    },
+    "forma": "box",
+    "id": "pmvi5eehk4w",
+    "materiale": "asfalto"
+  }
+}

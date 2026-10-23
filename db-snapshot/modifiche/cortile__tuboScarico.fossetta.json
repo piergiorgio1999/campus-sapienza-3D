@@ -1,0 +1,40 @@
+{
+  "aggiornato": "2026-10-21T12:47:09.613Z",
+  "applicata": "2026-10-21T13:45:00Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "",
+  "nota_claude": "Riportata in cortile/modello.json (versione 27).",
+  "oggetto": "Fossetta di scarico",
+  "originale": {
+    "fossetta": {
+      "larghezza": 0.22,
+      "u": 11.8,
+      "v": [
+        0.15,
+        5.95
+      ]
+    }
+  },
+  "percorso": "tuboScarico.fossetta",
+  "scatola": {
+    "h0": 0,
+    "h1": 0.04,
+    "u0": 10.39,
+    "u1": 10.61,
+    "v0": 0.9,
+    "v1": 6.15
+  },
+  "sorgente": "cortile",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "fossetta": {
+      "larghezza": 0.22,
+      "u": 10.5,
+      "v": [
+        0.9,
+        6.15
+      ]
+    }
+  }
+}

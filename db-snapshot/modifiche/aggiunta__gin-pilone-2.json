@@ -1,0 +1,47 @@
+{
+  "aggiornato": "2026-10-23T00:29:40.306Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "gin-pilone-2",
+  "oggetto": "Parallelepipedo in intonaco arancione",
+  "originale": {
+    "angolo": 355.27,
+    "box": {
+      "h0": 4.4,
+      "h1": 15.3,
+      "u0": 25.24,
+      "u1": 26.13,
+      "v0": -87.55,
+      "v1": -86.65
+    },
+    "forma": "box",
+    "id": "gin-pilone-2",
+    "materiale": "intonaco arancione"
+  },
+  "percorso": "gin-pilone-2",
+  "scatola": {
+    "h0": 4.4,
+    "h1": 15.3,
+    "u0": 29.83,
+    "u1": 30.72,
+    "v0": -87.74,
+    "v1": 24.66
+  },
+  "sorgente": "aggiunta",
+  "stato": "da applicare",
+  "tipo": "oggetto",
+  "valore": {
+    "angolo": 355.27,
+    "box": {
+      "h0": 4.4,
+      "h1": 15.3,
+      "u0": 29.83,
+      "u1": 30.72,
+      "v0": -87.74,
+      "v1": 24.66
+    },
+    "forma": "box",
+    "id": "gin-pilone-2",
+    "materiale": "intonaco arancione",
+    "rimosso": true
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "aggiornato": "2026-10-23T00:09:32.279Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "gin-ovest-rampa-1",
+  "oggetto": "Rampa di scale in travertino",
+  "originale": {
+    "angolo": 165.31,
+    "box": {
+      "h0": 0,
+      "h1": 2.03,
+      "u0": 16.99,
+      "u1": 20.19,
+      "v0": -89.72,
+      "v1": -88.32
+    },
+    "forma": "oggetto",
+    "id": "gin-ovest-rampa-1",
+    "modello": "rampaScala",
+    "ruota": 0
+  },
+  "percorso": "gin-ovest-rampa-1",
+  "scatola": {
+    "h0": 0,
+    "h1": 2.03,
+    "u0": 17.28,
+    "u1": 23.04,
+    "v0": -89.95,
+    "v1": -86.19
+  },
+  "sorgente": "aggiunta",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "angolo": 165.31,
+    "box": {
+      "h0": 0,
+      "h1": 2.03,
+      "u0": 17.28,
+      "u1": 23.04,
+      "v0": -89.95,
+      "v1": -86.19
+    },
+    "forma": "oggetto",
+    "id": "gin-ovest-rampa-1",
+    "modello": "rampaScala",
+    "ruota": 0
+  }
+}

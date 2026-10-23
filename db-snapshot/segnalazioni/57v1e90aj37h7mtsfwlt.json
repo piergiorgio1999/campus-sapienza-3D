@@ -1,0 +1,48 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T12:45:00Z",
+  "cortile": {
+    "h": 1.73,
+    "u": 6.55,
+    "v": 12.96
+  },
+  "creato": "2026-10-21T12:21:54.854Z",
+  "elemento": {
+    "chiave": "cortile:portico",
+    "etichetta": "Portico",
+    "nome": "Portico",
+    "percorso": "portico",
+    "sorgente": "cortile"
+  },
+  "lato0": {
+    "h": 1.73,
+    "u": 13.53,
+    "v": -41.17
+  },
+  "lonLat": [
+    12.513628,
+    41.9019441
+  ],
+  "oggetto": "cortile dell'azoto",
+  "punto": {
+    "x": -101.25,
+    "y": 1.76,
+    "z": 84
+  },
+  "quota": 1.76,
+  "risposta": "Cancellata di fondo chiusa, a barre, con il cortile interno visibile attraverso le grate (versione 24).",
+  "stato": "fatta",
+  "testo": "quailcancello deve essere visibile attraverso lo hai aperto...piuttosto chiudi la cancellata e manieni visibile linterno attraverso le grate",
+  "vista": {
+    "camera": [
+      -108.59,
+      2.88,
+      81.97
+    ],
+    "target": [
+      -77.29,
+      -8.08,
+      94.48
+    ]
+  }
+}

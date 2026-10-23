@@ -1,0 +1,46 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cortile": {
+    "h": 2.52,
+    "u": 8.23,
+    "v": 12.88
+  },
+  "creato": "2026-10-22T23:46:57.320Z",
+  "elemento": {
+    "chiave": "cortile:portico",
+    "etichetta": "Portico",
+    "nome": "",
+    "percorso": "portico",
+    "sorgente": "cortile"
+  },
+  "lato0": {
+    "h": 2.52,
+    "u": 13.48,
+    "v": -42.84
+  },
+  "lonLat": [
+    12.5136346,
+    41.9019299
+  ],
+  "oggetto": "cortile dell'azoto",
+  "punto": {
+    "x": -100.7,
+    "y": 2.55,
+    "z": 85.59
+  },
+  "quota": 2.55,
+  "stato": "aperta",
+  "testo": "le porte e cancelli devono potersi aprire in mod cammina non posto rimaner bloccato qua",
+  "vista": {
+    "camera": [
+      -97.31,
+      1.7,
+      84.13
+    ],
+    "target": [
+      -101.57,
+      0,
+      82.84
+    ]
+  }
+}

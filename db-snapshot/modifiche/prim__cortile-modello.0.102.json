@@ -1,0 +1,28 @@
+{
+  "aggiornato": "2026-10-21T12:50:46.353Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cornice": "cortile",
+  "istanza": null,
+  "nota_claude": "Non applicata: legata al portico spostato. Chiesto all'utente.",
+  "oggetto": "pezzo di cortile dell'azoto",
+  "originale": {
+    "h0": 8.45,
+    "h1": 8.8,
+    "u0": 1.5,
+    "u1": 16.6,
+    "v0": 9.4,
+    "v1": 31.25
+  },
+  "percorso": "cortile-modello/0/102",
+  "sorgente": "primitiva",
+  "stato": "sospesa",
+  "tipo": "primitiva",
+  "valore": {
+    "h0": 8.45,
+    "h1": 8.8,
+    "u0": 1.5,
+    "u1": 16.6,
+    "v0": 9.4,
+    "v1": 9.9
+  }
+}

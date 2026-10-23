@@ -1,0 +1,48 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T13:45:00Z",
+  "cortile": {
+    "h": 0.02,
+    "u": 13.28,
+    "v": 8.95
+  },
+  "creato": "2026-10-21T12:35:49.424Z",
+  "elemento": {
+    "chiave": "cortile:pavimento",
+    "etichetta": "Pavimento del cortile",
+    "nome": "",
+    "percorso": "pavimento",
+    "sorgente": "cortile"
+  },
+  "lato0": {
+    "h": 0.02,
+    "u": 9.62,
+    "v": -47.96
+  },
+  "lonLat": [
+    12.5136133,
+    41.9018745
+  ],
+  "oggetto": "cortile dell'azoto",
+  "punto": {
+    "x": -102.46,
+    "y": 0.05,
+    "z": 91.74
+  },
+  "quota": 0.05,
+  "risposta": "Colonna rettangolare in travertino 1,2 x 0,9 m fino al soffitto, dietro la gabbia.",
+  "stato": "fatta",
+  "testo": "colonna rettangolare in travertino",
+  "vista": {
+    "camera": [
+      -107.19,
+      8.27,
+      85.87
+    ],
+    "target": [
+      -82.14,
+      -6.83,
+      94.1
+    ]
+  }
+}

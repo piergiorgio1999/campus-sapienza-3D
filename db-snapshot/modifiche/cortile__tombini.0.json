@@ -1,0 +1,28 @@
+{
+  "aggiornato": "2026-10-21T14:15:11.546Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "",
+  "oggetto": "Tombino 1",
+  "originale": {
+    "lato": 0.6,
+    "u": 9.2,
+    "v": 2.4
+  },
+  "percorso": "tombini.0",
+  "scatola": {
+    "h0": 0,
+    "h1": 0.04,
+    "u0": 7.35,
+    "u1": 7.95,
+    "v0": 4.3,
+    "v1": 4.9
+  },
+  "sorgente": "cortile",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "lato": 0.6,
+    "u": 7.65,
+    "v": 4.6
+  }
+}

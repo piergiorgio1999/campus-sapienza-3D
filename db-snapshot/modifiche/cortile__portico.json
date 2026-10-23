@@ -1,0 +1,41 @@
+{
+  "aggiornato": "2026-10-21T12:52:32.821Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "",
+  "nota_claude": "Non applicata: il portico finirebbe 42 m più in là, fuori dal cortile. Sembra un trascinamento sfuggito: chiesto all'utente.",
+  "oggetto": "Portico",
+  "originale": {
+    "soffitto": 4.5,
+    "u": [
+      1.5,
+      16.6
+    ],
+    "v": [
+      9.4,
+      13
+    ]
+  },
+  "percorso": "portico",
+  "scatola": {
+    "h0": 0,
+    "h1": 4.5,
+    "u0": 10.1,
+    "u1": 21.95,
+    "v0": 51.65,
+    "v1": 55.25
+  },
+  "sorgente": "cortile",
+  "stato": "sospesa",
+  "tipo": "oggetto",
+  "valore": {
+    "soffitto": 4.5,
+    "u": [
+      10.1,
+      21.95
+    ],
+    "v": [
+      51.65,
+      55.25
+    ]
+  }
+}

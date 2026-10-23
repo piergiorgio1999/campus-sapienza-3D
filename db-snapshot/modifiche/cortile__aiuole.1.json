@@ -1,0 +1,40 @@
+{
+  "aggiornato": "2026-10-21T14:23:22.651Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "",
+  "oggetto": "Aiuola B del cortile",
+  "originale": {
+    "altezza": 0.42,
+    "u": [
+      10.65,
+      14.25
+    ],
+    "v": [
+      1.45,
+      8.3
+    ]
+  },
+  "percorso": "aiuole.1",
+  "scatola": {
+    "h0": 0,
+    "h1": 0.42,
+    "u0": 10.65,
+    "u1": 15.05,
+    "v0": 1.45,
+    "v1": 8.3
+  },
+  "sorgente": "cortile",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "altezza": 0.42,
+    "u": [
+      10.65,
+      15.05
+    ],
+    "v": [
+      1.45,
+      8.3
+    ]
+  }
+}

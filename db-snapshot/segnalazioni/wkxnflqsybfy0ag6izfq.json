@@ -1,0 +1,46 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cortile": {
+    "h": 0.67,
+    "u": 3.72,
+    "v": -0.2
+  },
+  "creato": "2026-10-22T12:16:39.312Z",
+  "elemento": {
+    "chiave": "aggiunta:pmvjal4zjcw",
+    "etichetta": "Tubo rosso a muro",
+    "nome": "pmvjal4zjcw",
+    "percorso": "pmvjal4zjcw",
+    "sorgente": "aggiunta"
+  },
+  "lato0": {
+    "h": 0.67,
+    "u": 0.34,
+    "v": -38.52
+  },
+  "lonLat": [
+    12.5134679,
+    41.9019238
+  ],
+  "oggetto": "esterni di Chimica",
+  "punto": {
+    "x": -114.51,
+    "y": 0.7,
+    "z": 86.26
+  },
+  "quota": 0.7,
+  "stato": "aperta",
+  "testo": "unisci i tubi",
+  "vista": {
+    "camera": [
+      -119.16,
+      1.74,
+      85.05
+    ],
+    "target": [
+      -111.68,
+      1.49,
+      88.4
+    ]
+  }
+}

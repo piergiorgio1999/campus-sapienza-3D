@@ -1,0 +1,33 @@
+{
+  "aggiornato": "2026-10-21T14:30:41.010Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "t12514325_41902507",
+  "oggetto": "Albero",
+  "originale": {
+    "p": [
+      12.5143252,
+      41.9025069
+    ],
+    "r": 3.1
+  },
+  "percorso": "t12514325_41902507",
+  "scatola": {
+    "h0": 0,
+    "h1": 9.01,
+    "u0": 86.76,
+    "u1": 92.96,
+    "v0": -6.55,
+    "v1": -0.35
+  },
+  "sorgente": "albero",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "p": [
+      12.5143252,
+      41.9025069
+    ],
+    "r": 3.1,
+    "rimosso": true
+  }
+}

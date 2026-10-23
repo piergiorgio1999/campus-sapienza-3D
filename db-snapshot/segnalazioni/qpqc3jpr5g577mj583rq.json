@@ -1,0 +1,37 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T18:00:00.000Z",
+  "cortile": null,
+  "creato": "2026-10-21T15:39:04.299Z",
+  "elemento": null,
+  "lato0": {
+    "h": 21.01,
+    "u": 20.9,
+    "v": -36.63
+  },
+  "lonLat": [
+    12.5136915,
+    41.902006
+  ],
+  "oggetto": "edificio CU014",
+  "punto": {
+    "x": -95.99,
+    "y": 21.04,
+    "z": 77.13
+  },
+  "quota": 21.04,
+  "stato": "fatta",
+  "testo": "allarga il cortile interno della stessa larghezza di quello dell'azoto",
+  "vista": {
+    "camera": [
+      -120.38,
+      79.12,
+      87.1
+    ],
+    "target": [
+      -97.01,
+      -16.91,
+      84.57
+    ]
+  }
+}

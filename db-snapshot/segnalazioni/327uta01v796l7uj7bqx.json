@@ -1,0 +1,41 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T18:10:00.000Z",
+  "cortile": {
+    "h": 14.22,
+    "u": 4.82,
+    "v": 9.4
+  },
+  "creato": "2026-10-21T15:40:07.448Z",
+  "elemento": null,
+  "lato0": {
+    "h": 14.22,
+    "u": 9.95,
+    "v": -39.49
+  },
+  "lonLat": [
+    12.5135804,
+    41.9019467
+  ],
+  "oggetto": "edificio",
+  "punto": {
+    "x": -105.19,
+    "y": 14.25,
+    "z": 83.72
+  },
+  "quota": 14.25,
+  "stato": "fatta",
+  "testo": "e va ingrandita che deve coprire le due colonne a piantarettangolare in travertino",
+  "vista": {
+    "camera": [
+      -120.48,
+      79.09,
+      87.11
+    ],
+    "target": [
+      -97.01,
+      -16.91,
+      84.57
+    ]
+  }
+}

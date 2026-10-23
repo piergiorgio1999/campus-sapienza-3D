@@ -1,0 +1,30 @@
+{
+  "aggiornato": "2026-10-22T22:25:27.046Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "",
+  "oggetto": "Tubi del gas (3 bombole)",
+  "originale": {
+    "ruota": 0,
+    "scala": 1,
+    "u": 13.4,
+    "v": 0.8
+  },
+  "percorso": "tubi",
+  "scatola": {
+    "h0": 0,
+    "h1": 1.67,
+    "u0": 15.46,
+    "u1": 16.12,
+    "v0": 6.59,
+    "v1": 6.89
+  },
+  "sorgente": "cortile",
+  "stato": "da applicare",
+  "tipo": "oggetto",
+  "valore": {
+    "ruota": 270,
+    "scala": 1,
+    "u": 15.79,
+    "v": 6.74
+  }
+}

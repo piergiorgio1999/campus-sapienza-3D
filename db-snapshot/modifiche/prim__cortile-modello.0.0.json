@@ -1,0 +1,28 @@
+{
+  "aggiornato": "2026-10-21T12:48:01.998Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cornice": "cortile",
+  "istanza": null,
+  "nota_claude": "Non applicata: pezzo del pavimento del cortile accorciato, insieme agli spostamenti sfuggiti. Chiesto all'utente.",
+  "oggetto": "pezzo di cortile dell'azoto",
+  "originale": {
+    "h0": 0.01,
+    "h1": 0.01,
+    "u0": 0.2,
+    "u1": 16.6,
+    "v0": 0,
+    "v1": 13
+  },
+  "percorso": "cortile-modello/0/0",
+  "sorgente": "primitiva",
+  "stato": "sospesa",
+  "tipo": "primitiva",
+  "valore": {
+    "h0": 0.01,
+    "h1": 0.01,
+    "u0": 0.2,
+    "u1": 16.6,
+    "v0": 0,
+    "v1": 7.7
+  }
+}

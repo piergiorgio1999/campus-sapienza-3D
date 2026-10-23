@@ -1,0 +1,38 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T13:45:00Z",
+  "cortile": null,
+  "creato": "2026-10-21T12:29:26.792Z",
+  "elemento": null,
+  "lato0": {
+    "h": -0.09,
+    "u": 47.66,
+    "v": 15.75
+  },
+  "lonLat": [
+    12.5137666,
+    41.9025323
+  ],
+  "oggetto": "terreno o contesto",
+  "punto": {
+    "x": -89.76,
+    "y": -0.06,
+    "z": 18.64
+  },
+  "quota": -0.06,
+  "risposta": "Vialetto in travertino dall'ingresso alla strada (u 44,6-50,6, v 6-21,5).",
+  "stato": "fatta",
+  "testo": "questa area bianca e un altro rettangolo di travertino che collega quello dell'entrata fino alla strada",
+  "vista": {
+    "camera": [
+      -101.96,
+      29.63,
+      -4.73
+    ],
+    "target": [
+      -88.08,
+      8.06,
+      27.69
+    ]
+  }
+}

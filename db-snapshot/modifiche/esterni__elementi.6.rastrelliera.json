@@ -1,0 +1,28 @@
+{
+  "aggiornato": "2026-10-21T13:31:26.111Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "Ingresso principale (Istituto Chimico)",
+  "oggetto": "Rastrelliera per bici",
+  "originale": {
+    "posti": 3,
+    "u": 43,
+    "v": 1.4
+  },
+  "percorso": "elementi.6.rastrelliera",
+  "scatola": {
+    "h0": 0,
+    "h1": 0.8,
+    "u0": 0.43,
+    "u1": 1.67,
+    "v0": 0.43,
+    "v1": 1.17
+  },
+  "sorgente": "esterni",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "posti": 3,
+    "u": 0.45,
+    "v": 0.8
+  }
+}

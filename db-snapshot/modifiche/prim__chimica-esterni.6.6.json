@@ -1,0 +1,28 @@
+{
+  "aggiornato": "2026-10-21T18:01:24.737Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cornice": "esterni:6",
+  "istanza": null,
+  "nota": "Era il condizionatore bianco sulla facciata dell'ingresso: tolto dal modello, confermato dall'utente il 22/10.",
+  "oggetto": "pezzo di esterni di Chimica: Ingresso principale (Istituto Chimico)",
+  "originale": {
+    "h0": 3.27,
+    "h1": 3.83,
+    "u0": 42.48,
+    "u1": 43.28,
+    "v0": 0.06,
+    "v1": 0.36
+  },
+  "percorso": "chimica-esterni/6/6",
+  "sorgente": "primitiva",
+  "stato": "scartata",
+  "tipo": "primitiva",
+  "valore": {
+    "h0": 3.27,
+    "h1": 3.83,
+    "u0": 42.9,
+    "u1": 43.7,
+    "v0": 7.7,
+    "v1": 8
+  }
+}

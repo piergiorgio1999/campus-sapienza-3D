@@ -1,0 +1,38 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T13:45:00Z",
+  "cortile": null,
+  "creato": "2026-10-21T12:49:59.173Z",
+  "elemento": null,
+  "lato0": {
+    "h": 7.97,
+    "u": 0.02,
+    "v": -22.16
+  },
+  "lonLat": [
+    12.5133936,
+    41.9020603
+  ],
+  "oggetto": "edificio CU014",
+  "punto": {
+    "x": -120.67,
+    "y": 8,
+    "z": 71.09
+  },
+  "quota": 8,
+  "risposta": "Muro in intonaco arancione verniciato, dal piano terra all'attico (basamento in pietra invariato).",
+  "stato": "fatta",
+  "testo": "qua la texture cambia non è piu mattoni ma un arancione verniciato che assomiglia molto al colore attuale",
+  "vista": {
+    "camera": [
+      -162.23,
+      35.82,
+      56.14
+    ],
+    "target": [
+      -98.94,
+      -9.9,
+      89.14
+    ]
+  }
+}

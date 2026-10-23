@@ -1,0 +1,32 @@
+{
+  "aggiornato": "2026-10-21T18:00:42.253Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "Ingresso principale (Istituto Chimico)",
+  "oggetto": "Rivestimento chiaro con la scritta",
+  "originale": {
+    "altezza": 4.6,
+    "u": [
+      41.6,
+      54.2
+    ]
+  },
+  "percorso": "elementi.6.rivestimento",
+  "scatola": {
+    "h0": 0,
+    "h1": 4.3,
+    "u0": 41.5,
+    "u1": 54.45,
+    "v0": -0.02,
+    "v1": 0.14
+  },
+  "sorgente": "esterni",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "altezza": 4.3,
+    "u": [
+      41.5,
+      54.45
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "aggiornato": "2026-10-21T17:07:59.137Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "Ingresso principale (Istituto Chimico)",
+  "oggetto": "Panchina 2",
+  "originale": {
+    "altezza": 0.45,
+    "lunghezza": 1.9,
+    "profondita": 0.5,
+    "u": 45,
+    "v": 13
+  },
+  "percorso": "elementi.6.panchine.1",
+  "scatola": {
+    "h0": 0,
+    "h1": 0.45,
+    "u0": 45.25,
+    "u1": 45.75,
+    "v0": 10.9,
+    "v1": 12.8
+  },
+  "sorgente": "esterni",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "altezza": 0.45,
+    "lunghezza": 1.9,
+    "profondita": 0.5,
+    "rimosso": true,
+    "u": 45.5,
+    "v": 11.85
+  }
+}

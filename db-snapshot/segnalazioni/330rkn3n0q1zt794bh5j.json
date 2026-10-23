@@ -1,0 +1,39 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cortile": null,
+  "creato": "2026-10-22T23:34:38.376Z",
+  "elemento": null,
+  "foto": [
+    "14a8e8dfbfd5a0b4652275dab35b995d"
+  ],
+  "lato0": {
+    "h": 1.98,
+    "u": 35.98,
+    "v": -88.65
+  },
+  "lonLat": [
+    12.5140862,
+    41.9016176
+  ],
+  "oggetto": "edificio CU014",
+  "punto": {
+    "x": -63.28,
+    "y": 2.01,
+    "z": 120.29
+  },
+  "quota": 2.01,
+  "stato": "aperta",
+  "testo": "il tetto e un rettangolo chesegue lacurva dell'edificio ed arriva alla fine del cancello il cancello è sotto al tetto dell'edificio non della scala ed in un areaaperta ma coperta sotto al anfiteatropoi vedi ce il primo piano che e tutto rientrante per il dentro di almeno 3 se non 5 metri ci sono i 4 piloni e lo spazio tra questi e le facciate in travertinoson piugrossi\nesopra non ce quella ringhierachehaifatto poi alla basedelle scale ci staun inizio discalinata tipo con base quadrata e unaoduescale ad angolo prima della staccionata inoltre prima di arrivare alla curva della scala prima delcancelloce un pilone di travertino bello largo parallelamente alle scale versodi percorrenzaintendo chefiniscetipo in fronte a metacancello",
+  "vista": {
+    "camera": [
+      -53.93,
+      11.79,
+      131.99
+    ],
+    "target": [
+      -75.88,
+      -13.51,
+      95.95
+    ]
+  }
+}

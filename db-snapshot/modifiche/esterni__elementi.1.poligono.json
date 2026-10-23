@@ -1,0 +1,48 @@
+{
+  "aggiornato": "2026-10-21T12:32:01.311Z",
+  "applicata": "2026-10-21T13:45:00Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "Pavimento in travertino davanti all'ingresso principale",
+  "nota_claude": "Pavimento davanti all'ingresso da u 0 (versione 26).",
+  "oggetto": "Pavimento in travertino davanti all'ingresso principale",
+  "originale": [
+    [
+      17,
+      0
+    ],
+    [
+      56.3,
+      0
+    ],
+    [
+      56.3,
+      6
+    ],
+    [
+      17,
+      6
+    ]
+  ],
+  "percorso": "elementi.1.poligono",
+  "sorgente": "esterni",
+  "stato": "applicata",
+  "tipo": "poly",
+  "valore": [
+    [
+      0,
+      0
+    ],
+    [
+      56.3,
+      0
+    ],
+    [
+      56.3,
+      6
+    ],
+    [
+      0,
+      6
+    ]
+  ]
+}

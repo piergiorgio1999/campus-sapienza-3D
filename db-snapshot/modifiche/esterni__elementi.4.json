@@ -1,0 +1,20 @@
+{
+  "aggiornato": "2026-10-21T12:28:22.575Z",
+  "applicata": "2026-10-21T13:45:00Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "Palo della bandiera verde, sul marciapiede accanto all'angolo (lato est)",
+  "nota_claude": "Palo a (86.1, 3.2) (versione 26).",
+  "oggetto": "Palo della bandiera verde, sul marciapiede accanto all'angolo (lato est)",
+  "originale": {
+    "u": 86.05,
+    "v": 2.35
+  },
+  "percorso": "elementi.4",
+  "sorgente": "esterni",
+  "stato": "applicata",
+  "tipo": "point",
+  "valore": {
+    "u": 86.1,
+    "v": 3.2
+  }
+}

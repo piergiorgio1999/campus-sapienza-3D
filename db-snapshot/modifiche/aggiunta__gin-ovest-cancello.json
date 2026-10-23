@@ -1,0 +1,48 @@
+{
+  "aggiornato": "2026-10-23T00:23:00.243Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "gin-ovest-cancello",
+  "oggetto": "Cancello metallico a sbarre",
+  "originale": {
+    "angolo": 343.02,
+    "box": {
+      "h0": 2.2,
+      "h1": 4.15,
+      "u0": 17.14,
+      "u1": 18.54,
+      "v0": -86.03,
+      "v1": -85.98
+    },
+    "forma": "oggetto",
+    "id": "gin-ovest-cancello",
+    "modello": "cancelloScala",
+    "ruota": 0
+  },
+  "percorso": "gin-ovest-cancello",
+  "scatola": {
+    "h0": 2.2,
+    "h1": 4.15,
+    "u0": 17.14,
+    "u1": 18.54,
+    "v0": -86.03,
+    "v1": -85.98
+  },
+  "sorgente": "aggiunta",
+  "stato": "da applicare",
+  "tipo": "oggetto",
+  "valore": {
+    "angolo": 343.02,
+    "box": {
+      "h0": 2.2,
+      "h1": 4.15,
+      "u0": 17.14,
+      "u1": 18.54,
+      "v0": -86.03,
+      "v1": -85.98
+    },
+    "forma": "oggetto",
+    "id": "gin-ovest-cancello",
+    "modello": "cancelloScala",
+    "ruota": 0
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "aggiornato": "2026-10-21T17:09:17.046Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cornice": "esterni:11",
+  "istanza": null,
+  "nota": "Prato del pergolato: tolto in v49, l'erba ora è l'aiuola 0 dell'ingresso come voleva l'utente.",
+  "oggetto": "pezzo di esterni di Chimica: Pergolato con vite lungo il viale (Street View 2015)",
+  "originale": {
+    "h0": 0,
+    "h1": 0.04,
+    "u0": 15,
+    "u1": 45.9,
+    "v0": 6.4,
+    "v1": 19.2
+  },
+  "percorso": "chimica-esterni/11/103",
+  "sorgente": "primitiva",
+  "stato": "applicata",
+  "tipo": "primitiva",
+  "valore": {
+    "h0": 0,
+    "h1": 0.04,
+    "u0": 15,
+    "u1": 44.4,
+    "v0": 6.4,
+    "v1": 19.2
+  }
+}

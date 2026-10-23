@@ -1,0 +1,47 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T18:00:00.000Z",
+  "cortile": {
+    "h": 0.11,
+    "u": -4.23,
+    "v": -4.38
+  },
+  "creato": "2026-10-21T14:18:23.788Z",
+  "elemento": {
+    "chiave": "aggiunta:pmvi74yrjm4",
+    "etichetta": "Marciapiede",
+    "nome": "pmvi74yrjm4",
+    "percorso": "pmvi74yrjm4",
+    "sorgente": "aggiunta"
+  },
+  "lato0": {
+    "h": 0.11,
+    "u": -3.96,
+    "v": -30.64
+  },
+  "lonLat": [
+    12.5133854,
+    41.9019762
+  ],
+  "oggetto": "esterni di Chimica",
+  "punto": {
+    "x": -121.35,
+    "y": 0.14,
+    "z": 80.43
+  },
+  "quota": 0.14,
+  "stato": "fatta",
+  "testo": "i marciapiedi devono avere i bordi a cornice a blocchi di travertino bianco",
+  "vista": {
+    "camera": [
+      -126.05,
+      7.87,
+      88.33
+    ],
+    "target": [
+      -113.04,
+      -14.47,
+      61.43
+    ]
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T18:00:00.000Z",
+  "cortile": {
+    "h": 9.3,
+    "u": 11.26,
+    "v": 1.35
+  },
+  "creato": "2026-10-21T16:10:01.793Z",
+  "elemento": {
+    "chiave": "cortile:magnolie.1",
+    "etichetta": "Magnolia B",
+    "nome": "",
+    "percorso": "magnolie.1",
+    "sorgente": "cortile"
+  },
+  "lato0": {
+    "h": 9.3,
+    "u": 1.99,
+    "v": -46.04
+  },
+  "lonLat": [
+    12.513519,
+    41.901866
+  ],
+  "oggetto": "cortile dell'azoto",
+  "punto": {
+    "x": -110.28,
+    "y": 9.33,
+    "z": 92.68
+  },
+  "quota": 9.33,
+  "stato": "fatta",
+  "testo": "la chioma vorrei quella del modello 3d delle manolie che abbiamo usato nell'artifact della scansione 3d",
+  "vista": {
+    "camera": [
+      -130.33,
+      26.49,
+      80.34
+    ],
+    "target": [
+      -105.56,
+      -5.78,
+      95.79
+    ]
+  }
+}

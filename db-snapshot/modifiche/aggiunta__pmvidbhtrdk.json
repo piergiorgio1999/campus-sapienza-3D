@@ -1,0 +1,47 @@
+{
+  "aggiornato": "2026-10-21T17:12:40.165Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "pmvidbhtrdk",
+  "nota": "Marciapiede eliminato dall'utente; non è nei file.",
+  "oggetto": "Marciapiede",
+  "originale": null,
+  "percorso": "pmvidbhtrdk",
+  "scatola": {
+    "h0": 0.14,
+    "h1": 0.19,
+    "u0": -0.1,
+    "u1": 46.27,
+    "v0": 11.64,
+    "v1": 14.17
+  },
+  "sorgente": "aggiunta",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "altezza": 0.05,
+    "base": 0.14,
+    "discese": [],
+    "forma": "marciapiede",
+    "id": "pmvidbhtrdk",
+    "poligono": [
+      [
+        1.54,
+        11.64
+      ],
+      [
+        46.27,
+        11.64
+      ],
+      [
+        46.27,
+        14.17
+      ],
+      [
+        -0.1,
+        12.91
+      ]
+    ],
+    "raggio": 0.3,
+    "rimosso": true
+  }
+}

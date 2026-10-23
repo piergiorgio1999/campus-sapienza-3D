@@ -1,0 +1,42 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cortile": null,
+  "creato": "2026-10-22T16:48:33.748Z",
+  "elemento": null,
+  "foto": [
+    "d788e60d47d2c3603e45d90670b6169b",
+    "421c1fa701b79911356a658f8e238c00",
+    "c8ba0c7635ef9de92b8ab39ab62fb38c",
+    "fb95b17331fdf77c9671941f29b0fca1"
+  ],
+  "lato0": {
+    "h": 2.11,
+    "u": 17.74,
+    "v": -88.65
+  },
+  "lonLat": [
+    12.5138806,
+    41.9015587
+  ],
+  "oggetto": "edificio CU014",
+  "punto": {
+    "x": -80.32,
+    "y": 2.14,
+    "z": 126.83
+  },
+  "quota": 2.14,
+  "stato": "aperta",
+  "testo": "qua nonsonscalini fatti cosi ci sondue entrate a scaeparallele alla curvatura e balconata intravertino al centro con tre colonne intern non sporge",
+  "vista": {
+    "camera": [
+      -73.35,
+      91.2,
+      217.33
+    ],
+    "target": [
+      -73.88,
+      0,
+      79.68
+    ]
+  }
+}

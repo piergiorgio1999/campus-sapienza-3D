@@ -1,0 +1,48 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T12:45:00Z",
+  "cortile": {
+    "h": 1.92,
+    "u": 10.6,
+    "v": 11.15
+  },
+  "creato": "2026-10-21T12:20:24.621Z",
+  "elemento": {
+    "chiave": "cortile:pavimento",
+    "etichetta": "Pavimento del cortile",
+    "nome": "Pavimento del cortile",
+    "percorso": "pavimento",
+    "sorgente": "cortile"
+  },
+  "lato0": {
+    "h": 1.92,
+    "u": 11.78,
+    "v": -45.24
+  },
+  "lonLat": [
+    12.5136258,
+    41.9019042
+  ],
+  "oggetto": "edificio CU014",
+  "punto": {
+    "x": -101.43,
+    "y": 1.95,
+    "z": 88.44
+  },
+  "quota": 1.95,
+  "risposta": "Area coperta aperta su tutta la larghezza (u 1.5-16.6), senza pareti fino alla cancellata di fondo (versione 24).",
+  "stato": "fatta",
+  "testo": "qua non ce la parete e un area aperta ma coperta",
+  "vista": {
+    "camera": [
+      -109.28,
+      5.39,
+      85.89
+    ],
+    "target": [
+      -77.98,
+      -5.57,
+      98.4
+    ]
+  }
+}

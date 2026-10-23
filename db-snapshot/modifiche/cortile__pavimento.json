@@ -1,0 +1,39 @@
+{
+  "aggiornato": "2026-10-21T12:52:17.539Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "",
+  "nota_claude": "Non applicata: il pavimento arriverebbe a v 53, attraverso gli edifici. Sembra un trascinamento sfuggito durante il blocco: chiesto all'utente.",
+  "oggetto": "Pavimento del cortile",
+  "originale": {
+    "u": [
+      0.2,
+      16.6
+    ],
+    "v": [
+      0,
+      13
+    ]
+  },
+  "percorso": "pavimento",
+  "scatola": {
+    "h0": 0,
+    "h1": 0.03,
+    "u0": 0.2,
+    "u1": 16.6,
+    "v0": 0,
+    "v1": 53
+  },
+  "sorgente": "cortile",
+  "stato": "sospesa",
+  "tipo": "oggetto",
+  "valore": {
+    "u": [
+      0.2,
+      16.6
+    ],
+    "v": [
+      0,
+      53
+    ]
+  }
+}

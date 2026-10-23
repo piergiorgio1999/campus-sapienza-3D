@@ -1,0 +1,36 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cortile": null,
+  "creato": "2026-10-22T16:47:01.899Z",
+  "elemento": null,
+  "lato0": {
+    "h": 11.1,
+    "u": 16,
+    "v": -66.34
+  },
+  "lonLat": [
+    12.5137647,
+    41.9017406
+  ],
+  "oggetto": "edificio CU014",
+  "punto": {
+    "x": -89.92,
+    "y": 11.13,
+    "z": 106.62
+  },
+  "quota": 11.13,
+  "stato": "aperta",
+  "testo": "qua il foro non e realistico e tipotriangolare o na roba simile segui stl dato o dimmi se ti manca",
+  "vista": {
+    "camera": [
+      -73.53,
+      60.5,
+      171
+    ],
+    "target": [
+      -73.88,
+      0,
+      79.68
+    ]
+  }
+}

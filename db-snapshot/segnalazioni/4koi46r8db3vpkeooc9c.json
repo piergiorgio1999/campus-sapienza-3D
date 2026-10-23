@@ -1,0 +1,41 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T18:00:00.000Z",
+  "cortile": {
+    "h": 18.9,
+    "u": 17.07,
+    "v": 12.42
+  },
+  "creato": "2026-10-21T14:13:28.541Z",
+  "elemento": null,
+  "lato0": {
+    "h": 18.9,
+    "u": 13.15,
+    "v": -51.7
+  },
+  "lonLat": [
+    12.5136692,
+    41.9018544
+  ],
+  "oggetto": "edificio CU014",
+  "punto": {
+    "x": -97.83,
+    "y": 18.93,
+    "z": 93.97
+  },
+  "quota": 18.93,
+  "stato": "fatta",
+  "testo": "qui la giunzione non è naturale deve essere un solo rettangoloche collegaidue lati dell'edificioilcortile onterno e u rettangolo semplice non un rettangolo con un secondo piccolo interpolato inoltre in rettangolo del cortile interno ha stesso lato di quello esterno non e piu stretto",
+  "vista": {
+    "camera": [
+      -97.23,
+      60.73,
+      88.92
+    ],
+    "target": [
+      -96.23,
+      -19.54,
+      95.28
+    ]
+  }
+}

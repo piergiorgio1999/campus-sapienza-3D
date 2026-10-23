@@ -1,0 +1,28 @@
+{
+  "aggiornato": "2026-10-21T15:36:29.849Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cornice": "cortile",
+  "istanza": 2,
+  "nota": "Una sola barra allargata di 3 cm: trascinamento involontario, ora superato dalla sporgenza della cancellata.",
+  "oggetto": "pezzo di cortile dell'azoto",
+  "originale": {
+    "h0": 0.9,
+    "h1": 2.05,
+    "u0": 0.51,
+    "u1": 0.53,
+    "v0": -0.01,
+    "v1": 0.01
+  },
+  "percorso": "cortile-modello/0/43",
+  "sorgente": "primitiva",
+  "stato": "scartata",
+  "tipo": "primitiva",
+  "valore": {
+    "h0": 0.9,
+    "h1": 2.05,
+    "u0": 0.51,
+    "u1": 0.56,
+    "v0": -0.01,
+    "v1": 0.04
+  }
+}

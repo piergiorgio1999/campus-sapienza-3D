@@ -1,0 +1,48 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T12:45:00Z",
+  "cortile": {
+    "h": 2.51,
+    "u": 12.78,
+    "v": 9.4
+  },
+  "creato": "2026-10-21T12:20:58.120Z",
+  "elemento": {
+    "chiave": "cortile:pavimento",
+    "etichetta": "Pavimento del cortile",
+    "nome": "Pavimento del cortile",
+    "percorso": "pavimento",
+    "sorgente": "cortile"
+  },
+  "lato0": {
+    "h": 2.51,
+    "u": 10.06,
+    "v": -47.45
+  },
+  "lonLat": [
+    12.5136161,
+    41.9018802
+  ],
+  "oggetto": "edificio CU014",
+  "punto": {
+    "x": -102.24,
+    "y": 2.54,
+    "z": 91.11
+  },
+  "quota": 2.54,
+  "risposta": "Tolti l'angolo di muro e il pilastro a destra dell'area coperta; la facciata sopra resta a filo (versione 24).",
+  "stato": "fatta",
+  "testo": "anche qua non ce la parete rimuovi questo angolo e portalia livello della parete",
+  "vista": {
+    "camera": [
+      -110.21,
+      5.25,
+      88.11
+    ],
+    "target": [
+      -78.92,
+      -5.71,
+      100.61
+    ]
+  }
+}

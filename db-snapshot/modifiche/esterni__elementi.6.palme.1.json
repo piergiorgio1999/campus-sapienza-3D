@@ -1,0 +1,30 @@
+{
+  "aggiornato": "2026-10-21T18:01:59.886Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "Ingresso principale (Istituto Chimico)",
+  "nota_claude": "Palma tolta nel file (rimosso: true) su richiesta dell'utente in chat: «tolta per ora». v57.",
+  "oggetto": "Palma 2",
+  "originale": {
+    "altezza": 3.4,
+    "u": 42.4,
+    "v": 7.9
+  },
+  "percorso": "elementi.6.palme.1",
+  "scatola": {
+    "h0": 0,
+    "h1": 3.4,
+    "u0": 44.35,
+    "u1": 46.15,
+    "v0": 5,
+    "v1": 6.8
+  },
+  "sorgente": "esterni",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "altezza": 3.4,
+    "rimosso": true,
+    "u": 45.25,
+    "v": 5.9
+  }
+}

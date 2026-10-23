@@ -1,0 +1,28 @@
+{
+  "aggiornato": "2026-10-21T18:05:08.303Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cornice": "esterni:11",
+  "istanza": null,
+  "nota": "Corrente della ringhiera del pergolato: ringhiera tolta in v49, il pezzo non esiste più.",
+  "oggetto": "pezzo di esterni di Chimica: Pergolato con vite lungo il viale (Street View 2015)",
+  "originale": {
+    "h0": 0.64,
+    "h1": 0.66,
+    "u0": 15,
+    "u1": 45.9,
+    "v0": 7.39,
+    "v1": 7.41
+  },
+  "percorso": "chimica-esterni/11/101",
+  "sorgente": "primitiva",
+  "stato": "scartata",
+  "tipo": "primitiva",
+  "valore": {
+    "h0": 0.64,
+    "h1": 0.66,
+    "u0": 15,
+    "u1": 49.8,
+    "v0": 7.39,
+    "v1": 7.44
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "aggiornato": "2026-10-21T12:28:03.122Z",
+  "applicata": "2026-10-21T13:45:00Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "Terrazza rialzata accanto al Museo \"Primo Levi\"",
+  "nota_claude": "Terrazza senza il muretto est della rientranza (versione 26).",
+  "oggetto": "Terrazza (sagoma)",
+  "originale": [
+    [
+      56.3,
+      -20.4
+    ],
+    [
+      69.4,
+      -20.4
+    ],
+    [
+      69.4,
+      -15.5
+    ],
+    [
+      85.3,
+      -15.5
+    ],
+    [
+      85.3,
+      -20.4
+    ],
+    [
+      85.6,
+      -20.4
+    ],
+    [
+      85.6,
+      3.6
+    ],
+    [
+      56.3,
+      3.6
+    ]
+  ],
+  "percorso": "elementi.0.poligono",
+  "sorgente": "esterni",
+  "stato": "applicata",
+  "tipo": "poly",
+  "valore": [
+    [
+      56.3,
+      -20.4
+    ],
+    [
+      69.4,
+      -20.4
+    ],
+    [
+      69.4,
+      -15.5
+    ],
+    [
+      85.3,
+      -15.5
+    ],
+    [
+      85.35000000000001,
+      -15.5
+    ],
+    [
+      85.75,
+      -15.450000000000001
+    ],
+    [
+      85.6,
+      3.6
+    ],
+    [
+      56.3,
+      3.6
+    ]
+  ]
+}

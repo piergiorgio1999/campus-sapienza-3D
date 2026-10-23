@@ -1,0 +1,171 @@
+{
+  "aggiornato": "2026-10-21T17:08:52.391Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "Pergolato con vite lungo il viale (Street View 2015)",
+  "nota": "Riportato solo l'allungamento del primo pergolato a u 16,5-44,4 (gli altri campi del valore non esistono più dopo la v49).",
+  "oggetto": "Pergolato con vite lungo il viale (Street View 2015)",
+  "originale": {
+    "aiuole": [
+      {
+        "fiori": "rosse",
+        "u": [
+          18.5,
+          26
+        ],
+        "v": [
+          15.6,
+          17.8
+        ]
+      },
+      {
+        "fiori": "rosa",
+        "u": [
+          26.8,
+          31.6
+        ],
+        "v": [
+          15.6,
+          17.8
+        ]
+      },
+      {
+        "fiori": "bianche",
+        "u": [
+          32,
+          35.2
+        ],
+        "v": [
+          15.6,
+          17.8
+        ]
+      },
+      {
+        "fiori": "rosse",
+        "u": [
+          38.6,
+          42.4
+        ],
+        "v": [
+          15.6,
+          17.8
+        ]
+      }
+    ],
+    "altezza": 3,
+    "lampioni": [
+      {
+        "u": 24,
+        "v": 18.7
+      },
+      {
+        "u": 40,
+        "v": 18.7
+      }
+    ],
+    "prato": [
+      6.4,
+      19.2
+    ],
+    "ringhiera": {
+      "altezza": 1,
+      "passo": 3,
+      "v": 7.4
+    },
+    "u": [
+      16.5,
+      43
+    ],
+    "v": [
+      12.1,
+      14.7
+    ]
+  },
+  "percorso": "elementi.11",
+  "scatola": {
+    "h0": 0,
+    "h1": 3,
+    "u0": 16.5,
+    "u1": 44.4,
+    "v0": 11.7,
+    "v1": 15.1
+  },
+  "sorgente": "esterni",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "aiuole": [
+      {
+        "fiori": "rosse",
+        "u": [
+          18.5,
+          26
+        ],
+        "v": [
+          15.6,
+          17.8
+        ]
+      },
+      {
+        "fiori": "rosa",
+        "u": [
+          26.8,
+          31.6
+        ],
+        "v": [
+          15.6,
+          17.8
+        ]
+      },
+      {
+        "fiori": "bianche",
+        "u": [
+          32,
+          35.2
+        ],
+        "v": [
+          15.6,
+          17.8
+        ]
+      },
+      {
+        "fiori": "rosse",
+        "u": [
+          38.6,
+          42.4
+        ],
+        "v": [
+          15.6,
+          17.8
+        ]
+      }
+    ],
+    "altezza": 3,
+    "lampioni": [
+      {
+        "u": 24,
+        "v": 18.7
+      },
+      {
+        "u": 40,
+        "v": 18.7
+      }
+    ],
+    "prato": [
+      6.4,
+      19.2
+    ],
+    "ringhiera": {
+      "altezza": 1,
+      "passo": 3,
+      "v": 7.4
+    },
+    "u": [
+      16.5,
+      44.4
+    ],
+    "v": [
+      12.1,
+      14.7
+    ]
+  }
+}

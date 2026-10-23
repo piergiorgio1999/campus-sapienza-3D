@@ -1,0 +1,42 @@
+{
+  "aggiornato": "2026-10-21T12:46:46.671Z",
+  "applicata": "2026-10-21T13:45:00Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "",
+  "nota_claude": "Riportata in cortile/modello.json (versione 27).",
+  "oggetto": "Gabbia del silos",
+  "originale": {
+    "altezza": 1.63,
+    "u": [
+      11.98,
+      15.2
+    ],
+    "v": [
+      5.5,
+      7.82
+    ]
+  },
+  "percorso": "gabbia",
+  "scatola": {
+    "h0": 0.42,
+    "h1": 2.05,
+    "u0": 10.65,
+    "u1": 13.95,
+    "v0": 5.3,
+    "v1": 8.25
+  },
+  "sorgente": "cortile",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "altezza": 1.63,
+    "u": [
+      10.65,
+      13.95
+    ],
+    "v": [
+      5.3,
+      8.25
+    ]
+  }
+}

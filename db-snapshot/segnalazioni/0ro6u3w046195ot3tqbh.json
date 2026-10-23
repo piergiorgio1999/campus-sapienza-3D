@@ -1,0 +1,38 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T13:45:00Z",
+  "cortile": null,
+  "creato": "2026-10-21T12:40:35.939Z",
+  "elemento": null,
+  "lato0": {
+    "h": 6.43,
+    "u": -3.25,
+    "v": -14.38
+  },
+  "lonLat": [
+    12.5133231,
+    41.9021151
+  ],
+  "oggetto": "albero",
+  "punto": {
+    "x": -126.51,
+    "y": 6.46,
+    "z": 65
+  },
+  "quota": 6.46,
+  "risposta": "Alberi: si eliminano, spostano e aggiungono. ＋ Aggiungi crea primitive con il materiale scelto. Edifici: solo texture (anche di un singolo muro) e finestre. L'albero qui è stato eliminato.",
+  "stato": "fatta",
+  "testo": "qua gli alberi posso solo muoverlo tho detto devo poterli eliminare \ne poter aggiungere primitive sceglianfone la texture non mi interessa modificare i l palazzo in se quello levane la modifica se non per aggiunta o rimozione di finestre dalla texture o modifica della texture",
+  "vista": {
+    "camera": [
+      -184.65,
+      75.29,
+      67.38
+    ],
+    "target": [
+      -73.88,
+      0,
+      79.68
+    ]
+  }
+}

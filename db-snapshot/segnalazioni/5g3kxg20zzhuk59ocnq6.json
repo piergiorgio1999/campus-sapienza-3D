@@ -1,0 +1,36 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "cortile": null,
+  "creato": "2026-10-23T00:24:22.762Z",
+  "elemento": null,
+  "lato0": {
+    "h": 2.16,
+    "u": 13.95,
+    "v": -84.63
+  },
+  "lonLat": [
+    12.5138206,
+    41.9015803
+  ],
+  "oggetto": "edificio CU014",
+  "punto": {
+    "x": -85.29,
+    "y": 2.19,
+    "z": 124.43
+  },
+  "quota": 2.19,
+  "stato": "aperta",
+  "testo": "cancellata qua al posto della finestra",
+  "vista": {
+    "camera": [
+      -85.25,
+      5.02,
+      140.78
+    ],
+    "target": [
+      -79.02,
+      0.88,
+      121.05
+    ]
+  }
+}

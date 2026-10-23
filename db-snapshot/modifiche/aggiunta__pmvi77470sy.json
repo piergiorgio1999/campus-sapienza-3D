@@ -1,0 +1,108 @@
+{
+  "aggiornato": "2026-10-22T12:09:57.314Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "pmvi77470sy",
+  "oggetto": "Marciapiede",
+  "originale": {
+    "altezza": 0.15,
+    "base": -0.09,
+    "discese": [
+      {
+        "larghezza": 1.4,
+        "lato": 0,
+        "profondita": 0.9,
+        "t": 0.39
+      }
+    ],
+    "forma": "marciapiede",
+    "id": "pmvi77470sy",
+    "poligono": [
+      [
+        -2.95,
+        -40.8
+      ],
+      [
+        0.45,
+        -40.85
+      ],
+      [
+        0.45,
+        20.75
+      ],
+      [
+        -6.25,
+        20.75
+      ],
+      [
+        -6.05,
+        -38.85
+      ],
+      [
+        -4.85,
+        -40.45
+      ]
+    ],
+    "raggio": 0.3
+  },
+  "percorso": "pmvi77470sy",
+  "scatola": {
+    "h0": 0,
+    "h1": 0.2,
+    "u0": -6.35,
+    "u1": 0.7,
+    "v0": -40.5,
+    "v1": 20.75
+  },
+  "sorgente": "aggiunta",
+  "stato": "da applicare",
+  "tipo": "oggetto",
+  "valore": {
+    "altezza": 0.2,
+    "base": 0,
+    "discese": [
+      {
+        "larghezza": 1.4,
+        "lato": 0,
+        "profondita": 0.9,
+        "t": 0.39
+      }
+    ],
+    "forma": "marciapiede",
+    "id": "pmvi77470sy",
+    "poligono": [
+      [
+        -3.22,
+        -40.5
+      ],
+      [
+        0.57,
+        -40.45
+      ],
+      [
+        0.7,
+        20.75
+      ],
+      [
+        -6.35,
+        20.75
+      ],
+      [
+        -6.16,
+        -38.61
+      ],
+      [
+        -4.89,
+        -40.2
+      ]
+    ],
+    "raggi": [
+      null,
+      null,
+      null,
+      null,
+      3,
+      3
+    ],
+    "raggio": 0
+  }
+}

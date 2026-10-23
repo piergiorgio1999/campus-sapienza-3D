@@ -1,0 +1,32 @@
+{
+  "aggiornato": "2026-10-21T12:22:31.665Z",
+  "applicata": "2026-10-21T12:45:00Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "Terrazza rialzata accanto al Museo \"Primo Levi\"",
+  "nota_claude": "Riportata in cortile/chimica-esterni.json come [[85.5, 2.6], [85.5, -15.5]] (versione 24).",
+  "oggetto": "Ringhiera 2",
+  "originale": [
+    [
+      85.5,
+      2.6
+    ],
+    [
+      85.5,
+      -20.4
+    ]
+  ],
+  "percorso": "elementi.0.ringhiere.1",
+  "sorgente": "esterni",
+  "stato": "applicata",
+  "tipo": "line",
+  "valore": [
+    [
+      85.5,
+      2.6
+    ],
+    [
+      85.45,
+      -15.5
+    ]
+  ]
+}

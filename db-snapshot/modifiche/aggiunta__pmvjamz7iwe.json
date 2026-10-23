@@ -1,0 +1,33 @@
+{
+  "aggiornato": "2026-10-22T08:43:50.063Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "pmvjamz7iwe",
+  "oggetto": "Porta antincendio doppia",
+  "originale": null,
+  "percorso": "pmvjamz7iwe",
+  "scatola": {
+    "h0": 1.07,
+    "h1": 4.65,
+    "u0": 9.88,
+    "u1": 12.74,
+    "v0": -35.2,
+    "v1": -35.05
+  },
+  "sorgente": "aggiunta",
+  "stato": "da applicare",
+  "tipo": "oggetto",
+  "valore": {
+    "box": {
+      "h0": 0,
+      "h1": 3.58,
+      "u0": 9.88,
+      "u1": 12.74,
+      "v0": -35.2,
+      "v1": -35.05
+    },
+    "forma": "oggetto",
+    "id": "pmvjamz7iwe",
+    "modello": "portaAntincendio",
+    "ruota": 0
+  }
+}

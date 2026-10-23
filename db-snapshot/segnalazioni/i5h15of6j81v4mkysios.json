@@ -1,0 +1,47 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-21T18:10:00.000Z",
+  "cortile": {
+    "h": 0.04,
+    "u": 7.71,
+    "v": 4.69
+  },
+  "creato": "2026-10-21T17:47:29.672Z",
+  "elemento": {
+    "chiave": "cortile:tombini.0",
+    "etichetta": "Tombino 1",
+    "nome": "",
+    "percorso": "tombini.0",
+    "sorgente": "cortile"
+  },
+  "lato0": {
+    "h": 0.04,
+    "u": 5.28,
+    "v": -42.45
+  },
+  "lonLat": [
+    12.5135406,
+    41.9019068
+  ],
+  "oggetto": "cortile dell'azoto",
+  "punto": {
+    "x": -108.49,
+    "y": 0.07,
+    "z": 88.15
+  },
+  "quota": 0.07,
+  "stato": "fatta",
+  "testo": "va centrato su l piano tra le due aiuole",
+  "vista": {
+    "camera": [
+      -109.65,
+      6.08,
+      89.96
+    ],
+    "target": [
+      -108.93,
+      -3.72,
+      89.65
+    ]
+  }
+}

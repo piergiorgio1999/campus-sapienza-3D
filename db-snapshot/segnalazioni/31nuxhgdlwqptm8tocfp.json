@@ -1,0 +1,47 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-22T09:50:00.000Z",
+  "cortile": {
+    "h": 1.35,
+    "u": 13.18,
+    "v": 6.27
+  },
+  "creato": "2026-10-22T09:08:53.665Z",
+  "elemento": {
+    "chiave": "cortile:tubi",
+    "etichetta": "Tubi del gas (3 bombole)",
+    "nome": "",
+    "percorso": "tubi",
+    "sorgente": "cortile"
+  },
+  "lato0": {
+    "h": 1.35,
+    "u": 6.94,
+    "v": -47.89
+  },
+  "lonLat": [
+    12.5135828,
+    41.9018664
+  ],
+  "oggetto": "cortile dell'azoto",
+  "punto": {
+    "x": -104.99,
+    "y": 1.38,
+    "z": 92.64
+  },
+  "quota": 1.38,
+  "stato": "fatta",
+  "testo": "Non mi fa ruotare i 3 tubi devo ruotarli",
+  "vista": {
+    "camera": [
+      -109.04,
+      9.48,
+      92.22
+    ],
+    "target": [
+      -100.94,
+      -9.89,
+      90.24
+    ]
+  }
+}

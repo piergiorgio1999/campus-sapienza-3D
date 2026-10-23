@@ -1,0 +1,32 @@
+{
+  "aggiornato": "2026-10-21T12:46:56.587Z",
+  "applicata": "2026-10-21T13:45:00Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "",
+  "nota_claude": "Riportata in cortile/modello.json (versione 27).",
+  "oggetto": "Silos dell'azoto",
+  "originale": {
+    "altezza": 4.2,
+    "raggio": 0.8,
+    "u": 13.7,
+    "v": 6.4
+  },
+  "percorso": "serbatoio",
+  "scatola": {
+    "h0": 0,
+    "h1": 4.2,
+    "u0": 11.15,
+    "u1": 12.75,
+    "v0": 6.3,
+    "v1": 7.9
+  },
+  "sorgente": "cortile",
+  "stato": "applicata",
+  "tipo": "oggetto",
+  "valore": {
+    "altezza": 4.2,
+    "raggio": 0.8,
+    "u": 11.95,
+    "v": 7.1
+  }
+}

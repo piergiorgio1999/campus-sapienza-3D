@@ -1,0 +1,28 @@
+{
+  "aggiornato": "2026-10-22T12:23:52.063Z",
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "nome": "nmvjiiubhr6",
+  "oggetto": "Albero",
+  "originale": null,
+  "percorso": "nmvjiiubhr6",
+  "scatola": {
+    "h0": 0,
+    "h1": 8.8,
+    "u0": 68.78,
+    "u1": 74.78,
+    "v0": -13.29,
+    "v1": -7.29
+  },
+  "sorgente": "albero",
+  "stato": "da applicare",
+  "tipo": "oggetto",
+  "valore": {
+    "g": null,
+    "nuovo": true,
+    "p": [
+      12.514151,
+      41.9023912
+    ],
+    "r": 3
+  }
+}

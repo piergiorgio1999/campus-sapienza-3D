@@ -1,0 +1,44 @@
+{
+  "autore": "u_T_05hELxJPC4lnN6arWgDg",
+  "chiuso": "2026-10-22T09:50:00.000Z",
+  "cortile": {
+    "h": 0.67,
+    "u": 5.09,
+    "v": -0.15
+  },
+  "creato": "2026-10-22T08:40:54.530Z",
+  "elemento": null,
+  "foto": [
+    "f968f6f15eab7db0f594dc74aa8f855d"
+  ],
+  "lato0": {
+    "h": 0.67,
+    "u": 0.4,
+    "v": -39.89
+  },
+  "lonLat": [
+    12.5134745,
+    41.9019125
+  ],
+  "oggetto": "cortile dell'azoto",
+  "punto": {
+    "x": -113.96,
+    "y": 0.7,
+    "z": 87.51
+  },
+  "quota": 0.7,
+  "stato": "fatta",
+  "testo": "",
+  "vista": {
+    "camera": [
+      -121.1,
+      2.14,
+      88.79
+    ],
+    "target": [
+      -77.94,
+      -8.83,
+      80.94
+    ]
+  }
+}

@@ -455,3 +455,7 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
 
 ## v67 — mappa vuota corretta
 - La v65 creava `THREE.Raycaster` al caricamento dello script (WASD verso il cursore), prima che three.js fosse caricato: errore e scena mai costruita. Ora raycaster e piano si creano al primo uso.
+
+## v68 — scansione Gaussian splat (.spz)
+- Aggiungi → file 3D accetta anche **SPZ** (Gaussian splat di Scaniverse/Polycam/Niantic, v2/v3): ogni splat è un disco sfumato del suo colore (shader con test alfa, profondità logaritmica), armoniche sferiche scartate al caricamento (il file si alleggerisce di ~1/3). Selezione nell'editor su un campione invisibile di 25 mila splat.
+- `gin-scansione`: la scansione del Cortile della Ginestra (Cortile_ginestra.spz, 604 mila splat, 15,9 × 15,6 × 11,2 m) caricata negli asset dell'artifact (id 23590ab12fe66814c394d373cdadb1d6) e messa davanti alle scale ovest **da allineare a mano** (Sposta/Ruota); il pavimento della scansione sta ~0,9 m sopra il fondo della scatola, per questo h0 = −0,9.

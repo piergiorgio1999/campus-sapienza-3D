@@ -520,6 +520,7 @@
   }
  ],
  "primitive": [
+    {"id": "gin-scansione", "forma": "file3d", "modello3d": {"asset": "23590ab12fe66814c394d373cdadb1d6", "formato": "spz", "nome": "Cortile_ginestra.spz", "su": "y", "misure": {"x": 15.93, "y": 11.24, "z": 15.55}}, "angolo": 0, "box": {"u0": 11.04, "u1": 26.97, "v0": -95.78, "v1": -80.23, "h0": -0.9, "h1": 10.34}, "nota": "Scansione Gaussian splat del Cortile della Ginestra (Cortile_ginestra.spz, 604 mila splat): da allineare a mano con Sposta/Ruota"},
   {
    "id": "pmvi579i36b",
    "box": {

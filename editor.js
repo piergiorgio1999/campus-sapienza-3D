@@ -1216,7 +1216,7 @@
     }, true));
     openCard([el('h3', '', 'Aggiungi'), el('label', '', 'Cosa aggiungere'), shape, objLbl, obj, matLbl, mat, tipoLbl, tipo, terrLbl, terr, fileBtn, fileMeta, fileIn, row], 'dock');
   }
-  const modelError = (err) => ({ usdz: 'USDZ non si legge nel browser, convertilo in GLB (Reality Converter sul Mac o Blender) oppure mandamelo in chat', formato: 'formato non riconosciuto (vanno GLB, glTF, OBJ, STL, PLY, FBX, DAE, 3MF)', vuoto: 'il file non contiene geometria',
+  const modelError = (err) => ({ usdz: 'USDZ non si legge nel browser, convertilo in GLB (Reality Converter sul Mac o Blender) oppure mandamelo in chat', formato: 'formato non riconosciuto (vanno GLB, glTF, OBJ, STL, PLY, FBX, DAE, 3MF, SPZ)', vuoto: 'il file non contiene geometria',
     too_large: 'troppo grande anche compresso (massimo 20 MB): alleggeriscilo o mandamelo in chat', quota_or_state: 'spazio dell’artifact esaurito', rate_limited: 'troppi caricamenti, riprova tra poco', not_granted: 'serve il permesso di modifica' }[err && err.code] || (err && (err.code || err.message)) || 'errore');
   const newId = (p) => p + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
   function placeAt(hit) {

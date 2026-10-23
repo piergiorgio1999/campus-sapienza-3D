@@ -3440,7 +3440,7 @@
      dell'artifact come JSON { tipo: 'modello3d', formato, nome, compresso: 'gzip', dati: base64 } (gli asset non accettano binari 3D).
      Il modello, centrato e appoggiato a terra, riempie la scatola dell'oggetto; finché si carica resta una scatola grigia trasparente. */
   const MODEL_FORMATS = { glb: ['GLTFLoader'], gltf: ['GLTFLoader'], obj: ['OBJLoader'], stl: ['STLLoader'], ply: ['PLYLoader'],
-    fbx: ['fflate', 'NURBSUtils', 'NURBSCurve', 'FBXLoader'], dae: ['TGALoader', 'ColladaLoader'], '3mf': ['fflate', '3MFLoader'] };
+    fbx: ['fflate', 'NURBSUtils', 'NURBSCurve', 'FBXLoader'], dae: ['TGALoader', 'ColladaLoader'], '3mf': ['fflate', '3MFLoader'], spz: ['fflate'] };
   const VENDOR_LIBS = { GLTFLoader: () => typeof THREE.GLTFLoader === 'function', OBJLoader: () => typeof THREE.OBJLoader === 'function', STLLoader: () => typeof THREE.STLLoader === 'function',
     PLYLoader: () => typeof THREE.PLYLoader === 'function', FBXLoader: () => typeof THREE.FBXLoader === 'function', TGALoader: () => typeof THREE.TGALoader === 'function',
     ColladaLoader: () => typeof THREE.ColladaLoader === 'function', '3MFLoader': () => typeof THREE.ThreeMFLoader === 'function', NURBSUtils: () => typeof THREE.NURBSUtils === 'object',
@@ -3456,6 +3456,7 @@
     if (formato === 'fbx') return new THREE.FBXLoader().parse(buf, '');
     if (formato === 'dae') return new THREE.ColladaLoader().parse(text(), '').scene;
     if (formato === '3mf') return new THREE.ThreeMFLoader().parse(buf);
+    if (formato === 'spz') return splatModel(bytes);
     const g = formato === 'stl' ? new THREE.STLLoader().parse(buf) : new THREE.PLYLoader().parse(buf), colors = !!g.attributes.color;
     if (formato === 'ply' && !g.index) return new THREE.Points(g, new THREE.PointsMaterial({ size: 0.02, vertexColors: colors, color: colors ? 0xffffff : 0xcfc8bd })); // nuvola di punti
     if (!g.attributes.normal) g.computeVertexNormals();
@@ -3472,6 +3473,93 @@
     root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     return { root, size: { x: Math.max(size.x, 1e-3), y: Math.max(size.y, 1e-3), z: Math.max(size.z, 1e-3) } };
   }
+  /* Gaussian splat .spz (Niantic, v2/v3; Scaniverse, Polycam…): ogni splat diventa un disco sfumato del suo colore e della sua misura,
+     con test alfa invece dell'ordinamento (niente trasparenze da ordinare). Le armoniche sferiche si scartano: col caricamento il file
+     si riscrive con grado 0 (circa un terzo del peso). Assi RUB come three.js: Y in alto. */
+  function spzLayout(raw) {
+    const b = raw[0] === 0x1f && raw[1] === 0x8b ? window.fflate.gunzipSync(raw) : raw, dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+    if (b.length < 16 || dv.getUint32(0, true) !== 0x5053474e) throw Object.assign(new Error('spz'), { code: 'formato' });
+    const ver = dv.getUint32(4, true), n = dv.getUint32(8, true), fb = b[13], oA = 16 + n * 9, oC = oA + n, oS = oC + n * 3, oR = oS + n * 3;
+    const end = oR + n * (ver >= 3 ? 4 : 3);
+    if (ver < 2 || ver > 3 || end > b.length) throw Object.assign(new Error('spz'), { code: 'formato' });
+    return { b, n, fb, oA, oC, oS, end };
+  }
+  function slimSpz(raw) {
+    const L = spzLayout(raw), out = L.b.slice(0, L.end);
+    out[12] = 0; // grado delle armoniche sferiche: 0
+    return window.fflate.gzipSync(out, { level: 6 });
+  }
+  let splatMat = null;
+  function splatMaterial() {
+    if (splatMat) return splatMat;
+    splatMat = new THREE.ShaderMaterial({
+      uniforms: { uPx: { value: 400 } },
+      vertexShader: `#include <common>
+attribute vec3 rgb; attribute float splat; attribute float alpha; uniform float uPx; varying vec3 vC; varying float vA;
+#include <logdepthbuf_pars_vertex>
+void main() {
+  vC = rgb; vA = alpha;
+  vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  float k = (length(modelMatrix[0].xyz) + length(modelMatrix[1].xyz) + length(modelMatrix[2].xyz)) / 3.0;
+  gl_Position = projectionMatrix * mv;
+  gl_PointSize = clamp(splat * k * uPx * projectionMatrix[1][1] / max(0.05, -mv.z), 1.0, 28.0);
+#include <logdepthbuf_vertex>
+}`,
+      fragmentShader: `#include <common>
+varying vec3 vC; varying float vA;
+#include <logdepthbuf_pars_fragment>
+void main() {
+  vec2 d = gl_PointCoord * 2.0 - 1.0; float r = dot(d, d);
+  if (r > 1.0 || vA * exp(-3.0 * r) < 0.3) discard;
+#include <logdepthbuf_fragment>
+  gl_FragColor = vec4(vC, 1.0);
+}`
+    });
+    splatMat.extensions.fragDepth = true;
+    return splatMat;
+  }
+  function splatModel(raw) {
+    const L = spzLayout(raw), b = L.b, q = 1 / (1 << L.fb);
+    const P = new Float32Array(L.n * 3), RGB = new Float32Array(L.n * 3), SZ = new Float32Array(L.n), AL = new Float32Array(L.n);
+    let m = 0;
+    for (let i = 0; i < L.n; i += 1) {
+      const a = b[L.oA + i] / 255; if (a < 0.2) continue;
+      const l0 = b[L.oS + i * 3], l1 = b[L.oS + i * 3 + 1], l2 = b[L.oS + i * 3 + 2];
+      if (Math.exp(Math.max(l0, l1, l2) / 16 - 10) > 0.6) continue; // nuvolette enormi = rumore
+      const s = Math.exp((l0 + l1 + l2) / 48 - 10); // media geometrica dei tre semiassi: i dischi non gonfiano le superfici
+      for (let j = 0; j < 3; j += 1) {
+        const o = 16 + i * 9 + j * 3; let v = b[o] | (b[o + 1] << 8) | (b[o + 2] << 16); if (v & 0x800000) v -= 0x1000000;
+        P[m * 3 + j] = v * q;
+        RGB[m * 3 + j] = Math.min(1, Math.max(0, 0.5 + 0.282095 * (b[L.oC + i * 3 + j] / 255 - 0.5) / 0.15));
+      }
+      SZ[m] = Math.max(0.005, Math.min(0.14, 2.4 * s)); AL[m] = a; m += 1;
+    }
+    if (!m) throw Object.assign(new Error('vuoto'), { code: 'vuoto' });
+    // fuori dall'1–99% su ogni asse (più 1 m) restano solo splat volanti: via, così anche la scatola dell'oggetto è giusta
+    const lim = [0, 1, 2].map((j) => { const t = []; for (let i = 0; i < m; i += Math.max(1, Math.floor(m / 20000))) t.push(P[i * 3 + j]); t.sort((x, y) => x - y); return [t[Math.floor(t.length * 0.01)] - 1, t[Math.floor(t.length * 0.99)] + 1]; });
+    let k = 0;
+    for (let i = 0; i < m; i += 1) {
+      if ([0, 1, 2].some((j) => P[i * 3 + j] < lim[j][0] || P[i * 3 + j] > lim[j][1])) continue;
+      for (let j = 0; j < 3; j += 1) { P[k * 3 + j] = P[i * 3 + j]; RGB[k * 3 + j] = RGB[i * 3 + j]; }
+      SZ[k] = SZ[i]; AL[k] = AL[i]; k += 1;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(P.slice(0, k * 3), 3));
+    geo.setAttribute('rgb', new THREE.BufferAttribute(RGB.slice(0, k * 3), 3));
+    geo.setAttribute('splat', new THREE.BufferAttribute(SZ.slice(0, k), 1));
+    geo.setAttribute('alpha', new THREE.BufferAttribute(AL.slice(0, k), 1));
+    geo.computeBoundingBox(); geo.computeBoundingSphere();
+    const pts = new THREE.Points(geo, splatMaterial()); pts.userData.splat = true; pts.frustumCulled = false;
+    // per selezionarlo nell'editor: un campione invisibile di splat con soglia di 15 cm (i 600 mila veri non si interrogano)
+    const step = Math.max(1, Math.floor(k / 25000)), sub = [];
+    for (let i = 0; i < k; i += step) sub.push(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]);
+    const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.Float32BufferAttribute(sub, 3));
+    const proxy = new THREE.Points(pg, new THREE.PointsMaterial({ visible: false })); proxy.userData.splatProxy = true;
+    const g = new THREE.Group(); g.add(pts, proxy);
+    return g;
+  }
+  function splatRaycast(rc, out) { const t = rc.params.Points.threshold; rc.params.Points.threshold = 0.15; THREE.Points.prototype.raycast.call(this, rc, out); rc.params.Points.threshold = t; }
+  function wireSplats(root) { root.traverse((o) => { if (o.userData.splat) o.raycast = () => {}; else if (o.userData.splatProxy) o.raycast = splatRaycast; }); }
   const userModels = new Map(); // `${asset}|${su}` → Promise<{ root, size } | null>
   function userModel(m) {
     const su = m.su || modelUp(m.formato), key = `${m.asset}|${su}`;
@@ -3491,11 +3579,13 @@
     if (/^usd[azc]?$/.test(formato)) throw Object.assign(new Error('usdz'), { code: 'usdz' });
     if (!MODEL_FORMATS[formato]) throw Object.assign(new Error('formato'), { code: 'formato' });
     await vendorLibs(['fflate']);
-    const raw = new Uint8Array(await file.arrayBuffer()), su = modelUp(formato), model = normalizeModel(await parseModel(raw, formato), su);
+    let raw = new Uint8Array(await file.arrayBuffer());
+    if (formato === 'spz') raw = slimSpz(raw); // già compresso: si toglie solo il peso delle armoniche sferiche
+    const su = modelUp(formato), model = normalizeModel(await parseModel(raw, formato), su);
     const big = Math.max(model.size.x, model.size.y, model.size.z), scala = big > 500 ? 0.001 : big > 150 ? 0.01 : 1;
-    const gz = window.fflate.gzipSync(raw, { level: 6 }); let s = '';
+    const gz = formato === 'spz' ? raw : window.fflate.gzipSync(raw, { level: 6 }); let s = '';
     for (let i = 0; i < gz.length; i += 0x8000) s += String.fromCharCode.apply(null, gz.subarray(i, i + 0x8000));
-    const json = JSON.stringify({ tipo: 'modello3d', formato, nome: file.name, compresso: 'gzip', byte: raw.length, dati: btoa(s) });
+    const json = JSON.stringify({ tipo: 'modello3d', formato, nome: file.name, compresso: formato === 'spz' ? 'spz' : 'gzip', byte: raw.length, dati: btoa(s) });
     const r3 = (x) => Math.round(x * scala * 1000) / 1000;
     return { blob: new Blob([json], { type: 'application/json' }), formato, nome: file.name, su, scala, misure: { x: r3(model.size.x), y: r3(model.size.y), z: r3(model.size.z) }, model };
   }
@@ -3508,7 +3598,7 @@
     if (!M.asset) { ph.material = failedModelMaterial(); return g; }
     userModel(M).then((res) => {
       if (!res) { ph.material = failedModelMaterial(); return; }
-      const m = res.root.clone(true), sp = String(pr.specchio || '');
+      const m = res.root.clone(true), sp = String(pr.specchio || ''); wireSplats(m);
       m.scale.set((sp.includes('u') ? -1 : 1) * du / res.size.x, dh / res.size.y, (sp.includes('v') ? -1 : 1) * dv / res.size.z);
       g.remove(ph); ph.geometry.dispose(); g.add(m);
     });
@@ -4372,6 +4462,7 @@
     updateWater(performance.now());
     updateFountains(performance.now());
     if (frameHook) frameHook(); else { freeView(); controls.update(); }
+    if (splatMat) splatMat.uniforms.uPx.value = renderer.domElement.height / 2;
     renderer.render(scene, camera);
   }
   function resizeRenderer() {

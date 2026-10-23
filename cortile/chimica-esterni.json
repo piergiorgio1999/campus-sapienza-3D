@@ -521,6 +521,165 @@
  ],
  "primitive": [
   {
+   "id": "cavedio-est",
+   "forma": "cavedio",
+   "poligono": [
+    [
+     38.5,
+     -60
+    ],
+    [
+     47.5,
+     -60
+    ],
+    [
+     47.5,
+     -71.2
+    ],
+    [
+     46.1,
+     -71.2
+    ],
+    [
+     47.6,
+     -73.5
+    ],
+    [
+     46.5,
+     -75
+    ],
+    [
+     45,
+     -77
+    ],
+    [
+     44,
+     -77
+    ],
+    [
+     41,
+     -71.2
+    ],
+    [
+     38.5,
+     -71.2
+    ]
+   ],
+   "nota": "Cavedio est fra ventaglio e corpo centrale (disegno a colori dell'utente del 23/10): il vuoto nel solido di CU014, fino a terra (giallo). Gli angoli si spostano con «◇ Angoli»."
+  },
+  {
+   "id": "cavedio-est-blu-nord",
+   "forma": "prisma",
+   "materiale": "edificio",
+   "poligono": [
+    [
+     38.5,
+     -60
+    ],
+    [
+     42.5,
+     -60
+    ],
+    [
+     42.5,
+     -66.2
+    ],
+    [
+     38.5,
+     -66.2
+    ]
+   ],
+   "base": 0,
+   "altezza": 8,
+   "nota": "Cavedio est fra ventaglio e corpo centrale (disegno a colori dell'utente del 23/10): blu, terrazza a 8 m verso il ventaglio."
+  },
+  {
+   "id": "cavedio-est-rosso",
+   "forma": "prisma",
+   "materiale": "edificio",
+   "poligono": [
+    [
+     38.5,
+     -66.2
+    ],
+    [
+     42.5,
+     -66.2
+    ],
+    [
+     42.5,
+     -71.2
+    ],
+    [
+     38.5,
+     -71.2
+    ]
+   ],
+   "base": 0,
+   "altezza": 4.5,
+   "nota": "Cavedio est fra ventaglio e corpo centrale (disegno a colori dell'utente del 23/10): rosso, 4,5 m (fra viola e blu)."
+  },
+  {
+   "id": "cavedio-est-viola",
+   "forma": "prisma",
+   "materiale": "edificio",
+   "poligono": [
+    [
+     45.5,
+     -60
+    ],
+    [
+     47.5,
+     -60
+    ],
+    [
+     47.5,
+     -65.5
+    ],
+    [
+     45.5,
+     -65.5
+    ]
+   ],
+   "base": 0,
+   "altezza": 3.2,
+   "nota": "Cavedio est fra ventaglio e corpo centrale (disegno a colori dell'utente del 23/10): viola, 3,2 m contro il corpo centrale."
+  },
+  {
+   "id": "cavedio-est-blu-sud",
+   "forma": "prisma",
+   "materiale": "edificio",
+   "poligono": [
+    [
+     41,
+     -71.2
+    ],
+    [
+     46.1,
+     -71.2
+    ],
+    [
+     47.6,
+     -73.5
+    ],
+    [
+     46.5,
+     -75
+    ],
+    [
+     45,
+     -77
+    ],
+    [
+     44,
+     -77
+    ]
+   ],
+   "base": 0,
+   "altezza": 8,
+   "nota": "Cavedio est fra ventaglio e corpo centrale (disegno a colori dell'utente del 23/10): blu, cuneo a 8 m lungo il fianco del ventaglio."
+  },
+  {
    "id": "pmvi579i36b",
    "box": {
     "h0": -0.09,

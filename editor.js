@@ -22,7 +22,7 @@
   let db = null, assets = null, myId = null, saving = false;
   let mode = null; // 'commenta' | 'modifica' | null
   const base = { esterni: null, cortile: null, alberi: null, facciate: {} };
-  const FORME = { oggetto: 'Oggetto del modello', box: 'Parallelepipedo', cilindro: 'Cilindro', sfera: 'Sfera', prisma: 'Solido a pianta libera (vertici)', marciapiede: 'Marciapiede', strada: 'Strada asfaltata', aiuola: 'Aiuola', albero: 'Albero', pino: 'Pino', file3d: 'File 3D (glb, gltf, obj, stl, ply, fbx, dae, 3mf)' };
+  const FORME = { oggetto: 'Oggetto del modello', box: 'Parallelepipedo', cilindro: 'Cilindro', sfera: 'Sfera', prisma: 'Solido a pianta libera (vertici)', cavedio: 'Vuoto nell’edificio di Chimica (cavedio, vertici)', marciapiede: 'Marciapiede', strada: 'Strada asfaltata', aiuola: 'Aiuola', albero: 'Albero', pino: 'Pino', file3d: 'File 3D (glb, gltf, obj, stl, ply, fbx, dae, 3mf)' };
   const TIPI_AIUOLA = { squadrata: 'squadrata', rotonda: 'rotonda', spezzata: 'con angoli spezzati' };
   const TERRENI = { prato: 'prato', foglie: 'terra con foglie', terra: 'terra senza foglie' };
   const TEXTURE = { cortina: 'mattoni rossi', giallo: 'mattoni gialli', travertino: 'travertino', ocra: 'intonaco ocra', arancione: 'intonaco arancione', intonaco: 'intonaco chiaro' };
@@ -405,13 +405,13 @@
     });
     // primitive aggiunte: scatola nelle coordinate del lato 0
     if (E) (E.primitive || []).forEach((pr) => {
-      const road = pr.forma === 'strada', prism = pr.forma === 'prisma', poly = road || prism || pr.forma === 'marciapiede' || (pr.forma === 'aiuola' && pr.tipo !== 'rotonda');
-      const label = pr.forma === 'oggetto' ? nomeOggetto(pr.modello) : road ? FORME.strada : prism ? `Solido in ${pr.materiale || 'travertino'}` : pr.forma === 'file3d' ? 'Modello 3D: ' + ((pr.modello3d && pr.modello3d.nome) || 'file') : pr.forma === 'marciapiede' ? 'Marciapiede' : pr.forma === 'aiuola' ? `Aiuola ${TIPI_AIUOLA[pr.tipo] || ''} (${TERRENI[pr.terreno] || 'prato'})` : `${FORME[pr.forma] || FORME.box} in ${pr.materiale || 'travertino'}`;
+      const road = pr.forma === 'strada', prism = pr.forma === 'prisma', cav = pr.forma === 'cavedio', poly = road || prism || cav || pr.forma === 'marciapiede' || (pr.forma === 'aiuola' && pr.tipo !== 'rotonda');
+      const label = pr.forma === 'oggetto' ? nomeOggetto(pr.modello) : road ? FORME.strada : cav ? 'Vuoto nell’edificio (cavedio)' : prism ? `Solido in ${pr.materiale || 'travertino'}` : pr.forma === 'file3d' ? 'Modello 3D: ' + ((pr.modello3d && pr.modello3d.nome) || 'file') : pr.forma === 'marciapiede' ? 'Marciapiede' : pr.forma === 'aiuola' ? `Aiuola ${TIPI_AIUOLA[pr.tipo] || ''} (${TERRENI[pr.terreno] || 'prato'})` : `${FORME[pr.forma] || FORME.box} in ${pr.materiale || 'travertino'}`;
       add({ sorgente: 'aggiunta', frameKey: pr.cornice || 'lato0', obj: pr, percorso: pr.id, nome: pr.id, label, fields: ['id', 'forma', 'materiale', 'box', 'poligono', 'base', 'altezza', 'tipo', 'terreno', 'cordolo', 'discese', 'raggio', 'raggi', 'modello', 'ruota', 'angolo', 'specchio', 'scritta', 'cartello', 'logoMuseo', 'cornice', 'modello3d'], primitiva: true,
         vincolo: pr.forma === 'marciapiede' || pr.forma === 'aiuola' ? 'suolo' : pr.forma === 'oggetto' && A_PARETE.includes(pr.modello) ? 'parete' : pr.forma === 'oggetto' && pr.modello === 'tombino' ? 'superficie' : undefined,
-        lock: road ? { h1: true } : pr.forma === 'marciapiede' || pr.forma === 'aiuola' ? { h0: true } : pr.forma === 'oggetto' && (A_PARETE.includes(pr.modello) || pr.modello === 'tombino') ? { h0: true } : {},
-        box: poly ? () => ({ ...bboxPts(pr.poligono), h0: Number(pr.base) || 0, h1: (Number(pr.base) || 0) + (road ? 0.05 : Number(pr.altezza) || 0.15) }) : () => pr.box, // strada: piano senza spessore, scatola sottile per le maniglie
-        apply: poly ? (o, n) => { pr.poligono = scalePts(pr.poligono, o, n); if (road) { pr.base = round(n.h0); return; } if (prism) { pr.base = round(n.h0); pr.altezza = round(Math.max(0.02, n.h1 - n.h0)); return; } pr.altezza = round(Math.max(0.05, n.h1 - n.h0)); if (pr.forma === 'marciapiede' || pr.forma === 'aiuola') pr.base = 0; } : (o, n) => { pr.box = roundBox(angleOf(pr) ? unturnBox(n, o, angleOf(pr)) : n); }, // con un angolo la scatola è nella cornice ruotata
+        lock: cav ? { h0: true, h1: true } : road ? { h1: true } : pr.forma === 'marciapiede' || pr.forma === 'aiuola' ? { h0: true } : pr.forma === 'oggetto' && (A_PARETE.includes(pr.modello) || pr.modello === 'tombino') ? { h0: true } : {},
+        box: poly ? () => ({ ...bboxPts(pr.poligono), h0: Number(pr.base) || 0, h1: cav ? 22 : (Number(pr.base) || 0) + (road ? 0.05 : Number(pr.altezza) || 0.15) }) : () => pr.box, // strada: piano senza spessore, scatola sottile per le maniglie
+        apply: poly ? (o, n) => { pr.poligono = scalePts(pr.poligono, o, n); if (cav) return; if (road) { pr.base = round(n.h0); return; } if (prism) { pr.base = round(n.h0); pr.altezza = round(Math.max(0.02, n.h1 - n.h0)); return; } pr.altezza = round(Math.max(0.05, n.h1 - n.h0)); if (pr.forma === 'marciapiede' || pr.forma === 'aiuola') pr.base = 0; } : (o, n) => { pr.box = roundBox(angleOf(pr) ? unturnBox(n, o, angleOf(pr)) : n); }, // con un angolo la scatola è nella cornice ruotata
         verts: poly ? { get: () => pr.poligono, set: (q) => { pr.poligono = q; } } : undefined });
     });
     return out;
@@ -535,9 +535,9 @@
     sel = null; closeCard(); ui.show.hidden = true;
   }
   function select(t) {
-    const same = !!(sel && sel.type === 'item' && t.type === 'item' && sel.it.key === t.it.key), rot = same && !!sel.rot, scala = same && !!sel.scala; // stesso oggetto toccato di nuovo: resta nel suo modo
+    const same = !!(sel && sel.type === 'item' && t.type === 'item' && sel.it.key === t.it.key), rot = same && !!sel.rot, scala = same && !!sel.scala, vert = same && !!sel.vert; // stesso oggetto toccato di nuovo: resta nel suo modo
     deselect();
-    sel = Object.assign({ vis: new T.Group(), handles: [], rot, scala }, t);
+    sel = Object.assign({ vis: new T.Group(), handles: [], rot, scala, vert }, t);
     sel.frameKey = t.type === 'item' ? frameOfItem(t.it) : t.p.frameKey;
     sel.box = selBox();
     if (t.type === 'prim') sel.orig = primBox(t.p, true);
@@ -563,6 +563,8 @@
       const rl = new T.LineLoop(new T.BufferGeometry().setFromPoints(ring), mat()), sp = new T.LineSegments(new T.BufferGeometry().setFromPoints([toWorld(fb, rum, rvm, hr), hw]), mat());
       rl.renderOrder = sp.renderOrder = 998; sel.vis.add(rl, sp); sel.ring = { pts: ring };
       hs.push({ role: 'rotate', world: hw });
+    } else if (sel.vert && sel.type === 'item' && sel.it.verts) { // modo Angoli: solo le maniglie dei vertici (gialle; blu quella scelta)
+      sel.it.verts.get().forEach((q, k) => hs.push({ role: 'vertex', k, u: q[0], v: q[1], h: b.h1 }));
     } else if (!sel.scala) { // modo Sposta: tre frecce lungo gli assi dell'oggetto (u rossa, v verde, h blu) e il cubo rosso per spostarlo in piano
       const ext = Math.max(0.6, 0.25 * Math.max(b.u1 - b.u0, b.v1 - b.v0, b.h1 - b.h0)), o = [um, vm, hm];
       const tips = { u: [b.u1 + ext, vm, hm], v: [um, b.v1 + ext, hm], h: [um, vm, b.h1 + ext] };
@@ -580,7 +582,6 @@
     });
     const flat = b.h1 - b.h0 < 0.3;
     for (const i of [0, 1]) for (const j of [0, 1]) for (const k of flat ? [1] : [0, 1]) hs.push({ role: 'corner', u: String(i), v: String(j), pu: i ? b.u1 : b.u0, pv: j ? b.v1 : b.v0, ph: k ? b.h1 : b.h0 });
-    if (sel.type === 'item' && sel.it.verts) sel.it.verts.get().forEach((q, k) => hs.push({ role: 'vertex', k, u: q[0], v: q[1], h: b.h1 }));
     }
     for (const h of hs) {
       const geo = h.role === 'vertex' || h.role === 'axis' ? new T.SphereGeometry(0.5, 12, 8) : new T.BoxGeometry(1, 1, 1);
@@ -647,14 +648,34 @@
     hint(sel.rot ? 'Ruota: trascina la maniglia sull’anello (passo 5°, Alt sospende l’aggancio). R o «⤡ Sposta» tornano alle maniglie.' : '');
   }
   // Sposta (frecce degli assi), Ingrandisci (facce, angoli, vertici), Ruota (anello): tre modi separati
-  function setScala(on) { if (!sel || drag) return; if (on && rotOn()) toggleRot(); sel.scala = !!on; drawSel(); infoCard(); hint(on ? 'Ingrandisci: trascina facce e angoli della scatola (gialle: vertici).' : 'Sposta: trascina una freccia per muovere lungo quell’asse (u rossa, v verde, alto blu) o il cubo rosso per muovere in piano.'); }
+  function setScala(on) { if (!sel || drag) return; if (on && rotOn()) toggleRot(); sel.scala = !!on; sel.vert = false; drawSel(); infoCard(); hint(on ? 'Ingrandisci: trascina facce e angoli della scatola (i vertici con «◇ Angoli»).' : 'Sposta: trascina una freccia per muovere lungo quell’asse (u rossa, v verde, alto blu) o il cubo rosso per muovere in piano.'); }
   function modeSwitch() {
     const kind = turnKind(), row = el('div', 'ed-row ed-seg'), rot = rotOn(), sc = !rot && !!sel.scala;
-    const mv = button('⤡ Sposta', () => { if (rotOn()) toggleRot(); setScala(false); }), gr = button('⤢ Ingrandisci', () => { setScala(true); }), rt = button('⟳ Ruota', () => { if (!rotOn()) { sel.scala = false; } toggleRot(); });
-    mv.setAttribute('aria-pressed', String(!rot && !sc)); gr.setAttribute('aria-pressed', String(sc)); rt.setAttribute('aria-pressed', String(rot));
+    const vt = !rot && !!sel.vert, canVert = sel.type === 'item' && (!!sel.it.verts || boxPrim(sel.it));
+    const mv = button('⤡ Sposta', () => { if (rotOn()) toggleRot(); setScala(false); }), gr = button('⤢ Ingrandisci', () => { setScala(true); }), rt = button('⟳ Ruota', () => { if (!rotOn()) { sel.scala = false; sel.vert = false; } toggleRot(); });
+    const an = button('◇ Angoli', () => setVert());
+    mv.setAttribute('aria-pressed', String(!rot && !sc && !vt)); gr.setAttribute('aria-pressed', String(sc && !vt)); rt.setAttribute('aria-pressed', String(rot)); an.setAttribute('aria-pressed', String(vt));
+    if (!canVert) { an.classList.add('ed-off'); an.setAttribute('aria-disabled', 'true'); an.title = 'Questo oggetto non ha una pianta a vertici'; }
     if (!kind) { rt.classList.add('ed-off'); rt.setAttribute('aria-disabled', 'true'); rt.title = noTurnMsg(); }
     else if (kind === 'orienta') rt.title = 'Alterna l’orientamento (lungo u / lungo v)';
-    row.append(mv, gr, rt); return row;
+    row.append(mv, gr, an, rt); return row;
+  }
+  // modo Angoli: maniglie dei vertici di tutto ciò che ha una pianta a vertici; un parallelepipedo diventa prima un solido a pianta libera
+  const boxPrim = (it) => !!(it && it.primitiva && it.obj.forma === 'box' && it.obj.box);
+  function setVert() {
+    if (!sel || drag || sel.type !== 'item') return;
+    if (!sel.it.verts && !boxPrim(sel.it)) { hint('Questo oggetto non ha una pianta a vertici: si sposta, si ingrandisce o si ruota.'); return; }
+    if (rotOn()) toggleRot();
+    if (!sel.it.verts) { // parallelepipedo → solido a pianta libera con gli stessi quattro angoli (anche ruotato)
+      const it = sel.it, pr = it.obj, b = pr.box, a = ((Number(pr.angolo) || 0) * Math.PI) / 180, co = Math.cos(a), si = Math.sin(a), cu = (b.u0 + b.u1) / 2, cv = (b.v0 + b.v1) / 2;
+      pr.poligono = [[b.u0, b.v0], [b.u1, b.v0], [b.u1, b.v1], [b.u0, b.v1]].map(([u, v]) => [round(cu + (u - cu) * co - (v - cv) * si), round(cv + (u - cu) * si + (v - cv) * co)]);
+      pr.base = round(b.h0); pr.altezza = round(b.h1 - b.h0); pr.forma = 'prisma'; pr.box = null; pr.angolo = 0;
+      saveItem(it); rebuild(it.sorgente);
+      const now = findItem(it.key); if (!now) return;
+      select({ type: 'item', it: now });
+    }
+    sel.scala = false; sel.vert = true; sel.box = selBox(); drawSel(); infoCard();
+    hint('Angoli: trascina le maniglie gialle; tocca un angolo per sceglierlo (diventa blu) e toglierlo o arrotondarlo; «Aggiungi angolo» e poi un lato per crearne uno nuovo.');
   }
   // aggancio magnetico dell'angolo grezzo (gradi): 0/90/180/270° e gli angoli, a passi di 90°, dei solidi vicini già ruotati
   function turnMagnet(raw, r) {
@@ -749,7 +770,7 @@
     if (!sel || !cardWanted()) return;
     const title = sel.type === 'item' ? sel.it.label : `Pezzo: ${describe(sel.p.mesh)}`;
     const nodes = [el('h3', '', title), ...(sel.type === 'item' ? [modeSwitch()] : []), el('p', 'ed-meta', dims(sel.box)),
-      rotOn() ? el('p', 'ed-meta', 'Modo Ruota: trascina la maniglia (o l’anello) per girare l’oggetto, passo 5° con aggancio a 0/90/180/270° e agli oggetti vicini; Alt lo sospende. R torna a Sposta.') : sel.scala ? el('p', 'ed-meta', 'Ingrandisci: facce = un lato · angoli = due lati' + (sel.type === 'item' && sel.it.verts ? ' · gialle: vertici' : '') + (sel.type === 'item' && sel.it.lock.h0 ? ' · la base resta ferma' : '') + '.') : el('p', 'ed-meta', 'Sposta: frecce lungo gli assi (u rossa, v verde, alto blu) · cubo rosso: in piano.')];
+      sel.vert && !rotOn() ? el('p', 'ed-meta', 'Modo Angoli: trascina le maniglie gialle dei vertici · tocca un angolo per sceglierlo · «Aggiungi angolo» poi un lato · «Togli angolo» poi un angolo.') : rotOn() ? el('p', 'ed-meta', 'Modo Ruota: trascina la maniglia (o l’anello) per girare l’oggetto, passo 5° con aggancio a 0/90/180/270° e agli oggetti vicini; Alt lo sospende. R torna a Sposta.') : sel.scala ? el('p', 'ed-meta', 'Ingrandisci: facce = un lato · angoli = due lati' + (sel.type === 'item' && sel.it.verts ? ' · i vertici si spostano con «◇ Angoli»' : '') + (sel.type === 'item' && sel.it.lock.h0 ? ' · la base resta ferma' : '') + '.') : el('p', 'ed-meta', 'Sposta: frecce lungo gli assi (u rossa, v verde, alto blu) · cubo rosso: in piano.')];
     const row = el('div', 'ed-row');
     if (sel.alt) { const alt = sel.alt, back = sel.type === 'item' ? { type: 'item', it: sel.it } : { type: 'prim', p: sel.p }; row.append(button(alt.type === 'prim' ? 'Solo questo pezzo' : 'Oggetto intero', () => select(Object.assign({}, alt, { alt: back })))); }
     if (sel.type === 'item' && sel.it.primitiva) {
@@ -786,6 +807,8 @@
       } else if (pr.forma === 'prisma') {
         nodes.push(...pick('Materiale', C.esterni.materiali.map((m) => [m, m]), pr.materiale || 'travertino', (v) => change('materiale', v)));
         nodes.push(el('p', 'ed-meta', 'Solido a pianta libera: le maniglie gialle spostano i vertici, «Aggiungi angolo» e «Togli angolo» cambiano la pianta, la faccia bassa e quella alta la quota.'));
+      } else if (pr.forma === 'cavedio') {
+        nodes.push(el('p', 'ed-meta', 'Vuoto nel solido di CU014 fino a terra: «◇ Angoli» sposta i vertici del cavedio, «Aggiungi angolo» e «Togli angolo» cambiano la pianta. I terrazzini dentro sono solidi a pianta libera in materiale «edificio».'));
       } else if (pr.forma === 'strada') {
         nodes.push(el('p', 'ed-meta', 'Piano d’asfalto senza spessore, 2 cm sopra la base: non sfarfalla con terreno, ortofoto e lastre; marciapiedi e oggetti sopra lo coprono. La faccia bassa della scatola alza o abbassa la strada.'));
       } else if (pr.forma !== 'marciapiede') {
@@ -855,12 +878,14 @@
       if (Array.isArray(pr.raggi)) pr.raggi.splice(e.i + 1, 0, null);
       sel.corner = null;
       for (const d of pr.discese || []) { if (d.lato > e.i) d.lato += 1; else if (d.lato === e.i) { if (d.t > e.t) { d.lato += 1; d.t = round((d.t - e.t) / (1 - e.t || 1)); } else d.t = round(d.t / (e.t || 1)); } }
+      sel.vert = true; sel.scala = false; // la nuova maniglia si vede nel modo Angoli
       hint('Angolo aggiunto: trascina la nuova maniglia gialla.');
     } else if (sel.tool === 'angolo-') {
       let k = -1, best = 1.2; P.forEach((p, i) => { const d = Math.hypot(p[0] - q.u, p[1] - q.v); if (d < best) { best = d; k = i; } });
       if (k < 0) { hint('Tocca più vicino a un angolo.'); return; }
       if (P.length <= 3) { hint('Servono almeno tre angoli.'); return; }
       P.splice(k, 1);
+      sel.vert = true; sel.scala = false;
       if (Array.isArray(pr.raggi)) pr.raggi.splice(k, 1);
       sel.corner = null;
       const n = P.length + 1;
@@ -1230,6 +1255,7 @@
     }
     const q = toLocal(frameBy('lato0'), hit.point), u = snap(q.u), v = snap(q.v), h = rootOf(hit.object) ? round(q.h) : 0; // sul terreno: a quota 0, non sotto il piano
     let pr = { id: newId('p'), forma: what.forma, materiale: what.materiale, box: { u0: round(u - 0.5), u1: round(u + 0.5), v0: round(v - 0.5), v1: round(v + 0.5), h0: h, h1: round(h + 1) } };
+    if (what.forma === 'cavedio') pr = { id: pr.id, forma: 'cavedio', poligono: [[u - 2, v - 2], [u + 2, v - 2], [u + 2, v + 2], [u - 2, v + 2]].map(([a, b]) => [round(a), round(b)]) };
     if (what.forma === 'prisma') pr = { id: pr.id, forma: 'prisma', materiale: what.materiale || 'travertino', poligono: [[u - 1, v - 1], [u + 1, v - 1], [u + 1, v + 1], [u - 1, v + 1]].map(([a, b]) => [round(a), round(b)]), base: h, altezza: 1 };
     if (what.forma === 'strada') pr = { id: pr.id, forma: 'strada', poligono: [[u - 6, v - 3], [u + 6, v - 3], [u + 6, v + 3], [u - 6, v + 3]].map(([a, b]) => [round(a), round(b)]), base: h };
     if (what.forma === 'file3d') { const m = what.modello3d.misure; pr = { id: pr.id, forma: 'file3d', modello3d: clone(what.modello3d), box: roundBox({ u0: u - m.x / 2, u1: u + m.x / 2, v0: v - m.z / 2, v1: v + m.z / 2, h0: h, h1: h + m.y }) }; }

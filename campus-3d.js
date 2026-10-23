@@ -1911,9 +1911,29 @@
     if (!parts.length) return;
     if (code && officialPlanCodes.has(code)) return;
     if (code === 'CU014') { cuDisegnato = true; if (solido) cuSolidoUsato = true; }
-    const b = lookup.get(code);
+    const b = lookup.get(code), n0 = buildingGroup.children.length;
+    if (code === 'CU014' && b) { for (const { shape, h } of parts) addCodedShape(shape, feature, props, code, b, h); for (const o of buildingGroup.children.slice(n0)) o.userData.cuCorpo = true; return; }
     if (!b) { if (insideCampus(polygonCentroid(outer))) for (const { shape } of parts) addContextPolygon(shape, props); return; } // edifici del quartiere: volumi uniti, non selezionabili
     for (const { shape, h } of parts) addCodedShape(shape, feature, props, code, b, h);
+  }
+  /* vuoti di CU014 disegnati nell'editor (primitive con forma 'cavedio' in cortile/chimica-esterni.json, poligono nel lato 0):
+     il solido si ricostruisce quando cambiano (anche al primo caricamento del file, che arriva dopo la scena) */
+  let cavediFatti = '[]';
+  const cavediCu = () => ((exteriorsCfg && exteriorsCfg.primitive) || []).filter((p) => p.forma === 'cavedio' && !p.rimosso && (!p.cornice || p.cornice === 'lato0') && Array.isArray(p.poligono) && p.poligono.length >= 3)
+    .map((p) => p.poligono.map((q) => [Number(q[0]), Number(q[1])]));
+  function rebuildCu014() {
+    if (!buildingGroup || !cuSolido) return;
+    for (const o of buildingGroup.children.filter((x) => x.userData.cuCorpo)) { buildingGroup.remove(o); o.geometry?.dispose(); }
+    pickables = pickables.filter((m) => !m.userData.cuCorpo);
+    activeCodeMeshes.delete('CU014'); activeCodeOutlines.delete('CU014');
+    const lookup = new Map(buildings.map((b) => [b.code.toUpperCase(), b]));
+    for (const feature of contextFeatures) {
+      const props = feature.properties || {}, geometry = feature.geometry;
+      if (!geometry || String(props['addr:housenumber'] || props.ref || '').trim().toUpperCase() !== 'CU014') continue;
+      if (geometry.type === 'Polygon') for (const r of carveCourtyard(geometry.coordinates)) addPolygon(feature, r, lookup);
+      else if (geometry.type === 'MultiPolygon') for (const polygon of geometry.coordinates) for (const r of carveCourtyard(polygon)) addPolygon(feature, r, lookup);
+    }
+    updateSelectionMaterials();
   }
   /* ---------- solido di CU014 dall'STL di riferimento (cu014-solido.json): ali a quote diverse e fondo del cortile nord ---------- */
   let cuSolido = null, cuDisegnato = false, cuSolidoUsato = false; // CU014 estruso (anche senza STL) / con le ali dell'STL
@@ -1958,6 +1978,8 @@
       const subject = rings.map(loc).filter((r) => r.length >= 4);
       const cuts = holes.map((h) => [loc(h)]).filter((q) => q[0].length >= 4);
       let rest = cuts.length ? pc.difference(subject, ...cuts) : [subject];
+      const cav = cavediCu(); cavediFatti = JSON.stringify(cav); // vuoti dell'editor (forma 'cavedio', lato 0): tagliano il solido fino a terra
+      if (cav.length) rest = pc.difference(rest, ...cav.map((P) => [closeRing(P)]));
       const vent = cuSolido.ventaglio; // fronte sud a ventaglio: oltre la facciata ad arco ci sono scale e pensiline, non il corpo (addCuVentaglio)
       if (vent && Array.isArray(vent.settori) && vent.settori.length) {
         const fuori = vent.settori.map((st) => [cuCorona(vent.centro, vent.raggioFacciata, vent.raggioEsterno + 0.6, st.a0, st.a1)]);
@@ -2835,13 +2857,16 @@
       if (f) f.add(buildPrimitive(pr));
     }
     scene.add(holder);
+    updateClipMask(holder);
+    if (JSON.stringify(cavediCu()) !== cavediFatti) rebuildCu014();
   }
   /* ---------- primitive aggiunte dall'editor: forma e materiale a scelta ---------- */
   const PRIM_COLORS = { intonaco: ['#e0c9a6', 0.9, 0], cemento: ['#9a9a95', 0.95, 0], bianco: ['#f2f1ec', 0.7, 0], 'metallo rosso': ['#6b1d29', 0.55, 0.4], 'ferro verde': ['#235b42', 0.55, 0.35], acciaio: ['#b9bdc0', 0.35, 0.75], legno: ['#6b4a2f', 0.8, 0], erba: ['#5f8a3e', 1, 0], asfalto: ['#4a4d50', 0.95, 0], 'intonaco arancione': ['#c98a5c', 0.9, 0] };
-  const PRIM_MATERIALS = ['travertino', 'travertino a lastre', 'mattoni', 'mattoni gialli', 'intonaco', 'cemento', 'bianco', 'metallo rosso', 'ferro verde', 'acciaio', 'legno', 'vetro', 'erba', 'terra', 'sanpietrini', 'asfalto', 'intonaco arancione'];
+  const PRIM_MATERIALS = ['travertino', 'travertino a lastre', 'mattoni', 'mattoni gialli', 'intonaco', 'cemento', 'bianco', 'metallo rosso', 'ferro verde', 'acciaio', 'legno', 'vetro', 'erba', 'terra', 'sanpietrini', 'asfalto', 'intonaco arancione', 'edificio'];
   const primMats = new Map();
   function primitiveMaterial(name) {
     if (name === 'travertino a lastre') return bedKerbMaterial(); // come cordoli e pilastri del cortile dell'azoto
+    if (name === 'edificio') return facadeSetFor('CU014').body; // su un parallelepipedo: la parete a finestre (il solido a pianta libera fa anche i piani)
     if (primMats.has(name)) return primMats.get(name);
     let mat;
     if (name === 'travertino') mat = new THREE.MeshStandardMaterial({ map: travertinePhoto(2.4), normalMap: travertineNormal(2.4), roughness: 0.8 });
@@ -3496,7 +3521,7 @@
     const [Q, R] = ccwRadii(P, cornerRadii(pr, P, 0));
     const geo = new THREE.ShapeGeometry(shapeOf(filletOutline(Q, R)), 6); geo.rotateX(-Math.PI / 2); // (u, v) → (x, −z), normale in alto
     const m = new THREE.Mesh(geo, roadMaterial()), k = Math.max(0, ((exteriorsCfg && exteriorsCfg.primitive) || []).indexOf(pr));
-    m.position.y = base + 0.02; m.receiveShadow = true; m.castShadow = false;
+    m.position.y = base + 0.02; m.receiveShadow = true; m.castShadow = false; clipMeshes(m, 'marciapiede'); // l'asfalto sparisce sotto marciapiedi e aiuole
     m.renderOrder = 3 + Math.min(100, Math.max(-10, base)) * 0.01 + k * 1e-5;
     m.userData.primitiva = pr.id;
     return m;
@@ -3669,10 +3694,82 @@ void main() {
     });
     return g;
   }
+  /* precedenza in pianta fra aiuole, marciapiedi e strade (aiuola > marciapiede > strada): chi sta sopra elimina chi sta sotto nella sua
+     impronta. Le impronte (userData.impronta, punti u/v nel gruppo) si disegnano in una maschera vista dall'alto, in coordinate di mondo:
+     canale rosso = aiuole, verde = aiuole + marciapiedi. Le mesh dei marciapiedi scartano i pixel col rosso, quelle delle strade col verde,
+     pareti dei cordoli comprese: niente sfarfallio dove due superfici coincidono. */
+  const clipUniforms = { clipMap: { value: null }, clipBox: { value: null }, clipOn: { value: 0 } };
+  const clipVariants = new Map();
+  function footprintOf(pr) {
+    if (pr.forma === 'aiuola' && pr.tipo === 'rotonda') return pr.box ? ellipsePts(pr.box) : null;
+    const P = pr.poligono; if (!Array.isArray(P) || P.length < 3) return null;
+    const [Q, R] = ccwRadii(P, cornerRadii(pr, P, pr.forma === 'marciapiede' ? 0.3 : 0));
+    return filletOutline(Q, R);
+  }
+  function clipMaterial(mat, livello) {
+    const key = mat.uuid + '|' + livello;
+    if (clipVariants.has(key)) return clipVariants.get(key);
+    const m = mat.clone(), ch = livello === 'aiuola' ? 'r' : 'g';
+    if (!clipUniforms.clipBox.value) clipUniforms.clipBox.value = new THREE.Vector4();
+    m.onBeforeCompile = (sh) => {
+      Object.assign(sh.uniforms, clipUniforms);
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vClipW;').replace('#include <project_vertex>', '#include <project_vertex>\nvec4 clipP = vec4(transformed, 1.0);\n#ifdef USE_INSTANCING\nclipP = instanceMatrix * clipP;\n#endif\nvClipW = (modelMatrix * clipP).xyz;');
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vClipW;\nuniform sampler2D clipMap;\nuniform vec4 clipBox;\nuniform float clipOn;')
+        .replace('void main() {', 'void main() {\n  if (clipOn > 0.5) { vec2 cuv = (vClipW.xz - clipBox.xy) * clipBox.zw; if (cuv.x > 0.0 && cuv.x < 1.0 && cuv.y > 0.0 && cuv.y < 1.0 && texture2D(clipMap, cuv).' + ch + ' > 0.5) discard; }');
+    };
+    m.customProgramCacheKey = () => 'clip-' + ch;
+    clipVariants.set(key, m);
+    return m;
+  }
+  function clipMeshes(root, livello) {
+    root.traverse((o) => { if (o.isMesh && o.material) o.material = Array.isArray(o.material) ? o.material.map((x) => clipMaterial(x, livello)) : clipMaterial(o.material, livello); });
+  }
+  function updateClipMask(holder) {
+    const polys = [];
+    holder.updateMatrixWorld(true);
+    holder.traverse((o) => {
+      const imp = o.userData.impronta; if (!imp || !Array.isArray(imp.pts)) return;
+      if (o.userData.primitiva) { const pr = ((exteriorsCfg && exteriorsCfg.primitive) || []).find((x) => x.id === o.userData.primitiva); if (pr && pr.rimosso) return; }
+      const v = new THREE.Vector3();
+      polys.push({ livello: imp.livello, pts: imp.pts.map(([u, w]) => { v.set(u, 0, -w).applyMatrix4(o.matrixWorld); return [v.x, v.z]; }) });
+    });
+    const old = clipUniforms.clipMap.value;
+    if (!polys.length) { clipUniforms.clipOn.value = 0; return; }
+    let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+    for (const p of polys) for (const [x, z] of p.pts) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+    x0 -= 1; z0 -= 1; x1 += 1; z1 += 1;
+    const res = Math.max(0.03, Math.max(x1 - x0, z1 - z0) / 4096), W = Math.ceil((x1 - x0) / res), H = Math.ceil((z1 - z0) / res);
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d'); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    const fill = (p, col) => { ctx.fillStyle = col; ctx.beginPath(); p.pts.forEach(([x, z], i) => { const X = (x - x0) / res, Y = (z - z0) / res; if (i) ctx.lineTo(X, Y); else ctx.moveTo(X, Y); }); ctx.closePath(); ctx.fill(); };
+    for (const p of polys) if (p.livello === 'marciapiede') fill(p, '#00ff00');
+    for (const p of polys) if (p.livello === 'aiuola') fill(p, '#ffff00');
+    const tex = new THREE.CanvasTexture(cv); tex.flipY = false; tex.generateMipmaps = false; tex.minFilter = tex.magFilter = THREE.LinearFilter;
+    clipUniforms.clipMap.value = tex; clipUniforms.clipBox.value = (clipUniforms.clipBox.value || new THREE.Vector4()).set(x0, z0, 1 / (W * res), 1 / (H * res)); clipUniforms.clipOn.value = 1;
+    if (old) old.dispose();
+  }
+  /* solido a pianta libera «edificio»: pareti con le finestre della facciata di CU014 (basamento, piani, attico come le ali del solido)
+     e tetto piano scuro come le terrazze dei cavedi nelle foto */
+  const terraceRoof = () => primMats.get('edificio|tetto') || primMats.set('edificio|tetto', stdMat({ color: '#55585b', roughness: 0.9 })).get('edificio|tetto');
+  function buildingPrism(pr, P, base, h) {
+    const g = new THREE.Group(), set = facadeSetFor('CU014'), pieces = cuPieces(h), [Q, R] = ccwRadii(P, cornerRadii(pr, P, 0)), shape = shapeOf(filletOutline(Q, R));
+    pieces.forEach((piece, i) => {
+      const geo = new THREE.ExtrudeGeometry(shape, { depth: piece.h, bevelEnabled: false, curveSegments: 6 });
+      geo.rotateX(-Math.PI / 2); geo.translate(0, base + piece.y0, 0);
+      planarUVs(geo, 2);
+      if (piece.kind !== 'attic') applyWallUVs(geo, base + piece.y0, FACADE_BAY, piece.floorH);
+      geo.computeVertexNormals();
+      const m = new THREE.Mesh(geo, [i === pieces.length - 1 ? terraceRoof() : hiddenCapMaterial(), set[piece.kind]]);
+      m.castShadow = true; m.receiveShadow = true; m.userData.primitiva = pr.id; g.add(m);
+    });
+    g.userData.primitiva = pr.id;
+    return g;
+  }
   // solido a pianta libera dell'editor: poligono u/v (angoli arrotondati come i marciapiedi) estruso da base a base + altezza nel materiale scelto
   function buildPrism(pr) {
     const P = pr.poligono, base = Number(pr.base) || 0, h = Math.max(0.02, Number(pr.altezza) || 0.3);
     if (!Array.isArray(P) || P.length < 3) return new THREE.Group();
+    if (pr.materiale === 'edificio') return buildingPrism(pr, P, base, h);
     const [Q, R] = ccwRadii(P, cornerRadii(pr, P, 0)), m = localSlab(filletOutline(Q, R), base, base + h, primitiveMaterial(pr.materiale || 'travertino'));
     m.userData.primitiva = pr.id;
     return m;
@@ -3682,7 +3779,14 @@ void main() {
     if (pr.forma === 'file3d') return rotatedAboutCenter(pr, buildUserModel(pr));
     if (pr.forma === 'strada') return buildRoad(pr);
     if (pr.forma === 'prisma') return buildPrism(pr);
-    if (pr.forma === 'marciapiede' || pr.forma === 'aiuola') { const g = pr.forma === 'marciapiede' ? buildSidewalk(pr) : buildBed(pr); g.userData.primitiva = pr.id; return g; }
+    if (pr.forma === 'cavedio') { const g = new THREE.Group(); g.userData.primitiva = pr.id; return g; } // il vuoto lo taglia rebuildCu014
+    if (pr.forma === 'marciapiede' || pr.forma === 'aiuola') {
+      const side = pr.forma === 'marciapiede', g = side ? buildSidewalk(pr) : buildBed(pr), imp = footprintOf(pr);
+      g.userData.primitiva = pr.id;
+      if (imp) g.userData.impronta = { livello: side ? 'marciapiede' : 'aiuola', pts: imp };
+      if (side) clipMeshes(g, 'aiuola'); // il marciapiede sparisce dove c'è un'aiuola
+      return g;
+    }
     const b = pr.box, du = Math.max(0.02, b.u1 - b.u0), dv = Math.max(0.02, b.v1 - b.v0), dh = Math.max(0.02, b.h1 - b.h0);
     let geo;
     if (pr.forma === 'cilindro') { geo = new THREE.CylinderGeometry(0.5, 0.5, 1, 32); geo.scale(du, dh, dv); }
@@ -3751,7 +3855,8 @@ void main() {
     }
     for (const a of (el.aiuole || []).filter((x) => !x.rimosso)) { // prato rialzato con cordolo in travertino
       const [u0, u1] = a.u, [v0, v1] = a.v, k = 0.2, hk = Number(a.cordolo) || 0.18;
-      const ga = turned(g, a, (u0 + u1) / 2, (v0 + v1) / 2);
+      const ga = turned(g, a, (u0 + u1) / 2, (v0 + v1) / 2), imp = new THREE.Object3D();
+      imp.userData.impronta = { livello: 'aiuola', pts: rect(u0, u1, v0, v1) }; ga.add(imp);
       const lawn = localSlab(rect(u0, u1, v0, v1), 0, hk - 0.04, std('#5f8a3e', 1)); lawn.castShadow = false; ga.add(lawn);
       for (const pts of [rect(u0, u1, v0, v0 + k), rect(u0, u1, v1 - k, v1), rect(u0, u0 + k, v0, v1), rect(u1 - k, u1, v0, v1)]) ga.add(localSlab(pts, 0, hk, bedKerbMaterial()));
     }

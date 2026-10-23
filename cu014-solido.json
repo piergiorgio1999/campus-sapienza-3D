@@ -37,6 +37,7 @@
   { "id": "basso-sud", "rect": [17, -64.5, 41, -60], "altezza": 10.7, "nota": "Corpo basso fra le due ali sud (10,5-10,9 m)." },
   { "id": "basso-cortile-3", "rect": [41, -64.5, 46, -60], "altezza": 8, "nota": "A nord del cortile n. 3 l'STL dà circa 8 m (u 41-42,5) e il pavimento rialzato del cortile (2-4 m) più a est: prima restava all'altezza base di 19 m e chiudeva il cortile." },
   { "id": "sud-centro-est", "rect": [46, -91, 48.5, -79], "altezza": 15.7, "nota": "Chiude la tacca triangolare sulla facciata sud fra sud-centro e sud-est-basso (nell'STL qui 15,5-15,9 m)." },
+  { "id": "ventaglio-retro", "rect": [20, -67.5, 37.5, -63.3], "altezza": 16, "nota": "Gradino sul retro del ventaglio, contro il corpo basso: l'STL dà 15,9-16,1 m su tutta la fascia (prima era scambiato per un canale lungo il bordo nord); nelle foto del 23/10 ha il doppio parapetto." },
   { "id": "cavedio-8", "rect": [39, -66, 43, -59.5], "altezza": 8, "nota": "Cavedio est fra ventaglio e corpo centrale (commenti 17-18, foto e scansione dell'utente; quote dall'STL): terrazza a 8 m verso il ventaglio." },
   { "id": "cavedio-8-coda", "rect": [39, -68.5, 40.5, -66], "altezza": 8 },
   { "id": "cavedio-terrazzo-ovest", "rect": [40.5, -71, 43, -66], "altezza": 4.5, "nota": "Cavedio est fra ventaglio e corpo centrale (commenti 17-18, foto e scansione dell'utente; quote dall'STL): terrazzino a 4,5 m a ovest del fondo." },

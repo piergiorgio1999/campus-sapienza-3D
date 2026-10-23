@@ -3102,6 +3102,30 @@
     kitSupporto: ['041', 'Condotta zincata: supporto a portale (kit)', [0.08, 0.73, 0.62]],
   };
   const kitHidden = () => courtOnce('condotte|segnaposto', () => new THREE.MeshBasicMaterial({ visible: false }));
+  /* lamiera zincata del kit (texture di colore, normali e metallo/rugosità del GLB) sui pezzi fatti a mano: UTA, raccordi, unità esterne,
+     cassette. Finché il kit non arriva è lo zinco liscio; le UV vanno messe in metri con kitUV (texture ripetuta ogni 1,2 m). */
+  const kitSteel = () => courtOnce('condotte|lamiera del kit', () => {
+    const m = stdMat({ color: 0xc4c8ca, roughness: 0.42, metalness: 0.35 });
+    loadVentKit().then((kit) => {
+      const src = kit && kit['014'] && kit['014'].mat;
+      if (!src || !src.map) return;
+      const tile = (t) => { if (!t) return null; const c = t.clone(); c.wrapS = c.wrapT = THREE.RepeatWrapping; c.needsUpdate = true; return c; };
+      Object.assign(m, { map: tile(src.map), normalMap: tile(src.normalMap), roughnessMap: tile(src.roughnessMap), metalnessMap: tile(src.metalnessMap), roughness: 1, metalness: Math.min(src.metalness ?? 1, 0.35) });
+      m.color.set(0xffffff); m.needsUpdate = true;
+    });
+    return m;
+  });
+  const kitUV = (mesh) => { planarUVs(mesh.geometry, 1.2); return mesh; };
+  // raccordo fra due sezioni rettangolari lungo x: in x0 la sezione a = [y0, y1, metà larghezza], in x1 la sezione b
+  function sectionTaper(x0, x1, a, b) {
+    const g = new THREE.BoxGeometry(1, 1, 1), pos = g.attributes.position;
+    for (let i = 0; i < pos.count; i += 1) {
+      const sec = pos.getX(i) < 0 ? a : b;
+      pos.setXYZ(i, pos.getX(i) < 0 ? x0 : x1, pos.getY(i) < 0 ? sec[0] : sec[1], Math.sign(pos.getZ(i)) * sec[2]);
+    }
+    g.computeVertexNormals();
+    return g;
+  }
   // segnaposto invisibile della misura del pezzo (scatola dell'editor e «Misure originali» subito giuste); il pezzo vero arriva col kit
   function kitPiece(code, size) {
     const g = new THREE.Group(), ph = new THREE.Mesh(new THREE.BoxGeometry(size[0], size[1], size[2]), kitHidden());
@@ -3128,13 +3152,23 @@
         const d = new THREE.Mesh(p.geo, p.mat); d.scale.set(seg / p.size.x, (H - s) / p.size.y, W / p.size.z);
         d.position.set(-L / 2 + seg * (i + 0.5), s, 0); d.castShadow = true; d.receiveShadow = true; g.add(d);
       }
+      for (const x of [-L / 2, L / 2]) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.02, H - s, W), kitSteel()); kitUV(c); c.position.set(x, (H + s) / 2, 0); g.add(c); } // tappi: i tratti del kit sono tubi aperti
+      // piedini → supporti a portale del kit, allargati attorno al canale, uno a ogni giunto
+      const q = kit['041'];
+      if (!q || s <= 0.06) return;
+      for (const c of g.children.filter((x) => x.userData.piede)) { g.remove(c); c.geometry.dispose(); }
+      for (let i = 0; i <= m; i += 1) {
+        const x = Math.min(L / 2 - 0.06, Math.max(-L / 2 + 0.06, -L / 2 + seg * i));
+        const f = new THREE.Mesh(q.geo, q.mat); f.scale.set(0.08 / q.size.x, (H + 0.04) / q.size.y, (W + 0.14) / q.size.z);
+        f.position.set(x, 0, 0); f.castShadow = true; f.receiveShadow = true; g.add(f);
+      }
     });
     for (let k = 0; k <= n; k += 1) {
       const x = -L / 2 + (L * k) / n, x0 = Math.max(-L / 2, x - 0.025), x1 = Math.min(L / 2, x + 0.025);
       box(x0, x1, s - t, H, -W / 2, W / 2, zincoScuro()).userData.corpo = true;
       if (s > 0.06) {
-        box(Math.max(-L / 2, x0 - 0.08), Math.min(L / 2, x1 + 0.08), 0, 0.05, -W / 2 + 0.03, W / 2 - 0.03, staffe()); // travetto sul tetto
-        for (const z of [-W / 2 + 0.08, W / 2 - 0.08]) box(x0, x1, 0.05, s - t, z - 0.03, z + 0.03, staffe());
+        box(Math.max(-L / 2, x0 - 0.08), Math.min(L / 2, x1 + 0.08), 0, 0.05, -W / 2 + 0.03, W / 2 - 0.03, staffe()).userData.piede = true; // travetto sul tetto
+        for (const z of [-W / 2 + 0.08, W / 2 - 0.08]) box(x0, x1, 0.05, s - t, z - 0.03, z + 0.03, staffe()).userData.piede = true;
       }
     }
   }
@@ -3186,24 +3220,49 @@
     ...CATALOGO_GINESTRA,
     ...Object.fromEntries(Object.entries(KIT_CONDOTTE).map(([k, [code, nome, size]]) => [k, { nome, crea: () => kitPiece(code, size) }])),
     condotta: { nome: 'Condotta dell’aria (canale zincato su piedini)', crea: (pr) => group((g) => { const [L, W, H] = ductDims(pr, 3, 1, 1.25); ductSegment(g, L, W, H, Math.min(0.45, Math.max(0.1, H * 0.22))); }) },
+    /* UTA come nelle foto del tetto della Ginestra (23/10): in testa (−x) una cappa più bassa e stretta con la griglia, poi il corpo a pannelli
+       su un telaio, e verso il canale (+x) un raccordo rastremato fino alla sezione del canale (campo `raccordo`: larghezza e quote da/a
+       sopra la base dell'oggetto, di solito quelle della «condotta» che ci arriva). Tutto in lamiera del kit. */
     uta: { nome: 'Unità di trattamento aria (UTA) da tetto', crea: (pr) => group((g) => {
-      const [L, W, H] = ductDims(pr, 7, 2.1, 2.6), { box, add } = partAdder(g), base = 0.18, bh = H - base, t = Math.min(1.1, L * 0.16), e = Math.min(0.7, L * 0.1), k = 0.55;
-      const x0 = -L / 2 + e + t; // corpo da x0 a L/2, raccordo rastremato da −L/2 + e a x0, cappa da −L/2 a −L/2 + e
-      box(x0, L / 2, 0, base, -W / 2 + 0.05, W / 2 - 0.05, staffe());
-      box(x0, L / 2, base, H - 0.01, -W / 2 + 0.01, W / 2 - 0.01, zinco());
-      const n = Math.max(2, Math.round((L / 2 - x0) / 1.1));
-      for (let i = 0; i <= n; i += 1) { const x = x0 + ((L / 2 - x0) * i) / n; box(Math.max(x0, x - 0.02), Math.min(L / 2, x + 0.02), base, H, -W / 2, W / 2, zincoScuro()); } // giunti dei pannelli
-      add(ductTaper(-L / 2 + e, x0, bh, W - 0.02, k), zinco(), 0, base + bh / 2, 0);
-      box(-L / 2 + 0.02, -L / 2 + e, base + (bh * (1 - k)) / 2, base + (bh * (1 + k)) / 2, -(W * k) / 2, (W * k) / 2, zinco());
-      box(-L / 2, -L / 2 + 0.02, base + (bh * (1 - k)) / 2 + 0.05, base + (bh * (1 + k)) / 2 - 0.05, -(W * k) / 2 + 0.05, (W * k) / 2 - 0.05, courtOnce('condotte|griglia', () => stdMat({ color: 0x2c2e30, roughness: 0.6, metalness: 0.4 }))); // griglia di presa
-      box(-L / 2 + e, x0, 0, base + (bh * (1 - k)) / 2, -0.06, 0.06, staffe()); // sostegno del raccordo
+      const [L, W, H] = ductDims(pr, 8, 2.4, 2.55), { box, add } = partAdder(g), base = 0.2, R = pr.raccordo || {};
+      const dw = Math.min(W, Number(R.larghezza) || 1.3), da = Math.max(0, Number(R.da) || 0.33), dh = Math.min(H, Number(R.a) || 1.5);
+      const t = Math.min(1.2, L * 0.15), e = Math.min(0.8, L * 0.1), x0 = -L / 2 + e, x1 = L / 2 - t; // cappa da −L/2 a x0, corpo da x0 a x1, raccordo da x1 a L/2
+      const steel = kitSteel(), dark = courtOnce('condotte|griglia', () => stdMat({ color: 0x2c2e30, roughness: 0.6, metalness: 0.4 }));
+      box(x0, x1, 0, base, -W / 2 + 0.06, W / 2 - 0.06, staffe()); // telaio
+      kitUV(box(x0, x1, base, H, -W / 2, W / 2, steel));
+      const n = Math.max(2, Math.round((x1 - x0) / 1.1));
+      for (let i = 0; i <= n; i += 1) { const x = x0 + ((x1 - x0) * i) / n; kitUV(box(Math.max(x0, x - 0.025), Math.min(x1, x + 0.025), base, H + 0.02, -W / 2 - 0.02, W / 2 + 0.02, zincoScuro())); } // giunti dei pannelli
+      kitUV(box(x0 + 0.06, x1 - 0.06, H, H + 0.05, -W / 2 + 0.06, W / 2 - 0.06, steel)); // coperchio a pannelli
+      for (let i = 1; i < n; i += 1) { const x = x0 + ((x1 - x0) * i) / n; box(x - 0.02, x + 0.02, H + 0.05, H + 0.08, -W / 2 + 0.06, W / 2 - 0.06, zincoScuro()); } // coprigiunti
+      kitUV(add(sectionTaper(x1, L / 2, [base + 0.05, H - 0.05, W / 2 - 0.05], [da, dh, dw / 2]), steel, 0, 0, 0));
+      box(x1, L / 2, 0, da, -0.05, 0.05, staffe()); // sostegno del raccordo
+      const hh = base + (H - base) * 0.62, hw = W * 0.7; // cappa
+      kitUV(box(-L / 2 + 0.03, x0, base, hh, -hw / 2, hw / 2, steel));
+      kitUV(box(-L / 2 - 0.05, x0 + 0.05, hh, hh + 0.05, -hw / 2 - 0.06, hw / 2 + 0.06, zincoScuro())); // tesa
+      box(-L / 2, -L / 2 + 0.03, base + 0.1, hh - 0.1, -hw / 2 + 0.08, hw / 2 - 0.08, dark); // griglia
+      const nl = Math.max(3, Math.round((hh - base) / 0.12));
+      for (let i = 1; i < nl; i += 1) { const y = base + 0.1 + ((hh - base - 0.2) * i) / nl; box(-L / 2 - 0.02, -L / 2 + 0.03, y - 0.012, y + 0.012, -hw / 2 + 0.08, hw / 2 - 0.08, zincoScuro()); } // lamelle
     }) },
-    ventilatore: { nome: 'Ventilatore da tetto (unità esterna)', crea: (pr) => group((g) => {
-      const [L, W, H] = ductDims(pr, 1, 1, 1.1), { box, add } = partAdder(g), r = Math.min(L, W) * 0.38;
+    // unità esterna: telaio in lamiera del kit, una ventola ogni quadrato lungo il lato più lungo (nelle foto: due ventole per unità)
+    ventilatore: { nome: 'Unità esterna da tetto (ventole sopra)', crea: (pr) => group((g) => {
+      const [L, W, H] = ductDims(pr, 1, 1, 1.1), { box, add } = partAdder(g), alongX = L >= W, n = Math.max(1, Math.round(Math.max(L, W) / Math.min(L, W)));
+      const r = Math.min(Math.min(L, W), Math.max(L, W) / n) * 0.38, dark = courtOnce('condotte|griglia', () => stdMat({ color: 0x2c2e30, roughness: 0.6, metalness: 0.4 }));
       box(-L / 2, L / 2, 0, 0.1, -W / 2, W / 2, staffe());
-      box(-L / 2, L / 2, 0.1, H - 0.08, -W / 2, W / 2, zinco());
-      add(new THREE.CylinderGeometry(r, r, 0.08, 24), courtOnce('condotte|griglia', () => stdMat({ color: 0x2c2e30, roughness: 0.6, metalness: 0.4 })), 0, H - 0.04, 0);
-      add(new THREE.CylinderGeometry(r * 0.25, r * 0.25, 0.1, 12), zincoScuro(), 0, H - 0.03, 0);
+      kitUV(box(-L / 2, L / 2, 0.1, H - 0.08, -W / 2, W / 2, kitSteel()));
+      kitUV(box(-L / 2 - 0.02, L / 2 + 0.02, H - 0.08, H - 0.02, -W / 2 - 0.02, W / 2 + 0.02, zincoScuro()));
+      for (let i = 0; i < n; i += 1) {
+        const c = -Math.max(L, W) / 2 + (Math.max(L, W) * (i + 0.5)) / n, x = alongX ? c : 0, z = alongX ? 0 : -c;
+        add(new THREE.CylinderGeometry(r, r, 0.08, 24), dark, x, H - 0.03, z);
+        add(new THREE.TorusGeometry(r, 0.03, 6, 24).rotateX(Math.PI / 2), zincoScuro(), x, H, z);
+        add(new THREE.CylinderGeometry(r * 0.22, r * 0.22, 0.1, 12), zincoScuro(), x, H - 0.01, z);
+      }
+    }) },
+    cassetta: { nome: 'Cassetta / quadro da tetto in lamiera', crea: (pr) => group((g) => {
+      const [L, W, H] = ductDims(pr, 1, 1.8, 1.3), { box } = partAdder(g);
+      box(-L / 2, L / 2, 0, 0.08, -W / 2, W / 2, staffe());
+      kitUV(box(-L / 2, L / 2, 0.08, H, -W / 2, W / 2, kitSteel()));
+      kitUV(box(-L / 2 - 0.04, L / 2 + 0.04, H, H + 0.04, -W / 2 - 0.04, W / 2 + 0.04, zincoScuro()));
+      box(L / 2, L / 2 + 0.01, 0.2, H - 0.12, -0.012, 0.012, zincoScuro()); // fessura fra le due ante
     }) },
     camino: { nome: 'Camino di ventilazione a imbuto', crea: (pr) => group((g) => {
       const [L, W, H] = ductDims(pr, 0.7, 0.7, 0.75), { add } = partAdder(g), R = Math.min(L, W) / 2;

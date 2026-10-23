@@ -463,3 +463,10 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
 ## v69 — cavedio est del ventaglio (commenti 17-18)
 - Il cavedio fra il ventaglio e il corpo centrale era un buco unico fino a terra (u 40,8-47, v −64,2/−73,2). Dall'STL (quote lette su griglia di 1 m) e confermato dai piani della scansione Cortile_ginestra.spz (+3,25 e +4,5/4,75 m sul fondo): fondo a terra solo u 43-47, v −64,2/−71 (buco n. 3 di courtyards.json), gradoni a 3,2 e 4,7 m verso il corpo centrale, terrazzino a 4,5 m a ovest, terrazza a 8 m verso il ventaglio, fascia a L a 13,5 m (10,6 m nell'angolo) lungo il fianco del ventaglio (ali `cavedio-…` in cu014-solido.json).
 - La scansione è servita solo da riferimento: tolta dalla mappa (l'asset resta negli allegati). courtyards.json e cu014-solido.json si scaricano senza cache.
+
+## v70 — impianto sul tetto della Ginestra (foto del 23/10)
+- Un solo canale dritto sull'asse del ventaglio (v −64/−77,6, colmo 16,8 m) fatto coi tratti dritti del kit dell'utente, tappati in testa, su supporti a portale del kit (pezzo 041) a ogni giunto.
+- UTA rifatta: cappa più bassa con griglia a lamelle in testa (sud), corpo a pannelli con coprigiunti, raccordo rastremato (`sectionTaper`) fino alla sezione del canale (campo `raccordo` della primitiva).
+- Lamiera del kit (`kitSteel`: texture colore, normali, metallo/rugosità del GLB, UV in metri ogni 1,2 m) su UTA, raccordi, unità esterne e nuova «cassetta» da tetto.
+- Unità esterna unica con due ventole (il «ventilatore» mette una ventola per ogni quadrato lungo il lato lungo) accanto al canale, lato est; cassetta accanto alla testa della UTA.
+- Tolti il canale lungo il bordo nord, la griglia e il camino (non ci sono nelle foto): la fascia a 16 m dell'STL è un gradino del tetto, ora ala `ventaglio-retro` in cu014-solido.json.

@@ -522,6 +522,36 @@
  ],
  "primitive": [
   {
+   "id": "gin-ovest-rampa-2-sotto",
+   "forma": "box",
+   "materiale": "travertino",
+   "angolo": 344.1,
+   "box": {
+    "u0": 16.94,
+    "u1": 21.82,
+    "v0": -83.88,
+    "v1": -82.48,
+    "h0": 0,
+    "h1": 1.23
+   },
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
+  },
+  {
+   "id": "gin-est-rampa-2-sotto",
+   "forma": "box",
+   "materiale": "travertino",
+   "angolo": 190.4,
+   "box": {
+    "u0": 32.43,
+    "u1": 37.31,
+    "v0": -84.62,
+    "v1": -83.22,
+    "h0": 0,
+    "h1": 1.23
+   },
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
+  },
+  {
    "id": "pmvjal4zjcw",
    "forma": "oggetto",
    "modello": "tuboRosso",
@@ -556,16 +586,32 @@
    "forma": "oggetto",
    "modello": "cancelloScala",
    "ruota": 0,
-   "angolo": 338.2,
+   "angolo": 337.85,
    "box": {
-    "u0": 14.17,
-    "u1": 15.57,
-    "v0": -85.095,
-    "v1": -85.045,
-    "h0": 0,
-    "h1": 2.9
+    "u0": 13.28,
+    "u1": 16.07,
+    "v0": -84.91,
+    "v1": -84.86,
+    "h0": 1.23,
+    "h1": 3.63
    },
-   "nota": "Commenti del 23/10: cancellata al posto della finestra del piano terra sull'arco della Ginestra (commento 15)."
+   "nota": "Commento 15 + scansione del 23/10: grata sul bordo esterno del pianerottolo delle scale (al posto della staccionata)."
+  },
+  {
+   "id": "cancellata-arco-est",
+   "forma": "oggetto",
+   "modello": "cancelloScala",
+   "ruota": 0,
+   "angolo": 196.65,
+   "box": {
+    "u0": 38.0,
+    "u1": 40.79,
+    "v0": -86.1,
+    "v1": -86.05,
+    "h0": 1.23,
+    "h1": 3.63
+   },
+   "nota": "Commento 15 + scansione del 23/10: grata sul bordo esterno del pianerottolo delle scale (al posto della staccionata). Lato est (specchio)."
   },
   {
    "id": "passaggio-cancello",
@@ -1075,77 +1121,77 @@
    "id": "gin-pilone-1",
    "forma": "box",
    "materiale": "intonaco arancione",
-   "angolo": 351.31,
+   "angolo": 349.4,
    "box": {
-    "u0": 22.71,
-    "u1": 23.6,
-    "v0": -87.26,
-    "v1": -86.36,
-    "h0": 4.4,
+    "u0": 21.5,
+    "u1": 22.39,
+    "v0": -87.05,
+    "v1": -86.15,
+    "h0": 3.25,
     "h1": 15.2
    },
-   "nota": "pilone arancione 1 della balconata (sale fino al tetto)"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-pilone-2",
    "forma": "box",
    "materiale": "intonaco arancione",
-   "angolo": 355.27,
+   "angolo": 354.63,
    "box": {
-    "u0": 25.24,
-    "u1": 26.13,
-    "v0": -87.55,
-    "v1": -86.65,
-    "h0": 4.4,
+    "u0": 24.83,
+    "u1": 25.72,
+    "v0": -87.52,
+    "v1": -86.62,
+    "h0": 3.25,
     "h1": 15.3
    },
-   "nota": "pilone arancione 2 della balconata (sale fino al tetto)"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-pilone-3",
    "forma": "box",
    "materiale": "intonaco arancione",
-   "angolo": 359.23,
+   "angolo": 359.87,
    "box": {
-    "u0": 27.78,
-    "u1": 28.67,
+    "u0": 28.19,
+    "u1": 29.08,
     "v0": -87.68,
     "v1": -86.78,
-    "h0": 4.4,
+    "h0": 3.25,
     "h1": 15.3
    },
-   "nota": "pilone arancione 3 della balconata (sale fino al tetto)"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-pilone-4",
    "forma": "box",
    "materiale": "intonaco arancione",
-   "angolo": 3.19,
+   "angolo": 5.1,
    "box": {
-    "u0": 30.32,
-    "u1": 31.21,
-    "v0": -87.62,
-    "v1": -86.72,
-    "h0": 4.4,
+    "u0": 31.55,
+    "u1": 32.44,
+    "v0": -87.53,
+    "v1": -86.63,
+    "h0": 3.25,
     "h1": 15.4
    },
-   "nota": "pilone arancione 4 della balconata (sale fino al tetto)"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-balaustra-1",
    "forma": "oggetto",
    "modello": "balaustra",
    "ruota": 0,
-   "angolo": 353.29,
+   "angolo": 352.01,
    "box": {
-    "u0": 23.55,
-    "u1": 25.22,
-    "v0": -87.43,
-    "v1": -87.13,
-    "h0": 4.4,
-    "h1": 5.4
+    "u0": 22.31,
+    "u1": 24.81,
+    "v0": -87.32,
+    "v1": -87.02,
+    "h0": 3.25,
+    "h1": 4.25
    },
-   "nota": "balaustra di travertino 1 fra i piloni"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-balaustra-2",
@@ -1154,46 +1200,46 @@
    "ruota": 0,
    "angolo": 357.25,
    "box": {
-    "u0": 26.1,
-    "u1": 27.77,
+    "u0": 25.68,
+    "u1": 28.19,
     "v0": -87.64,
     "v1": -87.34,
-    "h0": 4.4,
-    "h1": 5.4
+    "h0": 3.25,
+    "h1": 4.25
    },
-   "nota": "balaustra di travertino 2 fra i piloni"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-balaustra-3",
    "forma": "oggetto",
    "modello": "balaustra",
    "ruota": 0,
-   "angolo": 1.21,
+   "angolo": 2.48,
    "box": {
-    "u0": 28.67,
-    "u1": 30.34,
-    "v0": -87.67,
-    "v1": -87.37,
-    "h0": 4.4,
-    "h1": 5.4
+    "u0": 29.08,
+    "u1": 31.58,
+    "v0": -87.65,
+    "v1": -87.35,
+    "h0": 3.25,
+    "h1": 4.25
    },
-   "nota": "balaustra di travertino 3 fra i piloni"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-porta-1",
    "forma": "oggetto",
    "modello": "portaVetri",
    "ruota": 0,
-   "angolo": 353.29,
+   "angolo": 352.01,
    "box": {
-    "u0": 23.99,
-    "u1": 25.65,
-    "v0": -83.58,
-    "v1": -83.5,
-    "h0": 4.4,
-    "h1": 7.18
+    "u0": 23.25,
+    "u1": 24.91,
+    "v0": -83.49,
+    "v1": -83.41,
+    "h0": 3.25,
+    "h1": 6.03
    },
-   "nota": "porta a vetri 1 sul fondo della loggia"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-porta-2",
@@ -1206,68 +1252,72 @@
     "u1": 27.95,
     "v0": -83.77,
     "v1": -83.69,
-    "h0": 4.4,
-    "h1": 7.18
+    "h0": 3.25,
+    "h1": 6.03
    },
-   "nota": "porta a vetri 2 sul fondo della loggia"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-porta-3",
    "forma": "oggetto",
    "modello": "portaVetri",
    "ruota": 0,
-   "angolo": 1.21,
+   "angolo": 2.48,
    "box": {
-    "u0": 28.59,
-    "u1": 30.25,
-    "v0": -83.8,
-    "v1": -83.72,
-    "h0": 4.4,
-    "h1": 7.18
+    "u0": 29.34,
+    "u1": 31.0,
+    "v0": -83.78,
+    "v1": -83.7,
+    "h0": 3.25,
+    "h1": 6.03
    },
-   "nota": "porta a vetri 3 sul fondo della loggia"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
-   "angolo": 348.84,
+   "angolo": 348.0,
    "box": {
+    "u0": 20.37,
+    "u1": 21.9,
+    "v0": -87.58,
+    "v1": -84.58,
     "h0": 0,
-    "h1": 0.15,
-    "u0": 20.3,
-    "u1": 23.33,
-    "v0": -90.74,
-    "v1": -86.66
+    "h1": 0.15
    },
    "forma": "box",
-   "id": "gin-ovest-gradino-angolo"
+   "id": "gin-ovest-gradino-angolo",
+   "materiale": "travertino",
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-ovest-base",
    "forma": "box",
-   "angolo": 348.61,
+   "angolo": 347.5,
    "box": {
-    "u0": 20.13,
-    "u1": 21.53,
-    "v0": -90.24,
-    "v1": -88.84,
+    "u0": 20.17,
+    "u1": 21.57,
+    "v0": -86.52,
+    "v1": -85.12,
     "h0": 0,
     "h1": 0.34
    },
-   "nota": "scala ovest: base quadrata"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due).",
+   "materiale": "travertino"
   },
   {
-   "angolo": 165.31,
+   "angolo": 163.2,
    "box": {
+    "u0": 16.2,
+    "u1": 20.25,
+    "v0": -86.13,
+    "v1": -84.13,
     "h0": 0,
-    "h1": 2.03,
-    "u0": 17.28,
-    "u1": 23.04,
-    "v0": -89.95,
-    "v1": -86.19
+    "h1": 1.23
    },
    "forma": "oggetto",
    "id": "gin-ovest-rampa-1",
    "modello": "rampaScala",
-   "ruota": 0
+   "ruota": 0,
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-ovest-pianerottolo",
@@ -1275,81 +1325,57 @@
    "materiale": "travertino",
    "poligono": [
     [
-     18.5,
-     -86.25
+     13.37,
+     -84.38
     ],
     [
-     18.22,
-     -86.17
+     13.88,
+     -84.6
     ],
     [
-     17.94,
-     -86.09
+     14.4,
+     -84.82
     ],
     [
-     17.66,
-     -86.0
+     14.92,
+     -85.03
     ],
     [
-     17.38,
-     -85.92
+     15.44,
+     -85.24
     ],
     [
-     17.11,
-     -85.83
+     15.96,
+     -85.43
     ],
     [
-     16.83,
-     -85.73
+     17.67,
+     -80.73
     ],
     [
-     16.55,
-     -85.64
+     17.22,
+     -80.56
     ],
     [
-     15.46,
-     -88.81
+     16.77,
+     -80.39
     ],
     [
-     15.74,
-     -88.9
+     16.32,
+     -80.2
     ],
     [
-     16.01,
-     -88.99
+     15.87,
+     -80.01
     ],
     [
-     16.29,
-     -89.08
-    ],
-    [
-     16.57,
-     -89.17
-    ],
-    [
-     16.85,
-     -89.26
-    ],
-    [
-     17.43,
-     -87.34
-    ],
-    [
-     17.66,
-     -87.41
-    ],
-    [
-     17.9,
-     -87.48
-    ],
-    [
-     18.13,
-     -87.55
+     15.43,
+     -79.82
     ]
    ],
    "base": 0,
-   "altezza": 2.2,
-   "nota": "scala ovest: pianerottolo di mezzo (corsia e testata oltre il pilone)"
+   "altezza": 1.23,
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-ovest-pianerottolo-dentro",
@@ -1407,23 +1433,24 @@
    ],
    "base": 0,
    "altezza": 2.2,
-   "nota": "scala ovest: pianerottolo dentro, davanti al cancello, sotto l'edificio"
+   "nota": "scala ovest: pianerottolo dentro, davanti al cancello, sotto l'edificio",
+   "rimosso": true
   },
   {
    "id": "gin-ovest-rampa-2",
    "forma": "oggetto",
    "modello": "rampaScala",
    "ruota": 0,
-   "angolo": 347.12,
+   "angolo": 344.1,
    "box": {
-    "u0": 18.7,
-    "u1": 22.54,
-    "v0": -86.77,
-    "v1": -84.87,
-    "h0": 0,
-    "h1": 4.23
+    "u0": 16.94,
+    "u1": 21.82,
+    "v0": -83.88,
+    "v1": -82.48,
+    "h0": 1.23,
+    "h1": 3.25
    },
-   "nota": "scala ovest: seconda rampa nel sottoscala, sale verso il centro fino alla loggia"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "angolo": 345.23,
@@ -1436,176 +1463,170 @@
     "v1": -88.9
    },
    "forma": "box",
-   "id": "gin-ovest-pilone"
+   "id": "gin-ovest-pilone",
+   "rimosso": true
   },
   {
-   "altezza": 0.3,
-   "base": 4.3,
+   "altezza": 0.35,
+   "base": 4.1,
    "forma": "prisma",
    "id": "gin-ovest-pensilina",
    "materiale": "travertino",
    "poligono": [
     [
-     22.38,
-     -87.15
+     11.65,
+     -83.88
     ],
     [
-     22.02,
-     -87.09
+     12.23,
+     -84.17
     ],
     [
-     21.65,
-     -87.03
+     12.81,
+     -84.45
     ],
     [
-     21.29,
-     -86.97
+     13.39,
+     -84.71
     ],
     [
-     20.93,
-     -86.91
+     13.98,
+     -84.97
     ],
     [
-     20.57,
-     -86.85
+     14.58,
+     -85.22
     ],
     [
-     20.2,
-     -86.78
+     15.18,
+     -85.46
     ],
     [
-     19.84,
-     -86.71
+     15.78,
+     -85.68
     ],
     [
-     19.48,
-     -86.63
+     16.39,
+     -85.9
     ],
     [
-     19.13,
-     -86.56
+     17.0,
+     -86.11
     ],
     [
-     18.76,
-     -86.48
+     17.61,
+     -86.3
     ],
     [
-     18.41,
-     -86.4
+     18.23,
+     -86.49
     ],
     [
-     18.05,
-     -86.31
+     18.85,
+     -86.66
     ],
     [
-     17.7,
-     -86.22
-    ],
-    [
-     17.34,
-     -86.14
-    ],
-    [
-     16.98,
-     -86.04
-    ],
-    [
-     16.63,
-     -85.95
-    ],
-    [
-     16.28,
-     -85.85
-    ],
-    [
-     15,
-     -89.22
-    ],
-    [
-     15.38,
-     -89.32
-    ],
-    [
-     15.77,
-     -89.43
-    ],
-    [
-     16.15,
-     -89.53
-    ],
-    [
-     16.55,
-     -89.63
-    ],
-    [
-     16.94,
-     -89.72
-    ],
-    [
-     17.32,
-     -89.81
-    ],
-    [
-     17.72,
-     -89.9
-    ],
-    [
-     18.11,
-     -89.99
-    ],
-    [
-     18.5,
-     -90.07
-    ],
-    [
-     18.9,
-     -90.15
-    ],
-    [
-     19.3,
-     -90.23
-    ],
-    [
-     19.69,
-     -90.31
+     19.47,
+     -86.82
     ],
     [
      20.09,
-     -90.38
+     -86.98
     ],
     [
-     20.49,
-     -90.45
+     20.72,
+     -87.12
     ],
     [
-     20.89,
-     -90.51
+     21.35,
+     -87.25
     ],
     [
-     21.28,
-     -90.58
+     22.19,
+     -83.03
     ],
     [
-     21.68,
-     -90.64
+     21.64,
+     -82.92
+    ],
+    [
+     21.08,
+     -82.79
+    ],
+    [
+     20.53,
+     -82.66
+    ],
+    [
+     19.98,
+     -82.51
+    ],
+    [
+     19.43,
+     -82.36
+    ],
+    [
+     18.88,
+     -82.19
+    ],
+    [
+     18.34,
+     -82.02
+    ],
+    [
+     17.8,
+     -81.84
+    ],
+    [
+     17.26,
+     -81.65
+    ],
+    [
+     16.73,
+     -81.44
+    ],
+    [
+     16.2,
+     -81.23
+    ],
+    [
+     15.67,
+     -81.02
+    ],
+    [
+     15.15,
+     -80.79
+    ],
+    [
+     14.63,
+     -80.55
+    ],
+    [
+     14.11,
+     -80.31
+    ],
+    [
+     13.6,
+     -80.05
     ]
-   ]
+   ],
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-ovest-cancello",
    "forma": "oggetto",
    "modello": "cancelloScala",
    "ruota": 0,
-   "angolo": 343.02,
+   "angolo": 337.85,
    "box": {
-    "u0": 17.14,
-    "u1": 18.54,
-    "v0": -86.03,
-    "v1": -85.98,
-    "h0": 2.2,
-    "h1": 4.15
+    "u0": 14.19,
+    "u1": 16.82,
+    "v0": -82.87,
+    "v1": -82.82,
+    "h0": 1.23,
+    "h1": 3.18
    },
-   "nota": "scala ovest: cancello sul filo della facciata, sotto l'edificio"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "angolo": 165.31,
@@ -1628,32 +1649,33 @@
    "forma": "oggetto",
    "modello": "staccionata",
    "ruota": 0,
-   "angolo": 341.99,
+   "angolo": 337.85,
    "box": {
-    "u0": 15.44,
-    "u1": 16.9,
-    "v0": -89.02,
-    "v1": -88.97,
-    "h0": 2.2,
-    "h1": 3.2
+    "u0": 13.28,
+    "u1": 16.07,
+    "v0": -84.91,
+    "v1": -84.86,
+    "h0": 1.23,
+    "h1": 2.23
    },
-   "nota": "scala ovest: staccionata sul bordo esterno del pianerottolo"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due).",
+   "rimosso": true
   },
   {
    "id": "gin-ovest-staccionata-testata",
    "forma": "oggetto",
    "modello": "staccionata",
    "ruota": 0,
-   "angolo": 251.03,
+   "angolo": 245.7,
    "box": {
-    "u0": 14.43,
-    "u1": 17.68,
-    "v0": -87.26,
-    "v1": -87.21,
-    "h0": 2.2,
-    "h1": 3.2
+    "u0": 11.9,
+    "u1": 16.9,
+    "v0": -82.12,
+    "v1": -82.07,
+    "h0": 1.23,
+    "h1": 2.23
    },
-   "nota": "scala ovest: staccionata in testa al pianerottolo"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-ovest-staccionata-corsia",
@@ -1669,79 +1691,85 @@
     "h0": 2.2,
     "h1": 3.2
    },
-   "nota": "scala ovest: staccionata sul salto verso la corsia"
+   "nota": "scala ovest: staccionata sul salto verso la corsia",
+   "rimosso": true
   },
   {
-   "angolo": 345.23,
+   "angolo": 343.85,
    "box": {
+    "u0": 16.62,
+    "u1": 21.32,
+    "v0": -84.3,
+    "v1": -83.8,
     "h0": 0,
-    "h1": 4.3,
-    "u0": 17.59,
-    "u1": 22.43,
-    "v0": -86.94,
-    "v1": -86.34
+    "h1": 4.1
    },
    "forma": "box",
    "id": "pmvk7o45ss9",
-   "nota": "aggiunto dall'utente nell'editor (23/10/2026)"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due).",
+   "materiale": "travertino"
   },
   {
-   "angolo": 165.31,
+   "angolo": 163.2,
    "box": {
-    "u0": 16.82,
-    "u1": 22.58,
-    "v0": -89.87,
-    "v1": -89.82,
-    "h0": 0.11,
-    "h1": 3.03
+    "u0": 15.87,
+    "u1": 20.03,
+    "v0": -86.07,
+    "v1": -86.02,
+    "h0": 0.0,
+    "h1": 2.23
    },
    "forma": "oggetto",
    "id": "pmvk7skt3lh",
    "modello": "staccionata",
    "ruota": 0,
-   "nota": "staccionata della prima rampa ovest (dell'utente), sul bordo esterno dei gradini dal primo all'ultimo"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
-   "angolo": 185.66,
+   "angolo": 186.5,
    "box": {
-    "u0": 30.41,
-    "u1": 33.44,
-    "v0": -91.23,
-    "v1": -87.15,
+    "u0": 32.08,
+    "u1": 33.61,
+    "v0": -88.14,
+    "v1": -85.14,
     "h0": 0,
     "h1": 0.15
    },
    "forma": "box",
-   "id": "gin-est-gradino-angolo"
+   "id": "gin-est-gradino-angolo",
+   "materiale": "travertino",
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-est-base",
    "forma": "box",
-   "angolo": 185.89,
+   "angolo": 187.0,
    "box": {
-    "u0": 32.12,
-    "u1": 33.52,
-    "v0": -90.82,
-    "v1": -89.42,
+    "u0": 32.44,
+    "u1": 33.84,
+    "v0": -87.11,
+    "v1": -85.71,
     "h0": 0,
     "h1": 0.34
    },
-   "nota": "scala est: base quadrata (specchio del lato ovest)"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due).",
+   "materiale": "travertino"
   },
   {
-   "angolo": 9.19,
+   "angolo": 11.3,
    "box": {
-    "u0": 30.75,
-    "u1": 36.51,
-    "v0": -90.6,
-    "v1": -86.84,
+    "u0": 33.81,
+    "u1": 37.86,
+    "v0": -86.98,
+    "v1": -84.98,
     "h0": 0,
-    "h1": 2.03
+    "h1": 1.23
    },
    "forma": "oggetto",
    "id": "gin-est-rampa-1",
    "modello": "rampaScala",
-   "ruota": 0
+   "ruota": 0,
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-est-pianerottolo",
@@ -1749,81 +1777,57 @@
    "materiale": "travertino",
    "poligono": [
     [
-     35.7,
-     -88.39
+     39.13,
+     -80.96
     ],
     [
-     35.93,
-     -88.35
+     38.67,
+     -81.11
     ],
     [
-     36.18,
-     -88.3
+     38.2,
+     -81.25
     ],
     [
-     36.42,
-     -88.25
+     37.74,
+     -81.4
+    ],
+    [
+     37.27,
+     -81.52
     ],
     [
      36.81,
-     -90.22
+     -81.65
     ],
     [
-     37.1,
-     -90.16
+     38.06,
+     -86.49
     ],
     [
-     37.38,
-     -90.09
+     38.6,
+     -86.35
     ],
     [
-     37.67,
-     -90.03
+     39.14,
+     -86.19
     ],
     [
-     37.95,
-     -89.97
+     39.67,
+     -86.03
     ],
     [
-     38.24,
-     -89.9
+     40.21,
+     -85.86
     ],
     [
-     37.45,
-     -86.64
-    ],
-    [
-     37.17,
-     -86.71
-    ],
-    [
-     36.88,
-     -86.78
-    ],
-    [
-     36.6,
-     -86.84
-    ],
-    [
-     36.32,
-     -86.9
-    ],
-    [
-     36.03,
-     -86.96
-    ],
-    [
-     35.74,
-     -87.01
-    ],
-    [
-     35.45,
-     -87.06
+     40.74,
+     -85.69
     ]
    ],
    "base": 0,
-   "altezza": 2.2,
-   "nota": "scala est: pianerottolo di mezzo (corsia e testata oltre il pilone) (specchio del lato ovest)"
+   "altezza": 1.23,
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-est-pianerottolo-dentro",
@@ -1881,23 +1885,24 @@
    ],
    "base": 0,
    "altezza": 2.2,
-   "nota": "scala est: pianerottolo dentro, davanti al cancello, sotto l'edificio (specchio del lato ovest)"
+   "nota": "scala est: pianerottolo dentro, davanti al cancello, sotto l'edificio (specchio del lato ovest)",
+   "rimosso": true
   },
   {
    "id": "gin-est-rampa-2",
    "forma": "oggetto",
    "modello": "rampaScala",
    "ruota": 0,
-   "angolo": 187.38,
+   "angolo": 190.4,
    "box": {
-    "u0": 31.47,
-    "u1": 35.31,
-    "v0": -87.38,
-    "v1": -85.48,
-    "h0": 0,
-    "h1": 4.23
+    "u0": 32.43,
+    "u1": 37.31,
+    "v0": -84.62,
+    "v1": -83.22,
+    "h0": 1.23,
+    "h1": 3.25
    },
-   "nota": "scala est: seconda rampa nel sottoscala, sale verso il centro fino alla loggia (specchio del lato ovest)"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "angolo": 189.27,
@@ -1910,176 +1915,170 @@
     "h1": 4.3
    },
    "forma": "box",
-   "id": "gin-est-pilone"
+   "id": "gin-est-pilone",
+   "rimosso": true
   },
   {
-   "altezza": 0.3,
-   "base": 4.3,
+   "altezza": 0.35,
+   "base": 4.1,
    "forma": "prisma",
    "id": "gin-est-pensilina",
    "materiale": "travertino",
    "poligono": [
     [
-     31.87,
-     -91.13
+     40.93,
+     -81.36
     ],
     [
-     32.27,
-     -91.11
+     40.39,
+     -81.57
     ],
     [
-     32.67,
-     -91.08
+     39.85,
+     -81.76
     ],
     [
-     33.07,
-     -91.05
+     39.31,
+     -81.95
     ],
     [
-     33.48,
-     -91.02
+     38.77,
+     -82.13
     ],
     [
-     33.88,
-     -90.99
+     38.23,
+     -82.29
     ],
     [
-     34.28,
-     -90.95
+     37.68,
+     -82.45
     ],
     [
-     34.68,
-     -90.91
+     37.13,
+     -82.6
     ],
     [
-     35.09,
-     -90.87
+     36.57,
+     -82.74
     ],
     [
-     35.48,
-     -90.82
+     36.02,
+     -82.87
     ],
     [
-     35.88,
-     -90.77
+     35.47,
+     -82.99
     ],
     [
-     36.29,
-     -90.72
+     34.9,
+     -83.1
     ],
     [
-     36.68,
-     -90.67
+     34.34,
+     -83.2
     ],
     [
-     37.07,
-     -90.62
+     33.78,
+     -83.3
     ],
     [
-     37.48,
-     -90.55
+     33.22,
+     -83.37
     ],
     [
-     37.87,
-     -90.49
+     32.65,
+     -83.45
     ],
     [
-     38.27,
-     -90.42
+     32.09,
+     -83.51
     ],
     [
-     38.65,
-     -90.36
+     32.52,
+     -87.79
     ],
     [
-     37.7,
-     -86.88
+     33.16,
+     -87.72
     ],
     [
-     37.35,
-     -86.95
+     33.8,
+     -87.64
     ],
     [
-     36.99,
-     -87.0
-    ],
-    [
-     36.62,
-     -87.07
-    ],
-    [
-     36.25,
-     -87.11
-    ],
-    [
-     35.9,
-     -87.17
-    ],
-    [
-     35.53,
-     -87.22
-    ],
-    [
-     35.17,
-     -87.27
-    ],
-    [
-     34.8,
-     -87.31
-    ],
-    [
-     34.44,
-     -87.35
-    ],
-    [
-     34.08,
-     -87.39
-    ],
-    [
-     33.71,
-     -87.43
-    ],
-    [
-     33.34,
-     -87.46
-    ],
-    [
-     32.97,
-     -87.49
-    ],
-    [
-     32.61,
-     -87.51
-    ],
-    [
-     32.24,
+     34.43,
      -87.54
     ],
     [
-     31.87,
-     -87.56
+     35.07,
+     -87.44
     ],
     [
-     31.51,
-     -87.59
+     35.7,
+     -87.33
+    ],
+    [
+     36.34,
+     -87.2
+    ],
+    [
+     36.96,
+     -87.07
+    ],
+    [
+     37.59,
+     -86.92
+    ],
+    [
+     38.22,
+     -86.76
+    ],
+    [
+     38.84,
+     -86.6
+    ],
+    [
+     39.46,
+     -86.41
+    ],
+    [
+     40.08,
+     -86.22
+    ],
+    [
+     40.69,
+     -86.02
+    ],
+    [
+     41.29,
+     -85.82
+    ],
+    [
+     41.9,
+     -85.59
+    ],
+    [
+     42.5,
+     -85.36
     ]
-   ]
+   ],
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-est-cancello",
    "forma": "oggetto",
    "modello": "cancelloScala",
    "ruota": 0,
-   "angolo": 191.48,
+   "angolo": 196.65,
    "box": {
-    "u0": 35.44,
-    "u1": 36.84,
-    "v0": -86.91,
-    "v1": -86.85,
-    "h0": 2.2,
-    "h1": 4.15
+    "u0": 37.45,
+    "u1": 40.08,
+    "v0": -83.99,
+    "v1": -83.94,
+    "h0": 1.23,
+    "h1": 3.18
    },
-   "nota": "scala est: cancello sul filo della facciata, sotto l'edificio (specchio del lato ovest)"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "angolo": 9.19,
@@ -2102,32 +2101,33 @@
    "forma": "oggetto",
    "modello": "staccionata",
    "ruota": 0,
-   "angolo": 192.51,
+   "angolo": 196.65,
    "box": {
-    "u0": 36.78,
-    "u1": 38.24,
-    "v0": -90.04,
-    "v1": -90.0,
-    "h0": 2.2,
-    "h1": 3.2
+    "u0": 38.0,
+    "u1": 40.79,
+    "v0": -86.1,
+    "v1": -86.05,
+    "h0": 1.23,
+    "h1": 2.23
    },
-   "nota": "scala est: staccionata sul bordo esterno del pianerottolo (specchio del lato ovest)"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due).",
+   "rimosso": true
   },
   {
    "id": "gin-est-staccionata-testata",
    "forma": "oggetto",
    "modello": "staccionata",
    "ruota": 0,
-   "angolo": 283.47,
+   "angolo": 288.8,
    "box": {
-    "u0": 36.16,
-    "u1": 39.41,
-    "v0": -88.31,
-    "v1": -88.25,
-    "h0": 2.2,
-    "h1": 3.2
+    "u0": 37.43,
+    "u1": 42.43,
+    "v0": -83.35,
+    "v1": -83.3,
+    "h0": 1.23,
+    "h1": 2.23
    },
-   "nota": "scala est: staccionata in testa al pianerottolo (specchio del lato ovest)"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   },
   {
    "id": "gin-est-staccionata-corsia",
@@ -2143,37 +2143,39 @@
     "h0": 2.2,
     "h1": 3.2
    },
-   "nota": "scala est: staccionata sul salto verso la corsia (specchio del lato ovest)"
+   "nota": "scala est: staccionata sul salto verso la corsia (specchio del lato ovest)",
+   "rimosso": true
   },
   {
-   "angolo": 189.27,
+   "angolo": 190.65,
    "box": {
-    "u0": 31.49,
-    "u1": 36.33,
-    "v0": -87.61,
-    "v1": -87.01,
+    "u0": 32.85,
+    "u1": 37.55,
+    "v0": -85.08,
+    "v1": -84.58,
     "h0": 0,
-    "h1": 4.3
+    "h1": 4.1
    },
    "forma": "box",
    "id": "gin-est-pmvk7o45ss9",
-   "nota": "aggiunto dall'utente nell'editor (23/10/2026) (specchio del lato ovest)"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due).",
+   "materiale": "travertino"
   },
   {
-   "angolo": 9.19,
+   "angolo": 11.3,
    "box": {
-    "u0": 31.04,
-    "u1": 36.8,
-    "v0": -90.56,
-    "v1": -90.5,
-    "h0": 0.11,
-    "h1": 3.03
+    "u0": 33.94,
+    "u1": 38.1,
+    "v0": -86.94,
+    "v1": -86.89,
+    "h0": 0.0,
+    "h1": 2.23
    },
    "forma": "oggetto",
    "id": "gin-est-pmvk7skt3lh",
    "modello": "staccionata",
    "ruota": 0,
-   "nota": "staccionata della prima rampa est (dell'utente), sul bordo esterno dei gradini dal primo all'ultimo (specchio del lato ovest)"
+   "nota": "Retro della Ginestra rifatto dalla scansione Scaniverse dell'utente del 23/10 (balconata 3,25 m, pianerottoli 1,23 m, pensiline 4,1 m, prima rampa sul filo della facciata, seconda nel sottoscala, pilone e cancello fra le due)."
   }
  ]
 }

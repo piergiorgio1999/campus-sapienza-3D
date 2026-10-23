@@ -2112,8 +2112,9 @@
     }
     // piano terra sotto la loggia (finestre del basamento), senza il sottoscala aperto delle scale
     const baseBand = (r0, r1, b0, b1) => {
+      if (r1 - r0 < 0.05 || Math.abs(b1 - b0) < 1e-3) return; // sottoscala largo quanto la loggia: niente piano terra lì
       const shape = coronaShape(r0, r1, b0, b1);
-      if (!shape || Math.abs(b1 - b0) < 1e-3) return;
+      if (!shape) return;
       const g = new THREE.ExtrudeGeometry(shape, { depth: q - 0.15, bevelEnabled: false, curveSegments: 1 });
       g.rotateX(-Math.PI / 2); g.translate(0, Y0, 0); applyRoofUVs(g); applyWallUVs(g, Y0, FACADE_BAY, q); g.computeVertexNormals();
       const mats = [hiddenCapMaterial(), set.base], m = tag(new THREE.Mesh(g, mats));
@@ -2123,7 +2124,7 @@
     for (const [x, y] of minus(lo, hi, sides.map((d) => [d.aP, d.aG1]))) baseBand(rU0, rf, x, y);
     // pavimento della loggia in travertino, aperto sopra le seconde rampe
     sector(ri, rU0, lo, hi, q - 0.15, q, trav);
-    for (const [x, y] of minus(lo, hi, sides.map((d) => [d.aP, d.aF2]))) sector(rU0, rf, x, y, q - 0.15, q, trav);
+    for (const [x, y] of minus(lo, hi, sides.map((d) => [d.aP, d.aG1]))) sector(rU0, rf, x, y, q - 0.15, q, trav); // aperta sopra rampe e pianerottolo (sopra c'è la pensilina)
     // fondo della loggia rivestito di travertino e soffitto
     sector(ri, ri + 0.05, lo, hi, q, q + F, trav);
     sector(ri + 0.05, rf, lo, hi, q + F - 0.06, q + F, plaster);

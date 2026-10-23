@@ -486,3 +486,10 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
 - Scala antincendio della facciata sud specchiata (campo `specchio` degli elementi scala) + pulsante «Specchia ↔» nella sua scheda (commento 19).
 - Cancellata al posto della finestra sull'arco della Ginestra (commento 15).
 - CU035 non si disegna più (commento 16): restano CU014 e CU032 (`DISEGNATI`).
+
+## v74 — retro della Ginestra dalla scansione Scaniverse (23/10)
+- Scansione iPad (GLB + PLY, solo riferimento, non nella mappa; deriva e doppioni tenuti in conto: si usano solo quote e misure grandi). Quote sulla strada: balconata 3,25 m (prima 4,4), pianerottoli 1,23 m, pensiline 4,1 m; balconata profonda 4 m e larga ~9,5 m (coincide con la loggia), 4 colonne ai bordi con interasse ~3,4 m (gin-pilone-2 rimesso).
+- Per lato (ovest; est = specchio rispetto a −92,75°): prima rampa sul filo della facciata (r 35,3–37,3, da −103,6° a −110°, 0 → 1,23 m), pilone di travertino fra le rampe (r 34,8–35,3, fino alla pensilina), seconda rampa nel sottoscala (r 33,4–34,8, 1,23 → 3,25 m) con basamento sotto, pianerottolo r 32,3–37,3 fra −110° e −114,3°, cancello fra le due corsie (r 35,05), grata alta sul bordo esterno del pianerottolo (cancellata-arco, al posto della staccionata), staccionata lungo la prima rampa e in testata, pensilina r 33,3–37,6 da −101,3° a −117° a 4,1 m.
+- cu014-solido.json → ventaglio: balconata a0/a1 −101,3/−84,2, quota 3,25, margine colonne 0,46; scale pedata 0,42, sottoscala [33,3, 37,3], cancello 2,63 m a r 35,05, pensilina 4,1. La soletta della loggia si apre sopra rampe e pianerottolo.
+- Generatore: tools/ginestra_scale_da_scansione.py. Modifiche del db superate (gin-ovest-cancello, gin-ovest-pianerottolo, pmvk7o45ss9, gin-pilone-2, gin-ovest-staccionata-corsia) segnate «applicata».
+- La scala antincendio nella scansione non c'è (finisce alle pensiline).

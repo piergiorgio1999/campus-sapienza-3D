@@ -447,3 +447,8 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
 ## v66 — solo Chimica + Minerva
 - Si disegnano solo gli edifici di Chimica (CU014, CU032, CU035): `addPolygon` e la planimetria ufficiale scartano tutti gli altri codici (e niente volumi di quartiere).
 - La Minerva con la vasca, l'acqua, la scalinata e le fontanelle si costruisce anche senza la planimetria del sito principale (`buildMinervaArea` dopo `buildScene`, gruppo in scena). Tolta la facciata del Rettorato (l'edificio non c'è più); la vista iniziale resta su Chimica.
+
+## Deploy Cloudflare Pages (statico)
+- `build.sh` copia in `dist/` solo i file della mappa (niente riferimenti/, db-snapshot/, tools/, .md).
+- Dashboard Cloudflare → Workers & Pages → Create → Pages → Connect to Git → repo `campus-sapienza-3D`, branch `claude/new-session-zh34qp`; Build command `sh build.sh`, output `dist`. Ogni push ridistribuisce da solo.
+- Fuori dall'artifact non ci sono db/assets/utenti di claude.ai: la mappa si vede, ma modifiche e commenti condivisi restano nell'artifact (serve un D1 se li si vuole anche lì).

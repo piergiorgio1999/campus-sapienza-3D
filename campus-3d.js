@@ -4327,9 +4327,10 @@
   }
   // ultimo punto del mouse sulla scena (coordinate normalizzate), per WASD nella vista libera
   let cursorNdc = null;
-  const cursorRay = new THREE.Raycaster(), cursorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  let cursorRay = null, cursorPlane = null; // creati al primo uso: three.js si carica dopo questo script
   function cursorPoint() {
     if (!cursorNdc) return null;
+    if (!cursorRay) { cursorRay = new THREE.Raycaster(); cursorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); }
     cursorRay.setFromCamera(cursorNdc, camera); cursorPlane.constant = -controls.target.y;
     const p = new THREE.Vector3();
     return cursorRay.ray.intersectPlane(cursorPlane, p) && p.distanceTo(camera.position) < 5000 ? p : null;

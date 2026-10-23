@@ -452,3 +452,6 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
 - `build.sh` copia in `dist/` solo i file della mappa (niente riferimenti/, db-snapshot/, tools/, .md).
 - Dashboard Cloudflare → Workers & Pages → Create → Pages → Connect to Git → repo `campus-sapienza-3D`, branch `claude/new-session-zh34qp`; Build command `sh build.sh`, output `dist`. Ogni push ridistribuisce da solo.
 - Fuori dall'artifact non ci sono db/assets/utenti di claude.ai: la mappa si vede, ma modifiche e commenti condivisi restano nell'artifact (serve un D1 se li si vuole anche lì).
+
+## v67 — mappa vuota corretta
+- La v65 creava `THREE.Raycaster` al caricamento dello script (WASD verso il cursore), prima che three.js fosse caricato: errore e scena mai costruita. Ora raycaster e piano si creano al primo uso.

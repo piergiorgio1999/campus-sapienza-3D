@@ -459,3 +459,7 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
 ## v68 — scansione Gaussian splat (.spz)
 - Aggiungi → file 3D accetta anche **SPZ** (Gaussian splat di Scaniverse/Polycam/Niantic, v2/v3): ogni splat è un disco sfumato del suo colore (shader con test alfa, profondità logaritmica), armoniche sferiche scartate al caricamento (il file si alleggerisce di ~1/3). Selezione nell'editor su un campione invisibile di 25 mila splat.
 - `gin-scansione`: la scansione del Cortile della Ginestra (Cortile_ginestra.spz, 604 mila splat, 15,9 × 15,6 × 11,2 m) caricata negli asset dell'artifact (id 23590ab12fe66814c394d373cdadb1d6) e messa davanti alle scale ovest **da allineare a mano** (Sposta/Ruota); il pavimento della scansione sta ~0,9 m sopra il fondo della scatola, per questo h0 = −0,9.
+
+## v69 — cavedio est del ventaglio (commenti 17-18)
+- Il cavedio fra il ventaglio e il corpo centrale era un buco unico fino a terra (u 40,8-47, v −64,2/−73,2). Dall'STL (quote lette su griglia di 1 m) e confermato dai piani della scansione Cortile_ginestra.spz (+3,25 e +4,5/4,75 m sul fondo): fondo a terra solo u 43-47, v −64,2/−71 (buco n. 3 di courtyards.json), gradoni a 3,2 e 4,7 m verso il corpo centrale, terrazzino a 4,5 m a ovest, terrazza a 8 m verso il ventaglio, fascia a L a 13,5 m (10,6 m nell'angolo) lungo il fianco del ventaglio (ali `cavedio-…` in cu014-solido.json).
+- La scansione è servita solo da riferimento: tolta dalla mappa (l'asset resta negli allegati). courtyards.json e cu014-solido.json si scaricano senza cache.

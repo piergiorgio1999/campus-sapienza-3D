@@ -4579,8 +4579,8 @@ void main() {
       if (queryCode) selectBuilding(queryCode, { animate: false, notify: false });
       if (latestParentContext?.plan?.features) officialPlanCodes = new Set(latestParentContext.plan.features.map((feature) => String(feature.code || '').toUpperCase()));
       courtyardFrame = await loadCourtyardFrame();
-      try { const r = await fetch('courtyards.json'); if (r.ok) courtyardHoles = (await r.json()).courtyards || {}; } catch (_) { courtyardHoles = {}; }
-      try { const r = await fetch('cu014-solido.json'); if (r.ok) cuSolido = await r.json(); } catch (_) { cuSolido = null; } // senza il file CU014 resta la sagoma OSM intera
+      try { const r = await fetch('courtyards.json', { cache: 'no-cache' }); if (r.ok) courtyardHoles = (await r.json()).courtyards || {}; } catch (_) { courtyardHoles = {}; }
+      try { const r = await fetch('cu014-solido.json', { cache: 'no-cache' }); if (r.ok) cuSolido = await r.json(); } catch (_) { cuSolido = null; } // senza il file CU014 resta la sagoma OSM intera
       buildScene(context);
       if (!extrasGroup) buildMinervaArea(); // Minerva e vasca anche senza la planimetria del sito principale
       setView('3d');

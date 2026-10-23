@@ -443,3 +443,7 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
   cubo rosso in piano), Ingrandisci (facce, angoli, vertici) e Ruota, scelti in cima alla scheda.
 - Passeggiata: con la scheda dell'editor aperta si continua a camminare (tastiera e levetta); scheda sotto la barra in alto, suggerimento spostato.
 
+
+## v66 — solo Chimica + Minerva
+- Si disegnano solo gli edifici di Chimica (CU014, CU032, CU035): `addPolygon` e la planimetria ufficiale scartano tutti gli altri codici (e niente volumi di quartiere).
+- La Minerva con la vasca, l'acqua, la scalinata e le fontanelle si costruisce anche senza la planimetria del sito principale (`buildMinervaArea` dopo `buildScene`, gruppo in scena). Tolta la facciata del Rettorato (l'edificio non c'è più); la vista iniziale resta su Chimica.

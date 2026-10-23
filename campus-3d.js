@@ -462,7 +462,7 @@
     planMeshesByCode.clear(); planOutlinesByCode.clear(); planPointsByCode.clear(); planMask = [];
     for (const feature of plan.features) {
       const code = String(feature.code || '').toUpperCase();
-      if (!code) continue;
+      if (!code || !CHEMISTRY.has(code)) continue; // solo Chimica
       const parsed = planShape(feature.path);
       if (!parsed?.shapes?.length) continue;
       const osmBuilding = baseBuildings.find((building) => building.code.toUpperCase() === code);
@@ -1370,10 +1370,11 @@
     });
   }
   function buildMinervaArea() {
-    if (extrasGroup) { planLayerGroup?.remove(extrasGroup); extrasGroup.traverse((o) => { o.geometry?.dispose(); }); }
+    if (!alignment) return;
+    if (extrasGroup) { extrasGroup.parent?.remove(extrasGroup); extrasGroup.traverse((o) => { o.geometry?.dispose(); }); }
     extrasGroup = new THREE.Group(); extrasGroup.name = 'minerva';
     queueMicrotask(() => { if (extrasGroup) extrasGroup.visible = viewDim !== '2d'; });
-    planLayerGroup.add(extrasGroup);
+    (planLayerGroup || scene).add(extrasGroup); // senza planimetria ufficiale la Minerva va direttamente nella scena
     const stone = new THREE.MeshStandardMaterial({ color: 0xb9ae9c, roughness: 0.92, metalness: 0 });
     const stoneTop = new THREE.MeshStandardMaterial({ color: 0xebe4d7, roughness: 0.9, metalness: 0 });
     const edge = new THREE.LineBasicMaterial({ color: 0x9c9282, transparent: true, opacity: 0.7 });
@@ -1416,11 +1417,7 @@
     MINERVA.world = { x: statue.x, z: statue.z, y: MINERVA.basinHeight };
     const axisA = pdfToWorld(292.4, 500), axisB = pdfToWorld(292.4, 600);
     MINERVA.facing = Math.atan2(axisB.x - axisA.x, axisB.z - axisA.z);
-    if (!MINERVA.initialView && !selectedCode && !pendingSelectedCode) {
-      MINERVA.initialView = true;
-      flyTo({ x: statue.x, n: -statue.z }, 115, 0);
-    }
-    buildRettoratoFacade(stone);
+    // la vista iniziale resta su Chimica; il Rettorato non si disegna più, quindi niente facciata
     loadMinervaModel();
     loadFountains();
     loadScan3d();
@@ -1428,7 +1425,8 @@
   /* statua: si carica solo se esiste models/minerva.json (es. {"file":"minerva.glb","height":9,"rotationDeg":0}) */
   let minervaLoaded = false;
   async function loadMinervaModel() {
-    if (minervaLoaded || !MINERVA.world) return;
+    if (minervaLoaded) { if (MINERVA.holder && MINERVA.holder.parent !== extrasGroup) extrasGroup.add(MINERVA.holder); return; }
+    if (!MINERVA.world) return;
     let config;
     try { const response = await fetch('models/minerva.json', { cache: 'no-cache' }); if (!response.ok) return; config = await response.json(); } catch (_) { return; }
     if (!config?.file || !/^[\w.-]+\.(glb|gltf|json)$/i.test(config.file)) return;
@@ -1906,6 +1904,7 @@
     if (outer.length < 4 || !insideMap(polygonCentroid(outer)) || !nearFocusRing(outer)) return;
     const props = feature.properties || {};
     const code = String(props['addr:housenumber'] || props.ref || '').trim().toUpperCase();
+    if (!CHEMISTRY.has(code)) return; // solo gli edifici di Chimica: il resto del campus non si disegna
     const holes = (code && courtyardHoles[code]) || [];
     const solido = code === 'CU014' && cuSolidoParts(rings, holes);
     const parts = solido || shapesFor(rings, holes).map((shape) => ({ shape }));
@@ -4491,6 +4490,7 @@
       try { const r = await fetch('courtyards.json'); if (r.ok) courtyardHoles = (await r.json()).courtyards || {}; } catch (_) { courtyardHoles = {}; }
       try { const r = await fetch('cu014-solido.json'); if (r.ok) cuSolido = await r.json(); } catch (_) { cuSolido = null; } // senza il file CU014 resta la sagoma OSM intera
       buildScene(context);
+      if (!extrasGroup) buildMinervaArea(); // Minerva e vasca anche senza la planimetria del sito principale
       setView('3d');
       flyTo(focusCentroid(), 230, 0);
       tourButton.disabled = reducedMotion;

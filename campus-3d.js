@@ -2243,6 +2243,8 @@
     controls.addEventListener('change', () => scheduleTiles());
     controls.update();
     mapHost.addEventListener('wheel', onWheelZoom, { capture: true, passive: false });
+    renderer.domElement.addEventListener('pointermove', (e) => { if (e.pointerType !== 'mouse') return; const r = renderer.domElement.getBoundingClientRect(); cursorNdc = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); });
+    renderer.domElement.addEventListener('pointerleave', () => { cursorNdc = null; });
     const typing = (t) => t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable);
     window.addEventListener('keydown', (event) => {
       if (event.metaKey || event.ctrlKey || event.altKey) { orbitKeys.clear(); return; } // ⌘ tenuto: i keyup degli altri tasti non arrivano
@@ -4324,6 +4326,15 @@
     const from = zoomGoal ?? camera.position.distanceTo(controls.target);
     zoomGoal = Math.min(controls.maxDistance, Math.max(controls.minDistance, from * Math.exp(dy * 0.0006 * zoomPace(from))));
   }
+  // ultimo punto del mouse sulla scena (coordinate normalizzate), per WASD nella vista libera
+  let cursorNdc = null;
+  const cursorRay = new THREE.Raycaster(), cursorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  function cursorPoint() {
+    if (!cursorNdc) return null;
+    cursorRay.setFromCamera(cursorNdc, camera); cursorPlane.constant = -controls.target.y;
+    const p = new THREE.Vector3();
+    return cursorRay.ray.intersectPlane(cursorPlane, p) && p.distanceTo(camera.position) < 5000 ? p : null;
+  }
   function freeView() {
     const now = performance.now(), dt = keysAt ? Math.min(0.1, (now - keysAt) / 1000) : 0; keysAt = now;
     if (!controls.enabled) { zoomGoal = null; return; }
@@ -4340,8 +4351,10 @@
     const k = (c) => orbitKeys.has(c), fast = k('ShiftLeft') || k('ShiftRight') ? 3 : 1;
     const fwd = (k('KeyW') || k('ArrowUp') ? 1 : 0) - (k('KeyS') || k('ArrowDown') ? 1 : 0);
     const side = (k('KeyD') || k('ArrowRight') ? 1 : 0) - (k('KeyA') || k('ArrowLeft') ? 1 : 0);
+    // direzione del cursore: W va verso il punto del terreno (alla quota del punto guardato) sotto il mouse, non verso il centro della vista
+    const aim = cursorPoint();
     if (fwd) {
-      const dir = new THREE.Vector3(-off.x, 0, -off.z);
+      const dir = aim ? new THREE.Vector3(aim.x - camera.position.x, 0, aim.z - camera.position.z) : new THREE.Vector3(-off.x, 0, -off.z);
       if (dir.lengthSq() > 1e-8) {
         dir.setLength(fwd * fast * Math.min(400, Math.max(3, d * 0.5)) * dt); // m/s: metà della distanza dal punto guardato
         camera.position.add(dir); controls.target.add(dir);

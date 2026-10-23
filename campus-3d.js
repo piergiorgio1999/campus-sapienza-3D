@@ -1020,24 +1020,76 @@
     patchMats.set(key, mat);
     return mat;
   }
+  // cerchio ai minimi quadrati (Kåsa) per una serie di punti [x, z], attorno al loro baricentro (coordinate di centinaia di metri);
+  // null se i punti sono quasi allineati
+  function fitCircle(pts) {
+    const n = pts.length; let mx = 0, mz = 0;
+    for (const [x, z] of pts) { mx += x; mz += z; }
+    mx /= n; mz /= n;
+    let suu = 0, suv = 0, svv = 0, suuu = 0, svvv = 0, suvv = 0, svuu = 0;
+    for (const [x, z] of pts) { const u = x - mx, v = z - mz; suu += u * u; suv += u * v; svv += v * v; suuu += u * u * u; svvv += v * v * v; suvv += u * v * v; svuu += v * u * u; }
+    const det = suu * svv - suv * suv;
+    if (!(Math.abs(det) > 1e-9)) return null;
+    const bu = (suuu + suvv) / 2, bv = (svvv + svuu) / 2, uc = (bu * svv - bv * suv) / det, vc = (suu * bv - suv * bu) / det;
+    return { x: mx + uc, z: mz + vc, r: Math.sqrt(uc * uc + vc * vc + (suu + svv) / n) };
+  }
   function applyWallUVs(geometry, y0, bay, floorH) {
     // Pareti: u = metri lungo il muro / campata, v = metri da terra / interpiano. Così finestre e piani sono in scala reale.
+    // Muro dritto: u = posizione proiettata sulla direzione del muro (uguale per tutti i pezzi dello stesso muro).
+    // Muro curvo (catena di almeno 3 lati che girano poco e stanno su una circonferenza): u = raggio × angolo attorno al centro,
+    // continuo da un lato all'altro e uguale per tutti i pezzi dello stesso arco. Prima ogni lato dell'arco ripartiva da capo con
+    // la sua proiezione e la facciata tonda del ventaglio era piena di finestre spezzate.
     const pos = geometry.attributes.position, uv = geometry.attributes.uv;
+    const key = (x, z) => `${Math.round(x * 100)},${Math.round(z * 100)}`;
+    const segs = new Map(); // lato del contorno → estremi, chiavi e triangoli
     for (const group of geometry.groups) {
       if (group.materialIndex !== 1) continue;
       for (let i = group.start; i < group.start + group.count; i += 3) {
-        let dx = 0, dz = 0, best = -1;
+        let best = -1, pa = i, pb = i + 1;
         for (let a = 0; a < 3; a += 1) for (let b = a + 1; b < 3; b += 1) {
-          const ex = pos.getX(i + b) - pos.getX(i + a), ez = pos.getZ(i + b) - pos.getZ(i + a);
-          const l = ex * ex + ez * ez;
-          if (l > best) { best = l; dx = ex; dz = ez; }
+          const ex = pos.getX(i + b) - pos.getX(i + a), ez = pos.getZ(i + b) - pos.getZ(i + a), l = ex * ex + ez * ez;
+          if (l > best) { best = l; pa = i + a; pb = i + b; }
         }
-        const len = Math.sqrt(best) || 1; dx /= len; dz /= len;
-        if (dx < -1e-6 || (Math.abs(dx) <= 1e-6 && dz < 0)) { dx = -dx; dz = -dz; }
-        for (let k = 0; k < 3; k += 1) {
-          const j = i + k;
-          uv.setXY(j, (pos.getX(j) * dx + pos.getZ(j) * dz) / bay, (pos.getY(j) - y0) / floorH);
+        const A = [pos.getX(pa), pos.getZ(pa)], Bq = [pos.getX(pb), pos.getZ(pb)], ka = key(A[0], A[1]), kb = key(Bq[0], Bq[1]), k = ka < kb ? ka + '|' + kb : kb + '|' + ka;
+        if (!segs.has(k)) segs.set(k, { a: A, b: Bq, ka, kb, tris: [] });
+        segs.get(k).tris.push(i);
+      }
+    }
+    const dir = (s) => { const dx = s.b[0] - s.a[0], dz = s.b[1] - s.a[1], l = Math.hypot(dx, dz) || 1; return [dx / l, dz / l]; };
+    const ends = new Map();
+    for (const s of segs.values()) for (const k of [s.ka, s.kb]) { if (!ends.has(k)) ends.set(k, []); ends.get(k).push(s); }
+    const COS = Math.cos((25 * Math.PI) / 180), arcOf = new Map(), seen = new Set();
+    for (const s0 of segs.values()) {
+      if (seen.has(s0)) continue;
+      const chain = [s0]; seen.add(s0);
+      for (const side of [0, 1]) { // allunga la catena dai due estremi finché i lati girano di poco
+        let cur = s0, at = side ? s0.kb : s0.ka;
+        for (;;) {
+          const here = ends.get(at) || [], next = here.find((t) => t !== cur);
+          if (here.length !== 2 || !next || seen.has(next)) break;
+          const [ax, az] = dir(cur), [bx, bz] = dir(next);
+          if (Math.abs(ax * bx + az * bz) < COS) break;
+          seen.add(next); if (side) chain.push(next); else chain.unshift(next);
+          at = next.ka === at ? next.kb : next.ka; cur = next;
         }
+      }
+      if (chain.length < 3) continue;
+      const pts = []; for (const s of chain) pts.push(s.a, s.b);
+      const c = fitCircle(pts);
+      if (!c || !(c.r < 300) || pts.some(([x, z]) => Math.abs(Math.hypot(x - c.x, z - c.z) - c.r) > Math.max(0.05, c.r * 0.01))) continue;
+      const th0 = Math.atan2(chain[0].a[1] - c.z, chain[0].a[0] - c.x);
+      for (const s of chain) arcOf.set(s, { c, th0 });
+    }
+    for (const s of segs.values()) {
+      const arc = arcOf.get(s);
+      let [dx, dz] = dir(s);
+      if (dx < -1e-6 || (Math.abs(dx) <= 1e-6 && dz < 0)) { dx = -dx; dz = -dz; }
+      for (const i of s.tris) for (let k = 0; k < 3; k += 1) {
+        const j = i + k, x = pos.getX(j), z = pos.getZ(j);
+        let u;
+        if (arc) { let th = Math.atan2(z - arc.c.z, x - arc.c.x) - arc.th0; th -= 2 * Math.PI * Math.round(th / (2 * Math.PI)); u = (arc.c.r * (arc.th0 + th)) / bay; }
+        else u = (x * dx + z * dz) / bay;
+        uv.setXY(j, u, (pos.getY(j) - y0) / floorH);
       }
     }
     uv.needsUpdate = true;
@@ -3109,9 +3161,11 @@
     }) },
     cancelloScala: { nome: 'Cancello metallico a sbarre', crea: (pr) => group((g) => {
       const [L, , H] = ductDims(pr, 1.4, 0.05, 1.95), { box } = partAdder(g), mat = metalloScale(), nb = Math.max(2, Math.round(L / 0.12));
-      box(-L / 2, L / 2, 0.06, 0.11, -0.02, 0.02, mat); box(-L / 2, L / 2, H - 0.05, H, -0.02, 0.02, mat);
-      for (const x of [-L / 2, L / 2 - 0.05]) box(x, x + 0.05, 0, H, -0.025, 0.025, mat);
-      for (let k = 1; k < nb; k += 1) { const x = -L / 2 + (L * k) / nb; box(x - 0.012, x + 0.012, 0.06, H - 0.05, -0.012, 0.012, mat); }
+      for (const x of [-L / 2, L / 2 - 0.05]) box(x, x + 0.05, 0, H, -0.025, 0.025, mat); // montanti fissi
+      const leaf = new THREE.Group(), hx = -L / 2 + 0.05, lw = L - 0.1, lb = partAdder(leaf).box; // anta fra i montanti, cardine a sinistra
+      leaf.position.x = hx; leaf.userData.anta = { punta: [lw, 0, 0] }; g.add(leaf);
+      lb(0, lw, 0.06, 0.11, -0.02, 0.02, mat); lb(0, lw, H - 0.05, H, -0.02, 0.02, mat);
+      for (let k = 1; k < nb; k += 1) { const x = (lw * k) / nb; lb(x - 0.012, x + 0.012, 0.06, H - 0.05, -0.012, 0.012, mat); }
     }) },
     balaustra: { nome: 'Balaustra di travertino', crea: (pr) => group((g) => {
       const [L, W, H] = ductDims(pr, 1.7, 0.3, 1), { box } = partAdder(g), mat = primitiveMaterial('travertino'), nb = Math.max(2, Math.floor(L / 0.19));
@@ -3838,6 +3892,10 @@
     const doorMat = std({ color: 0x235b42, roughness: 0.55, metalness: 0.35 }), du0 = G.u[0] - 0.07, du1 = G.u[0] - 0.01;
     box(du0, du1, pb, pt, pv0, pv0 + 0.06, doorMat); box(du0, du1, pb, pt, pv1 - 0.06, pv1, doorMat); box(du0, du1, pt - 0.06, pt, pv0, pv1, doorMat);
     const a0 = pv0 + 0.08, a1 = pv1 - 0.08, b0 = pb + 0.04, b1 = pt - 0.08, mid = b0 + (b1 - b0) * 0.48, f0 = du0 + 0.01, f1 = du0 + 0.04;
+    { // anta: gruppo col cardine sul lato a1 (nella passeggiata si apre col tasto F); le coordinate restano quelle della gabbia
+      const hingeU = (du0 + du1) / 2, leaf = new THREE.Group(); leaf.position.set(hingeU, 0, -a1); grp.add(leaf);
+      leaf.userData.anta = { punta: [0, 0, a1 - a0] };
+      const lb = partAdder(leaf).box, box = (u0, u1, h0, h1, v0, v1, m) => lb(u0 - hingeU, u1 - hingeU, h0, h1, v0 - a1, v1 - a1, m);
     box(du0, du1, b0, b0 + 0.05, a0, a1, doorMat); box(du0, du1, b1 - 0.05, b1, a0, a1, doorMat);
     box(du0, du1, b0, b1, a0, a0 + 0.05, doorMat); box(du0, du1, b0, b1, a1 - 0.05, a1, doorMat);
     box(du0, du1, mid - 0.05, mid + 0.05, a0, a1, doorMat); // traverso largo
@@ -3846,6 +3904,7 @@
     for (let i = 1; i < nL; i += 1) { const hh = b0 + ((mid - b0) * i) / nL; box(f0, f1, hh - 0.012, hh + 0.012, a0, a1, doorMat); }
     for (let i = 1; i < nU; i += 1) { const hh = mid + ((b1 - mid) * i) / nU; box(f0, f1, hh - 0.012, hh + 0.012, a0, a1, doorMat); }
     box(du0 - 0.04, du0, mid - 0.2, mid - 0.06, a0 + 0.06, a0 + 0.12, doorMat); // serratura
+    }
     // cartello in alto sulla rete, come nelle foto: sotto passa il tubo di scarico
     const sign = add(new THREE.PlaneGeometry(0.62, 0.92), once('gabbia|cartello', () => std({ map: canvasTex(180, 280, (ctx, w, h) => {
       ctx.fillStyle = '#f4f4f2'; ctx.fillRect(0, 0, w, h);
@@ -3863,6 +3922,9 @@
     for (const hh of [0.06, h]) { const r = new THREE.Mesh(new THREE.BoxGeometry(L, 0.05, 0.04), gate); r.position.set(L / 2, hh, 0); r.castShadow = true; g.add(r); }
     for (const xx of [0, L]) { const r = new THREE.Mesh(new THREE.BoxGeometry(0.05, h, 0.05), gate); r.position.set(xx, h / 2, 0); g.add(r); }
     for (let x = 0.12; x < L - 0.05; x += 0.13) { const b = new THREE.Mesh(barGeo, gate); b.scale.y = h; b.position.set(x, h / 2 + 0.03, 0); b.castShadow = true; g.add(b); }
+    // anta apribile nella passeggiata (cammina.js, tasto F): cardine nell'origine del gruppo, estremo libero in `punta`; `apertura` (radianti,
+    // in più sulla rotazione di partenza) fissa il verso, altrimenti l'anta si apre spingendola lontano da chi cammina
+    g.userData.anta = { punta: [L, 0, 0] };
     if (mesh) { const m = new THREE.Mesh(new THREE.PlaneGeometry(L, h - 0.1), new THREE.MeshStandardMaterial({ map: wireMeshTex('rgba(120,92,60,1)'), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.7 })); m.material.map.repeat.set(L / 0.05, (h - 0.1) / 0.05); m.position.set(L / 2, h / 2, 0.03); g.add(m); }
     return g;
   }
@@ -3989,14 +4051,16 @@
     const mtx = new THREE.Matrix4(); let bi = 0;
     for (const [u, h0, h1, v] of bars) { mtx.makeScale(1, h1 - h0, 1).setPosition(u, (h0 + h1) / 2, -v); barMesh.setMatrixAt(bi++, mtx); }
     const gateH = Number(C.altezzaCancello) || 2.1, back = Number(C.rientro) || 0.9;
-    const frameBars = (x0, z0, x1, z1, h, mesh) => { // telaio a barre verticali fra due punti a terra
+    const frameBars = (x0, z0, x1, z1, h, mesh, apertura) => { // anta a barre verticali fra due punti a terra, cardine nel primo
       const g = barGate(Math.hypot(x1 - x0, z1 - z0), h, mesh); g.position.set(x0, 0, z0); g.rotation.y = -Math.atan2(z1 - z0, x1 - x0); court.add(g);
+      if (apertura != null) g.userData.anta.apertura = apertura;
     };
     const [gA, gB] = C.varco;
     frameBars(gA, -C.v, gA, -(C.v + back), gateH, false);          // cancelletto pedonale sinistro, perpendicolare
     frameBars(gB, -C.v, gB, -(C.v + back), gateH, true);           // cancelletto pedonale destro (con rete fitta)
-    frameBars(gA, -(C.v + back), (gA + gB) / 2, -(C.v + back), gateH, false); // anta principale 1, arretrata
-    frameBars((gA + gB) / 2, -(C.v + back), gB, -(C.v + back), gateH, false); // anta principale 2
+    // ante principali, arretrate: cardini agli estremi del varco, nella passeggiata si aprono verso la strada (v minore, +z)
+    frameBars(gA, -(C.v + back), (gA + gB) / 2, -(C.v + back), gateH, false, -Math.PI / 2);
+    frameBars(gB, -(C.v + back), (gA + gB) / 2, -(C.v + back), gateH, false, Math.PI / 2);
     barMesh.count = bi; barMesh.castShadow = true; barMesh.instanceMatrix.needsUpdate = true; court.add(barMesh);
 
     // muri del cortile: lastre di travertino, tubo rosso, condizionatori, finestre
@@ -4021,14 +4085,23 @@
     const FD = M.fondo || {}, fv = Number(FD.v) || PO.v[1] - 0.12, gH = PO.soffitto - 0.02, wt = Number(FD.spessore) || 0.24;
     const [vA, vB] = Array.isArray(FD.varco) && FD.varco.length === 2 ? [Math.max(pu0, Math.min(...FD.varco)), Math.min(pu1, Math.max(...FD.varco))] : [pu0, pu1], fw = vB - vA;
     for (const [w0, w1] of [[pu0, vA], [vB, pu1]]) if (w1 > w0 + 0.01) box(w0, w1, 0, PO.soffitto, fv - wt / 2, fv + wt / 2, travMat((w1 - w0) / 2.4, PO.soffitto / 2.4)); // pareti ai lati del varco
-    // niente fondale dipinto dietro il cancello: il cortile interno vero si vede attraverso la rete (commento 22/10)
-    // rete metallica fitta (maglia ~5 cm (4 maglie per tile di 20 cm), alphaTest, doppia faccia) dentro il telaio, al posto delle sole barre verticali: trasparente
-    const meshH = gH - 0.06, meshMat = once(`retefondo|${fw}|${meshH}`, () => { const m = new THREE.MeshStandardMaterial({ map: wireMeshTex('rgba(138,107,70,1)'), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.6, metalness: 0.35 }); m.map.repeat.set(fw / 0.2, meshH / 0.2); return m; });
-    add(new THREE.PlaneGeometry(fw, meshH), meshMat, (vA + vB) / 2, meshH / 2 + 0.03, -fv, false);
-    for (const hh of FD.correnti || [0.12, 1.1, 2.3]) box(vA, vB, hh - 0.03, hh + 0.03, fv - 0.03, fv + 0.03, rust);
-    box(vA, vB, gH - 0.06, gH, fv - 0.03, fv + 0.03, rust);
-    const nLeaf = Math.max(1, Math.round(fw / 2.5)); // montanti delle ante
-    for (let i = 0; i <= nLeaf; i += 1) { const u = vA + (fw * i) / nLeaf; box(u - 0.04, u + 0.04, 0, gH, fv - 0.04, fv + 0.04, rust); }
+    // niente fondale dipinto dietro il cancello: il cortile interno vero si vede attraverso la griglia (commento 22/10).
+    // Due ante (commento 2): cardini ai lati del varco, nella passeggiata si aprono verso il cortile esterno (v minore, +z);
+    // griglia di barre vere spesse 3,5 cm ogni 15 cm al posto della rete dipinta, che da lontano spariva
+    const half = fw / 2, barW = 0.035, pitch = 0.15, unit = new THREE.BoxGeometry(1, 1, 1);
+    for (const [hinge, sgn] of [[vA, 1], [vB, -1]]) {
+      const leaf = new THREE.Group(); leaf.position.set(hinge, 0, -fv); court.add(leaf);
+      leaf.userData.anta = { punta: [sgn * half, 0, 0], apertura: -sgn * Math.PI / 2 };
+      const lb = partAdder(leaf).box, x0 = sgn > 0 ? 0 : -half, x1 = sgn > 0 ? half : 0;
+      lb(x0, x1, 0.03, 0.09, -0.04, 0.04, rust); lb(x0, x1, gH - 0.06, gH, -0.04, 0.04, rust); // traversi
+      lb(x0, x0 + 0.06, 0, gH, -0.04, 0.04, rust); lb(x1 - 0.06, x1, 0, gH, -0.04, 0.04, rust); // montanti
+      for (const hh of FD.correnti || [1.1, 2.3]) lb(x0, x1, hh - 0.03, hh + 0.03, -0.04, 0.04, rust);
+      const w = x1 - x0 - 0.12, hgt = gH - 0.15, nv = Math.max(1, Math.floor(w / pitch)), nh = Math.max(1, Math.floor(hgt / pitch));
+      const grid = new THREE.InstancedMesh(unit, rust, nv + nh), m4 = new THREE.Matrix4(); let k = 0;
+      for (let i = 1; i <= nv; i += 1) { m4.makeScale(barW, hgt, barW).setPosition(x0 + 0.06 + (w * i) / (nv + 1), 0.09 + hgt / 2, 0); grid.setMatrixAt(k++, m4); }
+      for (let j = 1; j <= nh; j += 1) { m4.makeScale(w, barW, barW).setPosition((x0 + x1) / 2, 0.09 + (hgt * j) / (nh + 1), 0); grid.setMatrixAt(k++, m4); }
+      grid.count = k; grid.castShadow = true; grid.instanceMatrix.needsUpdate = true; leaf.add(grid);
+    }
     // ponte sopra il portico/cancello (le sagome sono svuotate fino al cielo: i due cortili sono un unico vuoto u 0.2 -> 16.6):
     // un solo volume, stessa fascia del corpo dell'edificio con le stesse quote delle texture, così piani e finestre continuano senza giunte.
     // Alto solo PO.piani piani (1 = il primo piano) sopra il piano terra, chiuso da un unico tetto piano liscio (niente attico né cornice).

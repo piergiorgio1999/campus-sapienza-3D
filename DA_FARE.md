@@ -423,3 +423,14 @@ nessun `prim:edifici` / `prim:alberi` da applicare, quindi niente da riportare l
 - `addCuVentaglio` costruisce solo la struttura (piano terra, soletta, fondo in travertino, soffitto, volume sopra la loggia) e lascia i vuoti del
   sottoscala e della soletta dove dice `ventaglio.scale`: se l'utente sposta molto le rampe, i vuoti vanno aggiornati nel JSON.
 
+## Finestre spezzate sulla facciata tonda e cancelli nella passeggiata (23/10/2026) — fatto, non provato nel browser
+- **Finestre:** `applyWallUVs` dava a ogni lato del muro la u proiettata sulla sua direzione; sull'arco del ventaglio (lati da 2°, 1,3 m) ogni lato
+  ripartiva con una fase diversa e le finestre (campata 3,6 m) uscivano a pezzi. Ora i lati del contorno si uniscono in catene (giro < 25° fra un lato
+  e il successivo, almeno 3 lati); se i punti stanno su una circonferenza (`fitCircle`, minimi quadrati, scarto ≤ max(5 cm, 1 % del raggio),
+  raggio < 300 m) la u è raggio × angolo attorno al centro: continua lungo l'arco e uguale per tutti i pezzi dello stesso arco. Muri dritti come prima.
+- **Cancelli (cammina.js):** tasto F e pulsante «🚪 Apri»: l'anta segnata più vicina davanti (entro 3 m, stesso piano) gira di 90° in 0,7 s, poi si
+  rifanno le collisioni. Ante segnate in `campus-3d.js` con `userData.anta` (cardine nell'origine del gruppo, `punta`, `apertura` facoltativa,
+  altrimenti si spinge lontano da chi cammina): `barGate` (cancelli del catalogo e della cancellata su strada; le due ante principali ora hanno il
+  cardine agli estremi del varco e si aprono verso la strada, commento 3), cancello del fondo del portico rifatto in due ante con griglia di barre
+  vere da 3,5 cm ogni 15 cm (commento 2: barre più spesse, si aprono verso il cortile esterno), porticina della gabbia, `cancelloScala` della Ginestra.
+

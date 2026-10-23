@@ -6,6 +6,7 @@
   //   (1 lentissimo … 9 velocissimo, 4 è il passo normale), Maiuscolo per correre, Spazio per saltare. Il mouse è catturato
   //   come in un videogioco: muovendolo ti guardi intorno; Esc lo libera (clic per riprenderlo), un secondo Esc esce.
   //   Se il browser non lo cattura si guarda trascinando.
+  // · Cancelli: F (o il tasto «🚪 Apri» a schermo) apre o chiude l'anta più vicina che hai davanti, entro 3 m; aperta non blocca più.
   // · Mirino al centro: E modifica e C commenta quello che miri (tasti «Modifica» e «Commenta» anche a schermo). La
   //   passeggiata si ferma, il mouse si libera per la scheda dell'editor; chiusa la scheda si riprende a camminare.
   // · Telefono e iPad (schermo touch): levetta in basso a sinistra per camminare (spinta fino in fondo corre), tasti «Corri»
@@ -132,6 +133,53 @@
     trunks = list.filter((t) => !t.rimosso && Array.isArray(t.p)).map((t) => { const p = C.project(t.p); return [p.x, p.z, /pinus|pino|needle/i.test(t.g || '') ? 0.35 : 0.3]; });
   }
 
+  /* ---------- cancelli ---------- */
+  // le ante le segna campus-3d.js (userData.anta: cardine nell'origine del gruppo, estremo libero `punta`, verso `apertura` facoltativo);
+  // l'anta gira di 90° in 0,7 s, poi le collisioni si rifanno con l'anta nella nuova posizione
+  const swings = new Set();
+  function gateInFront() {
+    const fx = -Math.sin(st.yaw), fz = -Math.cos(st.yaw), b = new T.Box3(), c = new T.Vector3();
+    let best = null, bestD = 3;
+    for (const root of rootsNow()) root.traverse((o) => {
+      if (!o.userData || !o.userData.anta || !visible(o)) return;
+      b.setFromObject(o); if (b.isEmpty()) return;
+      if (st.feet + EYE < b.min.y - 0.5 || st.feet > b.max.y + 0.5) return; // a un altro piano
+      const dx = Math.max(b.min.x - st.x, 0, st.x - b.max.x), dz = Math.max(b.min.z - st.z, 0, st.z - b.max.z), d = Math.hypot(dx, dz);
+      b.getCenter(c);
+      const cx = c.x - st.x, cz = c.z - st.z, cl = Math.hypot(cx, cz) || 1;
+      if (d < bestD && (d < 0.8 || (cx * fx + cz * fz) / cl > 0.35)) { bestD = d; best = o; } // davanti, o comunque attaccata
+    });
+    return best;
+  }
+  function toggleGate() {
+    const g = gateInFront();
+    if (!g) { flash('Nessun cancello qui davanti'); return; }
+    const a = g.userData.anta;
+    if (a.base == null) a.base = g.rotation.y;
+    let to = a.base;
+    if (!a.aperta) {
+      let ang = a.apertura;
+      if (ang == null) { // si spinge: il verso che porta l'estremo libero più lontano da chi cammina
+        const from = g.rotation.y, end = new T.Vector3();
+        const far = (th) => { g.rotation.y = a.base + th; g.updateMatrixWorld(true); end.fromArray(a.punta || [1, 0, 0]).applyMatrix4(g.matrixWorld); return Math.hypot(end.x - st.x, end.z - st.z); };
+        ang = far(Math.PI / 2) >= far(-Math.PI / 2) ? Math.PI / 2 : -Math.PI / 2;
+        g.rotation.y = from; g.updateMatrixWorld(true);
+      }
+      to = a.base + ang;
+    }
+    for (const s of swings) if (s.g === g) swings.delete(s);
+    a.aperta = !a.aperta;
+    swings.add({ g, from: g.rotation.y, to, t0: performance.now() });
+    flash(a.aperta ? 'Cancello aperto (F per chiuderlo)' : 'Cancello chiuso');
+  }
+  function swingGates(now) {
+    for (const s of swings) {
+      const k = Math.min(1, (now - s.t0) / 700), e = k < 0.5 ? 2 * k * k : 1 - ((2 - 2 * k) ** 2) / 2;
+      s.g.rotation.y = s.from + (s.to - s.from) * e;
+      if (k >= 1) { swings.delete(s); buildSoup(st.x, st.z); }
+    }
+  }
+
   /* ---------- movimento ---------- */
   function tryMove(dx, dz) {
     if (Math.hypot(dx, dz) < 1e-6) return;
@@ -152,6 +200,7 @@
     const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000)); last = now;
     if (Math.hypot(st.x - soup.cx, st.z - soup.cz) > HALF / 2 || (now - soup.checked > 1000 && ((soup.checked = now), signature() !== soup.sig))) buildSoup(st.x, st.z);
     refreshTrunks(now);
+    if (swings.size) swingGates(now);
     const k = paused ? new Set() : st.keys;
     if (k.has('ArrowLeft')) st.yaw += TURN * dt;
     if (k.has('ArrowRight')) st.yaw -= TURN * dt;
@@ -239,9 +288,9 @@
     if (!isTouch()) ui.help.textContent = locked() ? HELP.locked : HELP.free;
   }
   const HELP = {
-    locked: 'W A S D cammina · muovi il mouse per guardarti intorno · 1–9 velocità · Maiuscolo corre · Spazio salta · E modifica · C commenta · Esc libera il mouse',
-    free: 'Clic sulla scena per guardarti intorno col mouse · W A S D cammina · 1–9 velocità · E modifica · C commenta · Esc esce',
-    touch: 'Levetta: cammina (fino in fondo corre) · trascina per guardarti intorno · Modifica e Commenta agiscono sul mirino',
+    locked: 'W A S D cammina · muovi il mouse per guardarti intorno · 1–9 velocità · Maiuscolo corre · Spazio salta · F apre i cancelli · E modifica · C commenta · Esc libera il mouse',
+    free: 'Clic sulla scena per guardarti intorno col mouse · W A S D cammina · 1–9 velocità · F apre i cancelli · E modifica · C commenta · Esc esce',
+    touch: 'Levetta: cammina (fino in fondo corre) · trascina per guardarti intorno · «Apri» apre il cancello davanti · Modifica e Commenta agiscono sul mirino',
   };
 
   /* ---------- mirino: modifica e commenta al centro dello schermo ---------- */
@@ -292,6 +341,7 @@
     if (e.type === 'keydown' && e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); if (paused) resume(true); else exit(); return; }
     if (typing || paused) return;
     if (e.code === 'KeyE' || e.code === 'KeyC') { e.preventDefault(); e.stopImmediatePropagation(); if (e.type === 'keydown' && !e.repeat) aim(e.code === 'KeyE' ? 'modifica' : 'commenta'); return; }
+    if (e.code === 'KeyF') { e.preventDefault(); e.stopImmediatePropagation(); if (e.type === 'keydown' && !e.repeat) toggleGate(); return; }
     const digit = /^(?:Digit|Numpad)([1-9])$/.exec(e.code);
     if (digit) { e.preventDefault(); e.stopImmediatePropagation(); if (e.type === 'keydown' && !e.repeat) setSpeed(Number(digit[1])); return; }
     if (!KEYS.has(e.code)) return;
@@ -340,8 +390,9 @@
     const tools = el('div', 'cm-tools');
     const edit = el('button', 'cm-btn cm-aim', '✎ Modifica'); edit.type = 'button'; edit.title = 'Modifica quello che sta nel mirino (E)'; edit.addEventListener('click', () => aim('modifica'));
     const note = el('button', 'cm-btn cm-aim', '💬 Commenta'); note.type = 'button'; note.title = 'Commenta quello che sta nel mirino (C)'; note.addEventListener('click', () => aim('commenta'));
+    const gate = el('button', 'cm-btn', '🚪 Apri'); gate.type = 'button'; gate.title = 'Apri o chiudi il cancello che hai davanti (F)'; gate.addEventListener('click', toggleGate);
     ui.resume = el('button', 'cm-btn', '▶ Riprendi a camminare'); ui.resume.type = 'button'; ui.resume.hidden = true; ui.resume.addEventListener('click', () => resume(true));
-    tools.append(edit, note, ui.resume, ui.exit);
+    tools.append(gate, edit, note, ui.resume, ui.exit);
     top.append(help, tools);
     ui.stick = el('div', 'cm-stick'); ui.knob = el('div', 'cm-knob'); ui.stick.append(ui.knob); ui.stick.setAttribute('aria-hidden', 'true');
     const acts = el('div', 'cm-acts');
@@ -351,7 +402,7 @@
     acts.append(ui.run, jump);
     ui.layer.append(el('div', 'cm-cross'), top, ui.speed, ui.stick, acts);
     host.append(ui.layer);
-    for (const b of [ui.exit, ui.run, jump, edit, note, ui.resume]) b.addEventListener('pointerdown', (e) => e.stopPropagation());
+    for (const b of [ui.exit, ui.run, jump, gate, edit, note, ui.resume]) b.addEventListener('pointerdown', (e) => e.stopPropagation());
     // levetta
     const R = 46;
     const stickMove = (e) => {

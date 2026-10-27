@@ -1489,7 +1489,7 @@ uniform sampler2D roofPhoto; uniform vec3 roofPhotoS; uniform vec3 roofPhotoT; u
       }
       holder.position.set(baseX, MINERVA.world.y + pedestal, baseZ);
       holder.rotation.y = MINERVA.facing + ((Number(config.rotationDeg) || 0) * Math.PI / 180);
-      model.traverse((o) => { if (o.isMesh && o.material) { o.material.metalness = Math.min(o.material.metalness ?? 0.35, 0.35); o.material.needsUpdate = true; } });
+      model.traverse((o) => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; } if (o.isMesh && o.material) { o.material.metalness = Math.min(o.material.metalness ?? 0.35, 0.35); o.material.needsUpdate = true; } });
       holder.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
       holder.userData.minerva = true;
       extrasGroup.add(holder);
@@ -4186,29 +4186,169 @@ void main() {
     }
     return grp;
   }
-  // serbatoio dell'azoto liquido: corpo cilindrico, calotte bombate sopra e sotto, gonna e piedi
+  // serbatoio dell'azoto liquido (commento 4 del 27/10/2026: 42 foto, schema «Evaporatore criogenico per O2-N2-Ar» e indicazioni
+  // dell'utente): fasciame e calotte bombate bianchi con muffa in basso, tre piedi in lamiera triangolare piegata a L con la piega
+  // tonda verso l'esterno e l'orecchia forata, quadro valvole dello schema (PSV1 in cima al tubo della fase gas, cassetta inox del
+  // livello LI1 e del manometro PI1, PCV1 e PCV2 a calotta grigia, valvole a volantino, erogazione V2 avvolta nel ghiaccio), cartelli
+  // provvisori ritagliati dalle foto, asta dei manometri con la centralina. Coordinate locali: X verso il quadro, Y in alto, Z a sinistra
+  // di chi guarda il quadro; `fronte` = azimut del quadro (gradi da +u verso +v). Il serpentino HE1 (3 tubi alettati del modello
+  // dell'utente) si aggiunge quando il modello è caricato, nel gruppo userData.serpentino.
   function nitrogenTank(S) {
-    const grp = new THREE.Group(), { add } = partAdder(grp); grp.position.set(Number(S.u) || 0, 0, -(Number(S.v) || 0));
-    const R = S.raggio, white = courtOnce('silos|bianco', () => stdMat({ color: 0xffffff, roughness: 0.45, metalness: 0.15 }));
-    const yb = 1.45, yt = S.altezza - R * 0.45;
-    add(new THREE.CylinderGeometry(R, R, yt - yb, 40), white, 0, (yb + yt) / 2, 0);
-    const capT = add(new THREE.SphereGeometry(R, 40, 12, 0, Math.PI * 2, 0, Math.PI / 2), white, 0, yt, 0); capT.scale.y = 0.45;
-    const capB = add(new THREE.SphereGeometry(R, 40, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), white, 0, yb, 0); capB.scale.y = 0.45;
-    add(new THREE.CylinderGeometry(R * 0.32, R * 0.42, yb - 0.4, 20), white, 0, 0.4 + (yb - 0.4) / 2 - 0.15, 0);
-    // logo originale Nippon Gases, immagine fornita usata così com'è (tex/nippon-gases-logo.jpg, fondo bianco): fascia bianca
-    const bandMat = courtOnce('silos|logo', () => {
-      const bandTex = canvasTex(2048, 304, (ctx, w, h) => { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h); });
-      const logo = new Image();
-      logo.onload = () => {
-        const ctx = bandTex.image.getContext('2d'), hh = 215, ww = hh * logo.width / logo.height;
-        ctx.drawImage(logo, 655 - ww / 2, (bandTex.image.height - hh) / 2, ww, hh); bandTex.needsUpdate = true;
-      };
-      logo.src = 'tex/nippon-gases-logo.jpg';
-      return stdMat({ map: bandTex, roughness: 0.45, metalness: 0.15 });
+    const outer = new THREE.Group(); outer.position.set(Number(S.u) || 0, 0, -(Number(S.v) || 0));
+    const grp = new THREE.Group(); grp.rotation.y = ((Number(S.fronte) || 0) * Math.PI) / 180; outer.add(grp);
+    const { add } = partAdder(grp), once = courtOnce, Yv = new THREE.Vector3(0, 1, 0);
+    const R = Number(S.raggio) || 0.8, H = Number(S.altezza) || 4, yb = Number(S.fondo) || 1;
+    const k = Math.min(Number(S.calotta) || 0.28, R * 0.6), yt = H - k, PD = S.piedi || {}, g0 = Number(PD.base) || 0.3, soil = Number(S.suolo) || 0.36;
+    const headY = (r) => yb - k * Math.sqrt(Math.max(0, 1 - (r / R) ** 2));
+    const sx = (z) => Math.sqrt(Math.max(0, R * R - z * z));
+    const shell = once('azoto|fasciame', () => stdMat({ map: canvasTex(512, 512, (ctx, w, h) => {
+      ctx.fillStyle = '#ebe8df'; ctx.fillRect(0, 0, w, h);
+      for (let i = 0; i < 140; i += 1) { // colature dall'alto
+        const x = hash01(i, 61) * w, l = h * (0.05 + 0.4 * hash01(i, 62) ** 2);
+        ctx.fillStyle = `rgba(70,78,66,${0.05 + 0.18 * hash01(i, 63)})`; ctx.fillRect(x, 0, 1 + 2 * hash01(i, 64), l);
+      }
+      const g = ctx.createLinearGradient(0, h * 0.8, 0, h); g.addColorStop(0, 'rgba(40,48,36,0)'); g.addColorStop(1, 'rgba(40,48,36,.8)');
+      ctx.fillStyle = g; ctx.fillRect(0, h * 0.8, w, h * 0.2);
+      for (let i = 0; i < 90; i += 1) { ctx.fillStyle = `rgba(35,42,32,${0.3 + 0.4 * hash01(i, 65)})`; ctx.fillRect(hash01(i, 66) * w, h * (0.86 + 0.14 * hash01(i, 67)) - 30 * hash01(i, 68), 2 + 3 * hash01(i, 69), 10 + 40 * hash01(i, 70)); }
+    }), roughness: 0.55, metalness: 0.08 }));
+    const heads = once('azoto|calotte', () => stdMat({ map: canvasTex(256, 256, (ctx, w, h) => {
+      ctx.fillStyle = '#e8e5dc'; ctx.fillRect(0, 0, w, h);
+      for (let i = 0; i < 60; i += 1) { ctx.fillStyle = `rgba(70,78,66,${0.08 + 0.2 * hash01(i, 71)})`; ctx.fillRect(hash01(i, 72) * w, h * 0.5 - 40 * hash01(i, 73), 2, 40 * hash01(i, 73)); }
+      ctx.fillStyle = 'rgba(38,46,34,.75)'; ctx.fillRect(0, h * 0.5, w, h * 0.5); // fondo inferiore pieno di muffa
+      for (let i = 0; i < 200; i += 1) { ctx.fillStyle = `rgba(${hash01(i, 74) > 0.5 ? '200,198,188' : '20,26,18'},.35)`; ctx.fillRect(hash01(i, 75) * w, h * (0.5 + 0.5 * hash01(i, 76)), 3, 3); }
+    }), roughness: 0.6, metalness: 0.05 }));
+    const legMat = once('azoto|piedi', () => stdMat({ color: 0xe4e1d8, roughness: 0.65, side: THREE.DoubleSide }));
+    const inox = once('azoto|inox', () => stdMat({ color: 0xc8ccd0, roughness: 0.3, metalness: 0.8 }));
+    const nero = once('azoto|nero', () => stdMat({ color: 0x1b1d1f, roughness: 0.5, metalness: 0.25 }));
+    const grigio = once('azoto|pcv', () => stdMat({ color: 0x585f66, roughness: 0.42, metalness: 0.5 }));
+    const blu = once('azoto|blu', () => stdMat({ color: 0x2b64bd, roughness: 0.4, metalness: 0.3 }));
+    const ghiaccio = once('azoto|ghiaccio', () => stdMat({ color: 0xf4f8fb, roughness: 0.8, emissive: 0x2e3438 }));
+    const zinco = once('zinco', () => stdMat({ color: 0xa9adb0, roughness: 0.4, metalness: 0.6 }));
+    // fasciame e calotte
+    add(new THREE.CylinderGeometry(R, R, yt - yb, 64, 1, true), shell, 0, (yb + yt) / 2, 0);
+    add(new THREE.SphereGeometry(R, 64, 12, 0, Math.PI * 2, 0, Math.PI / 2), heads, 0, yt, 0).scale.y = k / R;
+    add(new THREE.SphereGeometry(R, 64, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), heads, 0, yb, 0).scale.y = k / R;
+    // tre piedi: profilo a L con la piega tonda (raggio rb) verso l'esterno sul raggio rp, ali da wb (a terra) a wt (in alto);
+    // il bordo alto segue il fondo bombato; orecchia forata in cima alla piega (foto della gamba mandata dall'utente)
+    const rp = Number(PD.raggio) || 0.62, rb = 0.06, wb = 0.05, wt = 0.2, nP = Number(PD.n) || 3, ph = ((PD.sfasamento != null ? Number(PD.sfasamento) : 60) * Math.PI) / 180;
+    const legGeo = once('azoto|geo piede|' + [rp, R, yb, k, g0].join(), () => {
+      const c = rp - rb, s = Math.SQRT1_2, prof = [{ a: c + rb * s, b: rb * s, d: [-s, s] }];
+      for (let i = 0; i <= 8; i += 1) { const f = Math.PI / 4 - (i * Math.PI) / 16; prof.push({ a: c + rb * Math.cos(f), b: rb * Math.sin(f) }); }
+      prof.push({ a: c + rb * s, b: -rb * s, d: [-s, -s] });
+      const pos = [], uv = [], idx = [];
+      prof.forEach((p, j) => {
+        for (const [top, w] of [[false, wb], [true, wt]]) {
+          const a = p.d ? p.a + p.d[0] * w : p.a, b = p.d ? p.b + p.d[1] * w : p.b;
+          pos.push(a, top ? headY(Math.hypot(a, b)) + 0.03 : g0, b); uv.push(j / (prof.length - 1), top ? 1 : 0);
+        }
+      });
+      for (let j = 0; j < prof.length - 1; j += 1) { const q = 2 * j; idx.push(q, q + 2, q + 1, q + 1, q + 2, q + 3); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals(); return g;
     });
-    const band = add(new THREE.CylinderGeometry(R * 1.004, R * 1.004, 0.75, 48, 1, true), bandMat, 0, yt - 0.55, 0);
-    band.rotation.y = Math.PI * 0.9;
-    return grp;
+    const lugGeo = once('azoto|geo orecchia', () => {
+      const sh = new THREE.Shape(); sh.moveTo(0, -0.07); sh.lineTo(0.04, -0.07); sh.absarc(0.04, 0, 0.07, -Math.PI / 2, Math.PI / 2, false); sh.lineTo(0, 0.07); sh.lineTo(0, -0.07);
+      const hole = new THREE.Path(); hole.absarc(0.045, 0, 0.022, 0, Math.PI * 2, true); sh.holes.push(hole);
+      const g = new THREE.ExtrudeGeometry(sh, { depth: 0.008, bevelEnabled: false }); g.translate(0, 0, -0.004); return g;
+    });
+    for (let i = 0; i < nP; i += 1) {
+      const al = ph + (i * Math.PI * 2) / nP, leg = add(legGeo, legMat, 0, 0, 0); leg.rotation.y = -al;
+      const lug = new THREE.Mesh(lugGeo, legMat); lug.position.set(rp - 0.005, headY(rp) - 0.06, 0); lug.castShadow = true; leg.add(lug);
+    }
+    // tubi: segmenti diritti con gomiti sferici, nelle coordinate locali
+    const pipe = (pts, r, mat) => {
+      const P = pts.map((p) => new THREE.Vector3(...p));
+      for (let i = 0; i < P.length - 1; i += 1) {
+        const a = P[i], b = P[i + 1], len = a.distanceTo(b); if (len < 1e-4) continue;
+        add(new THREE.CylinderGeometry(r, r, len, 10), mat, (a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2).quaternion.setFromUnitVectors(Yv, b.clone().sub(a).normalize());
+      }
+      for (const q of P.slice(1, -1)) add(new THREE.SphereGeometry(r, 10, 8), mat, q.x, q.y, q.z);
+    };
+    // valvola a volantino: corpo inox, stelo verso dir, volantino nero (o ottone), cartellino tondo nero
+    const valve = (x, y, z, dir, wr = 0.05, wheelMat = nero, tag = false) => {
+      const g = new THREE.Group(); g.position.set(x, y, z); g.quaternion.setFromUnitVectors(Yv, new THREE.Vector3(...dir).normalize()); grp.add(g);
+      const m = (geo, mat, py) => { const o = new THREE.Mesh(geo, mat); o.position.y = py; o.castShadow = true; g.add(o); return o; };
+      m(new THREE.BoxGeometry(0.06, 0.06, 0.06), inox, 0); m(new THREE.CylinderGeometry(0.014, 0.02, 0.14, 8), inox, 0.1);
+      m(new THREE.TorusGeometry(wr, 0.008, 6, 18), wheelMat, 0.18).rotation.x = Math.PI / 2;
+      m(new THREE.BoxGeometry(wr * 2, 0.008, 0.012), wheelMat, 0.18); m(new THREE.BoxGeometry(0.012, 0.008, wr * 2), wheelMat, 0.18);
+      if (tag) { const t = m(new THREE.CylinderGeometry(0.025, 0.025, 0.004, 14), nero, 0.11); t.rotation.z = Math.PI / 2; t.position.x = 0.05; }
+    };
+    // regolatore a calotta grigia (PCV) con l'asse verso dir
+    const pcv = (x, y, z, dir) => {
+      const g = new THREE.Group(); g.position.set(x, y, z); g.quaternion.setFromUnitVectors(Yv, new THREE.Vector3(...dir).normalize()); grp.add(g);
+      const m = (geo, mat, py) => { const o = new THREE.Mesh(geo, mat); o.position.y = py; o.castShadow = true; g.add(o); return o; };
+      m(new THREE.CylinderGeometry(0.035, 0.035, 0.09, 12), inox, 0); m(new THREE.CylinderGeometry(0.078, 0.078, 0.025, 20), grigio, 0.06);
+      m(new THREE.SphereGeometry(0.076, 20, 8, 0, Math.PI * 2, 0, Math.PI / 2), grigio, 0.072).scale.y = 0.55; m(new THREE.CylinderGeometry(0.012, 0.012, 0.04, 8), inox, 0.13);
+    };
+    // quadro: tubo della fase gas con PSV1 in cima, cassetta del livello, valvole come nello schema
+    const xp = sx(0.04) + 0.075;
+    pipe([[sx(0.04) - 0.05, 0.86, 0.04], [xp, 0.92, 0.04], [xp, 2.84, 0.04]], 0.019, inox);
+    add(new THREE.CylinderGeometry(0.034, 0.034, 0.2, 12), nero, xp, 2.94, 0.04); add(new THREE.CylinderGeometry(0.024, 0.024, 0.06, 10), nero, xp, 3.07, 0.04); // PSV1
+    pipe([[xp, 2.98, 0.04], [xp, 2.98, 0.17]], 0.014, inox);
+    add(new THREE.CylinderGeometry(0.045, 0.016, 0.1, 12, 1, true), inox, xp, 3.02, 0.2).rotation.x = -0.7; // scarico svasato
+    pipe([[xp, 2.62, 0.04], [xp, 2.62, -0.08], [xp, 2.7, -0.08]], 0.012, inox); add(new THREE.CylinderGeometry(0.026, 0.026, 0.15, 10), nero, xp, 2.77, -0.08); // PSE1 su V11
+    const bx = sx(-0.3) + 0.03; // cassetta inox LI1 / PI1
+    add(new THREE.BoxGeometry(0.25, 0.26, 0.5), inox, bx + 0.125, 2.42, -0.3);
+    for (const z of [-0.12, -0.48]) add(new THREE.BoxGeometry(0.05, 0.03, 0.03), inox, bx - 0.02, 2.42, z);
+    add(new THREE.CircleGeometry(0.068, 24), nero, bx + 0.252, 2.42, -0.2).rotation.y = Math.PI / 2;
+    add(new THREE.CylinderGeometry(0.066, 0.066, 0.03, 24), inox, bx + 0.265, 2.42, -0.41).rotation.z = Math.PI / 2;
+    add(new THREE.CircleGeometry(0.056, 24), once('azoto|quadrante', () => stdMat({ map: gaugeDialTex(), roughness: 0.3 })), bx + 0.282, 2.42, -0.41).rotation.y = Math.PI / 2;
+    pipe([[bx + 0.1, 2.29, -0.25], [bx + 0.1, 1.05, -0.25]], 0.005, inox); pipe([[bx + 0.15, 2.29, -0.35], [bx + 0.15, 1.1, -0.35]], 0.005, inox);
+    valve(xp + 0.05, 2.22, 0.04, [1, 0.2, 0], 0.06, nero, true); // V10
+    pipe([[xp, 1.82, 0.04], [xp, 1.82, 0.24]], 0.014, inox); valve(xp, 1.82, 0.26, [0, 1, 0], 0.045, nero, true); // V9
+    pipe([[xp, 1.42, 0.04], [xp, 1.42, 0.24]], 0.014, inox); pcv(xp + 0.02, 1.42, 0.26, [1, 0, 0]); // PCV2
+    valve(xp, 1.4, -0.08, [0, 1, 0], 0.045, nero, true); valve(xp, 1.38, -0.2, [0, 1, 0], 0.045, nero, true); // V4, V3
+    pipe([[xp, 1.18, 0.04], [xp + 0.14, 1.18, 0.04]], 0.016, inox); add(new THREE.CylinderGeometry(0.032, 0.032, 0.07, 14), inox, xp + 0.18, 1.18, 0.04).rotation.z = Math.PI / 2; // CARICO
+    pcv(xp, 0.82, 0.18, [1, 0, 0]); valve(xp, 0.72, 0.36, [0, 1, 0], 0.045); // PCV1, V1
+    add(new THREE.CylinderGeometry(0.038, 0.038, 0.045, 18), blu, xp + 0.03, 1.02, 0.46).rotation.z = Math.PI / 2; // trasmettitore di pressione
+    // erogazione del liquido V2 / V2 BIS sopra la palla di ghiaccio (bianca: è ghiaccio, indicazione dell'utente)
+    valve(sx(-0.44) + 0.12, 1.24, -0.44, [0, 1, 0], 0.05, nero, true);
+    valve(sx(-0.56) + 0.12, 1.22, -0.56, [0, 1, 0], 0.05, once('azoto|ottone', () => stdMat({ color: 0x8a6a3a, roughness: 0.4, metalness: 0.7 })), true);
+    const ice = add(lumpyGeometry(7), ghiaccio, sx(-0.5) + 0.12, 1.05, -0.5); ice.scale.set(0.15, 0.12, 0.17);
+    const uscita = new THREE.Object3D(); uscita.position.set(sx(-0.5) + 0.12, 1.0, -0.5); grp.add(uscita); outer.userData.uscita = uscita;
+    // cartelli e scritte (ritagli provvisori dalle foto in tex/azoto/, curvati sul fasciame); psi = gradi a destra del quadro
+    const arcSign = (file, w, h, y, psi, opts = {}) => {
+      const r = R + 0.004, dt = w / r, th = Math.PI / 2 + (psi * Math.PI) / 180;
+      const mat = once('azoto|cartello|' + file, () => stdMat(Object.assign({ map: new THREE.TextureLoader().load(file, (t) => { t.encoding = THREE.sRGBEncoding; t.needsUpdate = true; }), roughness: 0.6 }, opts)));
+      add(new THREE.CylinderGeometry(r, r, h, Math.max(4, Math.round(dt * 30)), 1, true, th - dt / 2, dt), mat, 0, y, 0, false);
+    };
+    arcSign('tex/nippon-gases-logo.jpg', 0.7, 0.22, 3.42, 0);
+    arcSign('tex/azoto/servizio-alert.jpg', 0.42, 0.3, 2.1, 60);
+    arcSign('tex/azoto/schema-impianto.jpg', 0.34, 0.5, 1.45, 52);
+    arcSign('tex/azoto/scheda-azoto.jpg', 0.3, 0.57, 1.45, 78);
+    arcSign('tex/azoto/avvertenze-travaso.jpg', 0.17, 0.45, 1.5, 98);
+    const letters = once('azoto|scritta', () => stdMat({ map: canvasTex(1024, 128, (ctx, w, h) => {
+      ctx.clearRect(0, 0, w, h); ctx.fillStyle = '#1e3c8c'; ctx.font = 'bold 104px "Times New Roman", Times, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('AZOTO  LIQUIDO', w / 2, h / 2 + 6);
+    }), transparent: true, alphaTest: 0.35, roughness: 0.5 }));
+    { const r = R + 0.004, w = 1.25, dt = w / r, th = Math.PI / 2 + (25 * Math.PI) / 180; add(new THREE.CylinderGeometry(r, r, 0.16, 40, 1, true, th - dt / 2, dt), letters, 0, 2.66, 0, false); }
+    // asta dei manometri: palo zincato con fazzoletti triangolari, due manometri, pressostato nero e centralina LEGIOBOX
+    const gx = R + 0.32, gz = 0.6;
+    add(new THREE.CylinderGeometry(0.025, 0.025, 1.95, 10), zinco, gx, soil + 0.975, gz); add(new THREE.BoxGeometry(0.22, 0.01, 0.22), zinco, gx, soil + 0.005, gz);
+    const tri = once('azoto|geo fazzoletto', () => { const s = new THREE.Shape(); s.moveTo(0, 0); s.lineTo(0.16, 0); s.lineTo(0, 0.28); s.lineTo(0, 0); const g = new THREE.ExtrudeGeometry(s, { depth: 0.006, bevelEnabled: false }); g.translate(0.02, 0, -0.003); return g; });
+    for (let i = 0; i < 4; i += 1) add(tri, zinco, gx, soil + 0.01, gz).rotation.y = (i * Math.PI) / 2;
+    add(new THREE.BoxGeometry(0.02, 0.42, 0.14), zinco, gx + 0.04, soil + 1.6, gz);
+    const dial = once('azoto|quadrante', () => stdMat({ map: gaugeDialTex(), roughness: 0.3 }));
+    for (const [y, r] of [[soil + 1.66, 0.08], [soil + 1.44, 0.055]]) {
+      add(new THREE.CylinderGeometry(r + 0.006, r + 0.006, 0.05, 24), inox, gx + 0.08, y, gz).rotation.z = Math.PI / 2;
+      add(new THREE.CircleGeometry(r, 24), dial, gx + 0.106, y, gz).rotation.y = Math.PI / 2;
+    }
+    add(new THREE.BoxGeometry(0.05, 0.08, 0.06), nero, gx + 0.08, soil + 1.66, gz + 0.13);
+    add(new THREE.BoxGeometry(0.09, 0.13, 0.24), once('azoto|legiobox', () => stdMat({ color: 0xeef0f2, roughness: 0.5 })), gx + 0.06, soil + 1.86, gz);
+    add(new THREE.BoxGeometry(0.005, 0.03, 0.22), blu, gx + 0.107, soil + 1.89, gz);
+    pipe([[gx + 0.05, soil + 1.55, gz], [xp + 0.05, soil + 1.55, 0.3], [xp, soil + 1.55, 0.06]], 0.005, inox);
+    pipe([[gx + 0.05, soil + 1.5, gz - 0.02], [xp + 0.03, soil + 1.5, 0.28], [xp, soil + 1.5, 0.06]], 0.005, inox);
+    // serpentino HE1: gruppo riempito con 3 tubi alettati del modello dell'utente (loadCourtyardModel)
+    const coil = new THREE.Group(); coil.position.set(-0.3, Number(S.serpentino) || 0.55, 0); grp.add(coil); outer.userData.serpentino = coil;
+    return outer;
+  }
+  // quadrante di manometro: fondo bianco, tacche, numeri e lancetta
+  function gaugeDialTex() {
+    return canvasTex(128, 128, (ctx, w) => {
+      ctx.fillStyle = '#f7f7f4'; ctx.fillRect(0, 0, w, w); ctx.translate(w / 2, w / 2); ctx.strokeStyle = '#111'; ctx.lineWidth = 2;
+      for (let i = 0; i <= 20; i += 1) { const a = Math.PI * 0.75 + (i / 20) * Math.PI * 1.5, r0 = i % 5 ? 50 : 44; ctx.beginPath(); ctx.moveTo(Math.cos(a) * r0, Math.sin(a) * r0); ctx.lineTo(Math.cos(a) * 56, Math.sin(a) * 56); ctx.stroke(); }
+      ctx.strokeStyle = '#c22'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0, 0, 53, Math.PI * 1.85, Math.PI * 2.1); ctx.stroke();
+      ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(Math.PI * 1.6) * 44, Math.sin(Math.PI * 1.6) * 44); ctx.stroke();
+    });
   }
   // gabbia verde: montanti, rete e porticina; cartello di sicurezza sul lato verso l'albero (g0: quota del cordolo su cui poggia)
   function buildCage(G, g0) {
@@ -4328,7 +4468,7 @@ void main() {
 
     live(M.magnolie).forEach((t, n) => turned(court, t, Number(t.u), Number(t.v)).add(albero(magnoliaTree(t, n))));
 
-    turned(court, M.serbatoio, Number(M.serbatoio.u), Number(M.serbatoio.v)).add(nitrogenTank(M.serbatoio));
+    const tank = nitrogenTank(M.serbatoio); turned(court, M.serbatoio, Number(M.serbatoio.u), Number(M.serbatoio.v)).add(tank);
 
     // tubo di scarico del serbatoio (foto del 19/10/2026): metallico, esce sotto il serbatoio, corre orizzontale
     // verso il lato della porticina, scavalca il cordolo, scende a terra con un gomito e poggia su una canaletta bianca
@@ -4485,21 +4625,26 @@ void main() {
     // primitive aggiunte dall'editor nelle coordinate del cortile (duplicati dei suoi oggetti)
     for (const pr of (exteriorsCfg && exteriorsCfg.primitive) || []) if (pr.cornice === 'cortile' && !pr.rimosso && (pr.box || pr.poligono)) court.add(buildPrimitive(pr));
 
-    // bombole/tubi del gas dietro il silos (models/tubi-glb.json): 3 tubi in fila, a terra, parallela alla cancellata
-    const TB = M.tubi && !M.tubi.rimosso ? M.tubi : null;
-    if (TB) {
-      const slot = new THREE.Group(); slot.name = 'tubi';
-      slot.position.set(Number(TB.u) || 0, 0, -(Number(TB.v) || 0));
+    // evaporatori alettati dietro il silos (models/tubi-glb.json, modello dell'utente DVAP3: 6 tubi 3 × 2 con le valvole):
+    // `tubi` = il modello intero, `tubi4` = dall'altro lato dei 6, gruppo da 4 (2 × 2) dello stesso modello; il serpentino HE1 sotto
+    // il serbatoio usa una fila da 3 coricata. `colonne` e `file` scelgono quanti tubi tenere (colonne lungo la fila da 3, file da 2)
+    for (const key of ['tubi', 'tubi4']) {
+      const TB = M[key]; if (!TB || TB.rimosso) continue;
+      const slot = new THREE.Group(); slot.name = key;
+      slot.position.set(Number(TB.u) || 0, Number(TB.base) || 0, -(Number(TB.v) || 0));
       slot.rotation.y = (Number(TB.ruota) || 0) * Math.PI / 180;
       slot.scale.setScalar(Number(TB.scala) || 1);
       court.add(slot);
-      loadTubiModel().then((src) => {
-        if (!src || courtyardModel !== holder) return; // modello non disponibile o cortile già ricostruito
-        const m = src.clone(true);
-        m.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-        slot.add(m);
+      loadTubiSubset(Number(TB.colonne) || 3, Number(TB.file) || 2).then((m) => {
+        if (!m || courtyardModel !== holder) return; // modello non disponibile o cortile già ricostruito
+        slot.add(m.clone(true));
       });
     }
+    if (tank.userData.serpentino) loadTubiSubset(3, 1).then((m) => {
+      if (!m || courtyardModel !== holder) return;
+      const c = m.clone(true); c.rotation.z = -Math.PI / 2; c.position.y = 0.11; // coricata: l'asse dei tubi verso il quadro
+      tank.userData.serpentino.add(c);
+    });
 
     scene.add(holder);
     courtyardModel = holder;
@@ -4519,6 +4664,38 @@ void main() {
       return root;
     })().catch(() => { tubiPromise = null; return null; });
     return tubiPromise;
+  }
+  // parte del modello: tiene i tubi delle prime `nc` colonne (fila da 3 lungo X, passo 0,22 m) e delle prime `nf` file
+  // (lungo Z, passo 0,178 m), valvole comprese; ricentrata e appoggiata a terra
+  const tubiSubsets = new Map();
+  function loadTubiSubset(nc, nf) {
+    const key = nc + 'x' + nf;
+    if (!tubiSubsets.has(key)) tubiSubsets.set(key, loadTubiModel().then((root) => {
+      if (!root) { tubiSubsets.delete(key); return null; }
+      if (nc >= 3 && nf >= 2) return root;
+      root.updateMatrixWorld(true);
+      const bb = new THREE.Box3().setFromObject(root), out = new THREE.Group();
+      root.traverse((o) => {
+        if (!o.isMesh) return;
+        const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone(); g.applyMatrix4(o.matrixWorld);
+        const p = g.attributes.position, keep = [];
+        for (let t = 0; t < p.count; t += 3) {
+          const cx = (p.getX(t) + p.getX(t + 1) + p.getX(t + 2)) / 3, cz = (p.getZ(t) + p.getZ(t + 1) + p.getZ(t + 2)) / 3;
+          if (Math.floor((cx - bb.min.x) / 0.22) < nc && Math.floor((bb.max.z - cz) / 0.24) < nf) keep.push(t);
+        }
+        const sub = new THREE.BufferGeometry();
+        for (const name of Object.keys(g.attributes)) {
+          const a = g.attributes[name], n = a.itemSize, arr = new Float32Array(keep.length * 3 * n);
+          keep.forEach((t, i) => { for (let v = 0; v < 3; v += 1) for (let c = 0; c < n; c += 1) arr[(i * 3 + v) * n + c] = a.array[(t + v) * n + c]; });
+          sub.setAttribute(name, new THREE.BufferAttribute(arr, n));
+        }
+        const m = new THREE.Mesh(sub, o.material); m.castShadow = m.receiveShadow = true; out.add(m);
+      });
+      const b2 = new THREE.Box3().setFromObject(out), c = b2.getCenter(new THREE.Vector3());
+      out.children.forEach((m) => m.geometry.translate(-c.x, -b2.min.y, -c.z));
+      return out;
+    }));
+    return tubiSubsets.get(key);
   }
   /* ---------- alberi da OpenStreetMap (natural=tree, tree_row), in istanze ---------- */
   function rnd(i, k) { const s = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return s - Math.floor(s); }

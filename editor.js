@@ -368,14 +368,16 @@
       if (M.portico) add({ ...b, obj: M.portico, percorso: 'portico', label: 'Portico', fields: ['u', 'v', 'soffitto'], lock: { h0: true }, fixed: true, box: () => rect(M.portico, 0, Number(M.portico.soffitto) || 4.5), apply: (o, n) => { setRect(M.portico, n); M.portico.soffitto = round(n.h1); } });
       (M.magnolie || []).forEach((m, k) => add({ ...b, obj: m, percorso: `magnolie.${k}`, label: `Magnolia ${m.id || k + 1}`, fields: ['u', 'v', 'raggio', 'altezza'], lock: { h0: true }, giro: true, pivot: () => [m.u, m.v], box: () => ({ ...circ(m, Number(m.raggio) || 3), h0: 0, h1: Number(m.altezza) || 12 }), apply: (o, n) => { [m.u, m.v] = mid(n); m.raggio = round(side(n) / 2); m.altezza = round(n.h1); } }));
       const S = M.serbatoio;
-      if (S) add({ ...b, obj: S, percorso: 'serbatoio', label: "Silos dell'azoto", fields: ['u', 'v', 'raggio', 'altezza'], lock: { h0: true }, fixed: true, giro: true, pivot: () => [S.u, S.v], box: () => ({ ...circ(S, Number(S.raggio) || 0.8), h0: 0, h1: Number(S.altezza) || 4.2 }), apply: (o, n) => { [S.u, S.v] = mid(n); S.raggio = round(side(n) / 2); S.altezza = round(n.h1); } });
+      if (S) add({ ...b, obj: S, percorso: 'serbatoio', label: "Silos dell'azoto", fields: ['u', 'v', 'raggio', 'altezza'], lock: { h0: true }, fixed: true, giro: true, pivot: () => [S.u, S.v], box: () => ({ ...circ(S, Number(S.raggio) || 0.8), h0: 0, h1: Number(S.altezza) || 4 }), apply: (o, n) => { [S.u, S.v] = mid(n); S.raggio = round(side(n) / 2); S.altezza = round(n.h1); } });
       (M.tombini || []).forEach((t, k) => add({ ...b, obj: t, percorso: `tombini.${k}`, label: `Tombino ${k + 1}`, fields: ['u', 'v', 'lato', 'quota'], lock: { h0: true, h1: true }, giro: true, vincolo: 'superficie', pivot: () => [t.u, t.v], box: () => ({ ...circ(t, (Number(t.lato) || 0.6) / 2), h0: Number(t.quota) || 0, h1: (Number(t.quota) || 0) + 0.04 }), apply: (o, n) => { [t.u, t.v] = mid(n); t.lato = side(n); t.quota = round(n.h0); } }));
       (M.transenne || []).forEach((t, k) => add({ ...b, obj: t, percorso: `transenne.${k}`, label: `Transenna ${k + 1}`, fields: ['u', 'v', 'lunghezza', 'angoloDeg'], lock: { h0: true, h1: true }, giro: true, angKey: 'angoloDeg', pivot: () => [t.u, t.v], box: () => ({ u0: t.u, u1: t.u + (Number(t.lunghezza) || 2), v0: t.v - 0.05, v1: t.v + 0.05, h0: 0, h1: 1.1 }), apply: (o, n) => { t.u = round(n.u0); t.lunghezza = round(n.u1 - n.u0); t.v = round((n.v0 + n.v1) / 2); } }));
-      const TB = M.tubi;
-      if (TB) add({ ...b, obj: TB, percorso: 'tubi', label: 'Tubi del gas (3 bombole)', fields: ['u', 'v', 'ruota', 'scala'], lock: { h0: true, h1: true },
-        giro: true, angKey: 'ruota', angId: 'tubi', pivot: () => [TB.u, TB.v],
-        box: () => { const k = Number(TB.scala) || 1, du = (0.66 * k) / 2, dv = (0.3 * k) / 2; return { u0: TB.u - du, u1: TB.u + du, v0: TB.v - dv, v1: TB.v + dv, h0: 0, h1: 1.67 * k }; }, // non ruotata: gira la cornice «rot:tubi»
-        apply: (o, n) => { [TB.u, TB.v] = mid(n); } });
+      for (const key of ['tubi', 'tubi4']) {
+        const TB = M[key]; if (!TB) continue;
+        add({ ...b, obj: TB, percorso: key, label: `Evaporatore alettato (${key === 'tubi' ? 6 : 4} tubi)`, fields: ['u', 'v', 'ruota', 'scala'], lock: { h0: true, h1: true },
+          giro: true, angKey: 'ruota', angId: key, pivot: () => [TB.u, TB.v],
+          box: () => { const k = Number(TB.scala) || 1, du = (0.22 * (Number(TB.colonne) || 3) * k) / 2, dv = (0.24 * (Number(TB.file) || 2) * k) / 2, h0 = Number(TB.base) || 0; return { u0: TB.u - du, u1: TB.u + du, v0: TB.v - dv, v1: TB.v + dv, h0, h1: h0 + 1.67 * k }; }, // non ruotata: gira la cornice «rot:<key>»
+          apply: (o, n) => { [TB.u, TB.v] = mid(n); } });
+      }
       const TS = M.tuboScarico;
       if (TS && Array.isArray(TS.percorso)) {
         const r = Number(TS.raggio) || 0.08, inner = (x) => ({ u0: x.u0 + r, u1: x.u1 - r, v0: x.v0 + r, v1: x.v1 - r, h0: x.h0 + r, h1: x.h1 - r });

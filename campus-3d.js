@@ -1109,13 +1109,43 @@
       { y0: height - ATTIC, h: ATTIC, kind: 'attic', floorH: ATTIC },
     ];
   }
+  /* Foto ad alta risoluzione sui tetti (commento 6 del 27/10/2026: vista dall'alto della Ginestra mandata dall'utente, circa 4,5 cm
+     per pixel contro 1 m dell'ortofoto AGEA). Dentro il riquadro della foto i tetti la usano al posto dell'ortofoto, con una sfumatura
+     ai bordi. `m` porta le coordinate dell'ortofoto dei tetti (applyRoofUVs: 0…1 su ORTHO_BOUNDS) in quelle della foto (s, t: 0…1, t dal
+     basso): la foto è agganciata alla quota dei tetti sugli estremi dell'arco del ventaglio della sagoma OSM di CU014. */
+  const ROOF_PHOTOS = [{ src: 'tex/ginestra-alto-2026-10-27.jpg', m: [[17.251845, 4.706138, -6.467596], [-8.880557, 15.982978, -2.577765]], sfuma: 0.03 }];
+  function withRoofPhotos(mat) {
+    const P = ROOF_PHOTOS[0];
+    if (!P) return mat;
+    const tex = new THREE.TextureLoader().load(P.src, () => { mat.userData.fotoPronta = true; if (mat.userData.shader) mat.userData.shader.uniforms.roofPhotoOn.value = 1; });
+    tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 8; tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+    mat.onBeforeCompile = (shader) => {
+      Object.assign(shader.uniforms, { roofPhoto: { value: tex }, roofPhotoS: { value: new THREE.Vector3(...P.m[0]) }, roofPhotoT: { value: new THREE.Vector3(...P.m[1]) },
+        roofPhotoFade: { value: P.sfuma }, roofPhotoOn: { value: mat.userData.fotoPronta ? 1 : 0 } });
+      shader.fragmentShader = shader.fragmentShader.replace('#include <map_pars_fragment>', `#include <map_pars_fragment>
+uniform sampler2D roofPhoto; uniform vec3 roofPhotoS; uniform vec3 roofPhotoT; uniform float roofPhotoFade; uniform float roofPhotoOn;`)
+        .replace('#include <map_fragment>', `#ifdef USE_MAP
+  vec4 texelColor = texture2D( map, vUv );
+  vec2 fq = vec2( dot( roofPhotoS, vec3( vUv, 1.0 ) ), dot( roofPhotoT, vec3( vUv, 1.0 ) ) );
+  if ( roofPhotoOn > 0.5 && fq.x > 0.0 && fq.x < 1.0 && fq.y > 0.0 && fq.y < 1.0 ) {
+    vec2 e = min( fq, 1.0 - fq ) / roofPhotoFade;
+    texelColor = mix( texelColor, texture2D( roofPhoto, fq ), clamp( min( e.x, e.y ), 0.0, 1.0 ) );
+  }
+  texelColor = mapTexelToLinear( texelColor );
+  diffuseColor *= texelColor;
+#endif`);
+      mat.userData.shader = shader;
+    };
+    mat.customProgramCacheKey = () => 'tetti-foto';
+    return mat;
+  }
   function createMaterials(texture) {
     createFacadeSets();
     // Tetti non illuminati: stessa luminosità dell'ortofoto al suolo, nessuna sovraesposizione.
     normalSide = new THREE.MeshStandardMaterial({ color: 0xd8d0c7, roughness: 0.88, metalness: 0 });
-    normalRoof = new THREE.MeshBasicMaterial({ color: 0xffffff, map: texture, toneMapped: false });
+    normalRoof = withRoofPhotos(new THREE.MeshBasicMaterial({ color: 0xffffff, map: texture, toneMapped: false }));
     selectedSide = new THREE.MeshStandardMaterial({ color: 0x822433, roughness: 0.78, metalness: 0 });
-    selectedRoof = new THREE.MeshBasicMaterial({ color: 0xf2d4d9, map: texture, toneMapped: false });
+    selectedRoof = withRoofPhotos(new THREE.MeshBasicMaterial({ color: 0xf2d4d9, map: texture, toneMapped: false }));
   }
   /* ---------- CNR, ospite d'onore ---------- */
   function addGuestBuilding(ring, height) {
@@ -2056,15 +2086,16 @@
      Il primo piano è arretrato lungo tutto l'arco (loggia profonda 4 m fra loggia.rInterno e la facciata, fondo rivestito di
      travertino): sotto il piano terra con le sue finestre, sopra il volume dell'anfiteatro che sporge fino al filo della facciata.
      Al centro 4 piloni arancioni sul filo della facciata (salgono fino al tetto come lesene), 3 parapetti di travertino fra i piloni,
-     porte a vetri sul fondo. Ai lati, per ogni scala (piloni, parapetti, porte e scale sono primitive dell'editor, id gin-…; qui
-     la pagina costruisce solo la struttura e lascia i vuoti dove passano le scale):
-       · prima rampa all'esterno, lungo la curva: base quadrata con uno o due gradini d'angolo, poi i gradini fino al mezzo piano;
-         a fianco, verso l'edificio, un grosso pilone di travertino che regge la pensilina e finisce in faccia a metà cancello;
-       · pensilina («tetto» della scala): fascia curva attaccata all'edificio dall'inizio della scala alla fine del cancello;
-       · pianerottolo di mezzo: svolta di 90° verso l'edificio, cancello sul filo della facciata (sotto l'edificio, nell'area
-         aperta ma coperta sotto l'anfiteatro), di nuovo 90°;
-       · seconda rampa sotto l'edificio, nel sottoscala aperto, che torna verso il centro e arriva alla loggia appena prima
-         del primo pilone; sopra la rampa la soletta della loggia è aperta, senza ringhiera. */
+     porte a vetri sul fondo. Ai lati, per ogni scala (misure dalla scansione Scaniverse dell'utente del 23/10/2026; piloni, parapetti,
+     porte e scale sono primitive dell'editor, id gin-…, generate da tools/ginestra_scale_da_scansione.py; qui la pagina costruisce
+     solo la struttura e lascia i vuoti dove passano le scale):
+       · prima rampa mezza dentro e mezza fuori dalla facciata, su una pedana con un gradino attorno; a fianco, verso l'edificio,
+         il muro divisorio di travertino; in cima, sul lato della strada, la colonna rettangolare di travertino che regge la pensilina
+         e prosegue col parapetto sotto una finestra aperta fino alla testata con la porta antipanico;
+       · pensilina: fascia curva dal primo pilone della balconata alla testata, soffitto di travertino e guaina sopra;
+       · pianerottolo di mezzo: svolta di 90° verso l'edificio, cancello nel varco in fondo al muro divisorio, di nuovo 90°;
+       · seconda rampa sotto l'edificio, nel sottoscala aperto, che torna verso il centro e arriva alla loggia appena dopo
+         il primo pilone; sopra la rampa la soletta della loggia è aperta. */
   function addCuVentaglio() {
     const f = cuSolido && cuFrame(), vent = cuSolido && cuSolido.ventaglio, B = vent && vent.balconata, Lg = vent && vent.loggia, S = vent && vent.scale;
     if (!f || !buildingGroup || !cuDisegnato || !cuSolidoUsato || officialPlanCodes.has('CU014') || !vent || !Array.isArray(vent.centro) || !B || !Lg) return;
@@ -2878,12 +2909,13 @@
     if (JSON.stringify(cavediCu()) !== cavediFatti) rebuildCu014();
   }
   /* ---------- primitive aggiunte dall'editor: forma e materiale a scelta ---------- */
-  const PRIM_COLORS = { intonaco: ['#e0c9a6', 0.9, 0], cemento: ['#9a9a95', 0.95, 0], bianco: ['#f2f1ec', 0.7, 0], 'metallo rosso': ['#6b1d29', 0.55, 0.4], 'ferro verde': ['#235b42', 0.55, 0.35], acciaio: ['#b9bdc0', 0.35, 0.75], legno: ['#6b4a2f', 0.8, 0], erba: ['#5f8a3e', 1, 0], asfalto: ['#4a4d50', 0.95, 0], 'intonaco arancione': ['#c98a5c', 0.9, 0] };
-  const PRIM_MATERIALS = ['travertino', 'travertino a lastre', 'mattoni', 'mattoni gialli', 'intonaco', 'cemento', 'bianco', 'metallo rosso', 'ferro verde', 'acciaio', 'legno', 'vetro', 'erba', 'terra', 'sanpietrini', 'asfalto', 'intonaco arancione', 'edificio'];
+  const PRIM_COLORS = { intonaco: ['#e0c9a6', 0.9, 0], cemento: ['#9a9a95', 0.95, 0], bianco: ['#f2f1ec', 0.7, 0], 'metallo rosso': ['#6b1d29', 0.55, 0.4], 'ferro verde': ['#235b42', 0.55, 0.35], acciaio: ['#b9bdc0', 0.35, 0.75], legno: ['#6b4a2f', 0.8, 0], erba: ['#5f8a3e', 1, 0], asfalto: ['#4a4d50', 0.95, 0], 'intonaco arancione': ['#c98a5c', 0.9, 0], guaina: ['#28292b', 0.95, 0] };
+  const PRIM_MATERIALS = ['travertino', 'travertino a lastre', 'mattoni', 'mattoni gialli', 'intonaco', 'cemento', 'bianco', 'metallo rosso', 'ferro verde', 'acciaio', 'legno', 'vetro', 'erba', 'terra', 'sanpietrini', 'asfalto', 'intonaco arancione', 'guaina', 'pensilina', 'edificio'];
   const primMats = new Map();
   function primitiveMaterial(name) {
     if (name === 'travertino a lastre') return bedKerbMaterial(); // come cordoli e pilastri del cortile dell'azoto
     if (name === 'edificio') return facadeSetFor('CU014').body; // su un parallelepipedo: la parete a finestre (il solido a pianta libera fa anche i piani)
+    if (name === 'pensilina') return primitiveMaterial('intonaco arancione'); // da solo è il bordo: sopra e sotto li mettono buildPrism e il parallelepipedo
     if (primMats.has(name)) return primMats.get(name);
     let mat;
     if (name === 'travertino') mat = new THREE.MeshStandardMaterial({ map: travertinePhoto(2.4), normalMap: travertineNormal(2.4), roughness: 0.8 });
@@ -3227,28 +3259,43 @@
     return g;
   }
   // pezzi del retro della Ginestra (aula magna di Chimica): la geometria segue la scatola, così gradini, balaustrini e sbarre restano a misura
-  const metalloScale = () => courtOnce('cu|ringhiera scale', () => stdMat({ color: '#2f3633', roughness: 0.45, metalness: 0.6 }));
+  const metalloScale = (pr) => (pr && /^#[0-9a-f]{6}$/i.test(String(pr.colore || '')) ? courtOnce('cu|metallo ' + pr.colore.toLowerCase(), () => stdMat({ color: pr.colore, roughness: 0.5, metalness: 0.45 }))
+    : courtOnce('cu|ringhiera scale', () => stdMat({ color: '#2f3633', roughness: 0.45, metalness: 0.6 })));
   const meshUV = (m) => { planarUVs(m.geometry, 1); return m; };
   const CATALOGO_GINESTRA = {
-    // gradini lungo x, quanti ne entrano a 32 cm; alzata = altezza / gradini, ma se viene oltre 19 cm la rampa parte da un plinto con alzate di 17 cm
+    // gradini lungo x, quanti ne entrano a `pedata` (32 cm se manca); alzata = altezza / gradini, ma se viene oltre 19 cm la rampa parte da un plinto con alzate di 17 cm
     rampaScala: { nome: 'Rampa di scale in travertino', crea: (pr) => group((g) => {
-      const [L, W, H] = ductDims(pr, 3.84, 1.4, 2.2), m = Math.max(1, Math.round(L / 0.32)), r = H / m <= 0.19 ? H / m : 0.17, t = L / m, { box } = partAdder(g), mat = primitiveMaterial('travertino');
+      const pd = Math.min(0.6, Math.max(0.2, Number(pr.pedata) || 0.32));
+      const [L, W, H] = ductDims(pr, 3.84, 1.4, 2.2), m = Math.max(1, Math.round(L / pd)), r = H / m <= 0.19 ? H / m : 0.17, t = L / m, { box } = partAdder(g), mat = primitiveMaterial('travertino');
       for (let j = 1; j <= m; j += 1) meshUV(box(-L / 2 + (j - 1) * t, -L / 2 + j * t, 0, H - (m - j) * r, -W / 2, W / 2, mat));
     }) },
     // staccionata metallica: montanti ogni 1,1 m al massimo, corrimano e corrente a 1 m e 0,5 m; con la scatola più alta di 1 m sale lungo x
     staccionata: { nome: 'Staccionata metallica (in pendenza se la scatola è alta più di 1 m)', crea: (pr) => group((g) => {
-      const [L, , H] = ductDims(pr, 2, 0.05, 1), rise = Math.max(0, H - 1), { box, add } = partAdder(g), mat = metalloScale(), y = (x) => (rise * (x + L / 2)) / L;
+      const [L, , H] = ductDims(pr, 2, 0.05, 1), rise = Math.max(0, H - 1), { box, add } = partAdder(g), mat = metalloScale(pr), y = (x) => (rise * (x + L / 2)) / L;
       const n = Math.max(1, Math.ceil(L / 1.1));
       for (let i = 0; i <= n; i += 1) { const x = Math.min(L / 2 - 0.025, Math.max(-L / 2 + 0.025, -L / 2 + (L * i) / n)); box(x - 0.025, x + 0.025, y(x), y(x) + 1, -0.025, 0.025, mat); }
       for (const hh of [1, 0.5]) { const len = Math.hypot(L, rise) - 0.02, bar = add(new THREE.BoxGeometry(len, 0.04, 0.04), mat, 0, rise / 2 + hh - 0.02, 0); bar.rotation.z = Math.atan2(rise, L); }
     }) },
     cancelloScala: { nome: 'Cancello metallico a sbarre', crea: (pr) => group((g) => {
-      const [L, , H] = ductDims(pr, 1.4, 0.05, 1.95), { box } = partAdder(g), mat = metalloScale(), nb = Math.max(2, Math.round(L / 0.12));
+      const [L, , H] = ductDims(pr, 1.4, 0.05, 1.95), { box } = partAdder(g), mat = metalloScale(pr), nb = Math.max(2, Math.round(L / 0.12));
       for (const x of [-L / 2, L / 2 - 0.05]) box(x, x + 0.05, 0, H, -0.025, 0.025, mat); // montanti fissi
       const leaf = new THREE.Group(), hx = -L / 2 + 0.05, lw = L - 0.1, lb = partAdder(leaf).box; // anta fra i montanti, cardine a sinistra
       leaf.position.x = hx; leaf.userData.anta = { punta: [lw, 0, 0] }; g.add(leaf);
       lb(0, lw, 0.06, 0.11, -0.02, 0.02, mat); lb(0, lw, H - 0.05, H, -0.02, 0.02, mat);
       for (let k = 1; k < nb; k += 1) { const x = (lw * k) / nb; lb(x - 0.012, x + 0.012, 0.06, H - 0.05, -0.012, 0.012, mat); }
+    }) },
+    // corrimano tondo attaccato a un muro: segue la pendenza lungo x (sale di altezza − 0,9 m, a 0,9 m sopra il bordo basso della scatola),
+    // con le staffe ogni 1,2 m verso il muro, che sta dal lato +z della scatola (dall'altro lato: «Specchia» v)
+    corrimano: { nome: 'Corrimano a muro (in pendenza se la scatola è alta più di 0,9 m)', crea: (pr) => group((g) => {
+      const [L, W, H] = ductDims(pr, 3, 0.08, 0.95), rise = Math.max(0, H - 0.95), { add } = partAdder(g), mat = metalloScale(pr), z0 = -W / 2 + 0.022;
+      const len = Math.hypot(L, rise), bar = add(new THREE.CylinderGeometry(0.022, 0.022, len, 10), mat, 0, rise / 2 + 0.9, z0); bar.rotation.z = Math.atan2(rise, L) - Math.PI / 2;
+      const n = Math.max(2, Math.ceil(L / 1.2) + 1);
+      for (let i = 0; i < n; i += 1) {
+        const x = -L / 2 + 0.15 + ((L - 0.3) * i) / (n - 1), y = (rise * (x + L / 2)) / L + 0.9;
+        add(new THREE.BoxGeometry(0.02, 0.02, W / 2 - 0.012 - z0), mat, x, y - 0.03, (z0 + W / 2 - 0.012) / 2);
+        add(new THREE.BoxGeometry(0.05, 0.08, 0.012), mat, x, y - 0.03, W / 2 - 0.006);
+      }
+      add(new THREE.BoxGeometry(0.02, 0.02, 0.02), mat, -L / 2, 0, 0).visible = false; // la scatola parte da terra: l'adattamento non stira il corrimano
     }) },
     balaustra: { nome: 'Balaustra di travertino', crea: (pr) => group((g) => {
       const [L, W, H] = ductDims(pr, 1.7, 0.3, 1), { box } = partAdder(g), mat = primitiveMaterial('travertino'), nb = Math.max(2, Math.floor(L / 0.19));
@@ -3794,6 +3841,13 @@ void main() {
     const P = pr.poligono, base = Number(pr.base) || 0, h = Math.max(0.02, Number(pr.altezza) || 0.3);
     if (!Array.isArray(P) || P.length < 3) return new THREE.Group();
     if (pr.materiale === 'edificio') return buildingPrism(pr, P, base, h);
+    if (pr.materiale === 'pensilina') {
+      const [Q, R] = ccwRadii(P, cornerRadii(pr, P, 0)), out = filletOutline(Q, R), g = new THREE.Group(), t = Math.min(0.05, h / 4), k = Math.min(0.03, h / 4);
+      g.add(localSlab(out, base, base + t, primitiveMaterial('travertino')), localSlab(out, base + t, base + h - k, primitiveMaterial('intonaco arancione')),
+        localSlab(out, base + h - k, base + h, primitiveMaterial('guaina')));
+      g.traverse((o) => { o.userData.primitiva = pr.id; });
+      return g;
+    }
     const [Q, R] = ccwRadii(P, cornerRadii(pr, P, 0)), m = localSlab(filletOutline(Q, R), base, base + h, primitiveMaterial(pr.materiale || 'travertino'));
     m.userData.primitiva = pr.id;
     return m;
@@ -3817,7 +3871,8 @@ void main() {
     else if (pr.forma === 'sfera') { geo = new THREE.SphereGeometry(0.5, 32, 16); geo.scale(du, dh, dv); }
     else geo = new THREE.BoxGeometry(du, dh, dv);
     planarUVs(geo, 1);
-    const m = new THREE.Mesh(geo, primitiveMaterial(pr.materiale || 'travertino'));
+    const side = primitiveMaterial(pr.materiale || 'travertino'); // pensilina su un parallelepipedo: facce ±x, ±y (sopra guaina, sotto travertino), ±z
+    const m = new THREE.Mesh(geo, pr.materiale === 'pensilina' && pr.forma === 'box' ? [side, side, primitiveMaterial('guaina'), primitiveMaterial('travertino'), side, side] : side);
     m.position.set((b.u0 + b.u1) / 2, (b.h0 + b.h1) / 2, -(b.v0 + b.v1) / 2);
     m.castShadow = true; m.receiveShadow = true; m.userData.primitiva = pr.id;
     return rotatedAboutCenter(pr, m);

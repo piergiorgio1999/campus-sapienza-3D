@@ -711,15 +711,30 @@
     const width = smallScreen ? 2048 : 4096;
     return { width, height: Math.round(width * aspect) };
   }
+  /* tetti stilizzati (30/10/2026, richiesta dell'utente): come le facciate, niente foto aerea. Guaina grigio chiaro a teli di 1 m con i
+     sormonti, qualche toppa e colatura, ripetuta in metri sulle UV dell'ortofoto (i tetti usano già quelle coordinate) */
+  function stylizedRoofTexture() {
+    const tile = 8, c = document.createElement('canvas'); c.width = c.height = 512;
+    const ctx = c.getContext('2d'), px = 512 / tile;
+    ctx.fillStyle = '#b9b6ae'; ctx.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 2600; i += 1) { const v = 150 + Math.floor(70 * hash01(i, 91)); ctx.fillStyle = `rgba(${v},${v - 3},${v - 9},0.35)`; ctx.fillRect(hash01(i, 92) * 512, hash01(i, 93) * 512, 2, 2); }
+    for (let k = 0; k < tile; k += 1) { // teli: sormonto più scuro e riga chiara
+      ctx.fillStyle = 'rgba(80,78,72,0.45)'; ctx.fillRect(0, k * px, 512, 3);
+      ctx.fillStyle = 'rgba(235,232,224,0.35)'; ctx.fillRect(0, k * px + 3, 512, 2);
+      for (let j = 0; j < 2; j += 1) { const x = (hash01(k, 94 + j) * 512) | 0; ctx.fillStyle = 'rgba(80,78,72,0.4)'; ctx.fillRect(x, k * px, 2, px); }
+    }
+    for (let i = 0; i < 7; i += 1) { ctx.fillStyle = `rgba(${hash01(i, 97) > 0.5 ? '120,118,110' : '210,207,198'},0.35)`; ctx.fillRect(hash01(i, 98) * 460, hash01(i, 99) * 460, 30 + 50 * hash01(i, 100), 20 + 40 * hash01(i, 101)); }
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(((ORTHO_BOUNDS.east - ORTHO_BOUNDS.west) * metersPerLon) / tile, ((ORTHO_BOUNDS.north - ORTHO_BOUNDS.south) * metersPerLat) / tile);
+    return t;
+  }
   function createOrthoTexture() {
     const { width, height } = orthoSize();
     orthoCanvas = document.createElement('canvas');
     orthoCanvas.width = width; orthoCanvas.height = height;
     orthoSource = document.createElement('canvas');
     orthoSource.width = width; orthoSource.height = height;
-    roofTexture = new THREE.CanvasTexture(orthoSource);
-    roofTexture.encoding = THREE.sRGBEncoding;
-    roofTexture.anisotropy = 8;
+    roofTexture = stylizedRoofTexture(); // tetti disegnati come le facciate, non più la foto aerea
     const texture = new THREE.CanvasTexture(orthoCanvas);
     texture.encoding = THREE.sRGBEncoding;
     texture.anisotropy = 8;
@@ -1113,7 +1128,7 @@
      per pixel contro 1 m dell'ortofoto AGEA). Dentro il riquadro della foto i tetti la usano al posto dell'ortofoto, con una sfumatura
      ai bordi. `m` porta le coordinate dell'ortofoto dei tetti (applyRoofUVs: 0…1 su ORTHO_BOUNDS) in quelle della foto (s, t: 0…1, t dal
      basso): la foto è agganciata alla quota dei tetti sugli estremi dell'arco del ventaglio della sagoma OSM di CU014. */
-  const ROOF_PHOTOS = [{ src: 'tex/ginestra-alto-2026-10-27.jpg', m: [[17.251845, 4.706138, -6.467596], [-8.880557, 15.982978, -2.577765]], sfuma: 0.03 }];
+  const ROOF_PHOTOS = []; // 30/10: i tetti sono stilizzati come le facciate (stylizedRoofTexture); la foto dall'alto della Ginestra resta in tex/ come riferimento
   function withRoofPhotos(mat) {
     const P = ROOF_PHOTOS[0];
     if (!P) return mat;
@@ -3372,6 +3387,19 @@ uniform sampler2D roofPhoto; uniform vec3 roofPhotoS; uniform vec3 roofPhotoT; u
       box(xr - 0.06, L / 2, H - 0.2, H - 0.12, -W / 2, W / 2, zincoScuro()); // tesa del cappello
       box(xr + 0.05, L / 2 - 0.05, H - 0.12, H, -W / 2 + 0.05, W / 2 - 0.05, zincoScuro());
       for (const x of [-L / 2 + 0.1, xr + d / 2]) box(x - 0.03, x + 0.03, 0, s, -W / 2 + 0.05, W / 2 - 0.05, staffe());
+      // col kit dell'utente: tratto dritto orizzontale, gomito verso l'alto e montante dritto (stessa sezione W × hs)
+      const corpi = g.children.slice(0, 2);
+      loadVentKit().then((kit) => {
+        const dr = kit && kit['014'], go = kit && kit['023'];
+        if (!dr || !go) return;
+        for (const c of corpi) { g.remove(c); c.geometry.dispose(); }
+        const add = (p, sx, sy, sz, x, y, rz) => { const m = new THREE.Mesh(p.geo, p.mat); m.scale.set(sx, sy, sz); m.position.set(x, y, 0); m.rotation.z = rz; m.castShadow = m.receiveShadow = true; g.add(m); };
+        const gl = Math.min(d, hs * 1.4), xh = xr + d - gl; // gomito nell'angolo, largo gl
+        if (xh > -L / 2 + 0.05) add(dr, (xh + L / 2) / dr.size.x, hs / dr.size.y, W / dr.size.z, (xh - L / 2) / 2, s, 0);
+        add(go, gl / go.size.x, gl / go.size.y, W / go.size.z, xh + gl / 2, s, 0);
+        const v0 = s + gl, v1 = H - 0.2; // montante: tratto dritto ruotato in verticale
+        if (v1 > v0 + 0.05) add(dr, (v1 - v0) / dr.size.x, d / dr.size.y, W / dr.size.z, xr + d / 2 + d / 2, (v0 + v1) / 2, Math.PI / 2);
+      });
     }) },
     panchina: { nome: 'Panchina in travertino', crea: () => group((g) => addBench(g, { u: 0, v: 0 }, 0)) },
     palma: { nome: 'Palma', crea: () => albero(palmTree({ u: 0, v: 0, altezza: 4 })) },

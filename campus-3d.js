@@ -733,7 +733,9 @@
     orthoCanvas.width = width; orthoCanvas.height = height;
     orthoSource = document.createElement('canvas');
     orthoSource.width = width; orthoSource.height = height;
-    roofTexture = stylizedRoofTexture(); // tetti disegnati come le facciate, non più la foto aerea
+    roofTexture = new THREE.CanvasTexture(orthoSource);
+    roofTexture.encoding = THREE.sRGBEncoding;
+    roofTexture.anisotropy = 8;
     const texture = new THREE.CanvasTexture(orthoCanvas);
     texture.encoding = THREE.sRGBEncoding;
     texture.anisotropy = 8;
@@ -1127,7 +1129,7 @@
      per pixel contro 1 m dell'ortofoto AGEA). Dentro il riquadro della foto i tetti la usano al posto dell'ortofoto, con una sfumatura
      ai bordi. `m` porta le coordinate dell'ortofoto dei tetti (applyRoofUVs: 0…1 su ORTHO_BOUNDS) in quelle della foto (s, t: 0…1, t dal
      basso): la foto è agganciata alla quota dei tetti sugli estremi dell'arco del ventaglio della sagoma OSM di CU014. */
-  const ROOF_PHOTOS = [{ src: 'tex/tetto-ginestra-maschera.png', m: [[17.251845, 4.706138, -6.467596], [-8.880557, 15.982978, -2.577765]], sfuma: 0.03 }]; // 30/10: maschera del tetto della Ginestra (guaina grigio-azzurra), nel riquadro della vecchia foto
+  const ROOF_PHOTOS = [{ src: 'tex/tetto-ginestra-maschera.png', m: [[17.251845, 4.706138, -6.467596], [-8.880557, 15.982978, -2.577765]], sfuma: 0.03 }]; // 30/10: solo il tetto della Ginestra in guaina grigio-azzurra (maschera nel riquadro della vecchia foto); gli altri tetti restano l'ortofoto
   function withRoofPhotos(mat) {
     const P = ROOF_PHOTOS[0];
     if (!P) return mat;
@@ -1140,12 +1142,12 @@
 uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; uniform vec3 roofPhotoS; uniform vec3 roofPhotoT; uniform float roofPhotoFade; uniform float roofPhotoOn;`)
         .replace('#include <map_fragment>', `#ifdef USE_MAP
   vec4 texelColor = texture2D( map, vUv );
-  vec2 ou = vUv / roofRep; // vUv è già ripetuta dalla mappa (teli): torna alle coordinate dell'ortofoto
+  vec2 ou = vUv;
   vec2 fq = vec2( dot( roofPhotoS, vec3( ou, 1.0 ) ), dot( roofPhotoT, vec3( ou, 1.0 ) ) );
   if ( roofPhotoOn > 0.5 && fq.x > 0.0 && fq.x < 1.0 && fq.y > 0.0 && fq.y < 1.0 ) {
     vec2 e = min( fq, 1.0 - fq ) / roofPhotoFade;
     float k = texture2D( roofPhoto, fq ).r * clamp( min( e.x, e.y ), 0.0, 1.0 );
-    texelColor = mix( texelColor, texture2D( roofBlu, vUv ), k );
+    texelColor = mix( texelColor, texture2D( roofBlu, vUv * roofRep ), k );
   }
   texelColor = mapTexelToLinear( texelColor );
   diffuseColor *= texelColor;
@@ -2371,6 +2373,7 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
       showGuest(false);
       if (hit?.object.userData.code) selectBuilding(hit.object.userData.code);
     });
+    setupFogClick();
     renderer.domElement.addEventListener('webglcontextlost', (event) => {
       event.preventDefault();
       fallbackToPhoto('La scena 3D è stata interrotta dal browser; continua con l’ortofoto AGEA e le impronte.');
@@ -3179,7 +3182,7 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
         if (!code || parts[code]) return;
         const g = o.geometry.clone().applyMatrix4(o.matrixWorld); g.computeBoundingBox();
         const bb = g.boundingBox, c = bb.getCenter(new THREE.Vector3()); g.translate(-c.x, -bb.min.y, -c.z); g.computeBoundingBox();
-        const mat = o.material; if (mat && mat.metalness != null) { mat.metalness = Math.min(mat.metalness, 0.35); mat.needsUpdate = true; }
+        const mat = o.material; if (mat && mat.metalness != null) { mat.metalness = Math.min(mat.metalness, 0.6); mat.roughness = 0.55; mat.needsUpdate = true; }
         parts[code] = { geo: g, mat, size: g.boundingBox.getSize(new THREE.Vector3()) };
       });
       return parts;
@@ -3206,7 +3209,7 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
       const src = kit && kit['014'] && kit['014'].mat;
       if (!src || !src.map) return;
       const tile = (t) => { if (!t) return null; const c = t.clone(); c.wrapS = c.wrapT = THREE.RepeatWrapping; c.needsUpdate = true; return c; };
-      Object.assign(m, { map: tile(src.map), normalMap: tile(src.normalMap), roughnessMap: tile(src.roughnessMap), metalnessMap: tile(src.metalnessMap), roughness: 1, metalness: Math.min(src.metalness ?? 1, 0.35) });
+      Object.assign(m, { map: tile(src.map), normalMap: tile(src.normalMap), roughnessMap: tile(src.roughnessMap), metalnessMap: tile(src.metalnessMap), roughness: 0.55, metalness: 0.6 }); // più lucida (commento del 30/10)
       m.color.set(0xffffff); m.needsUpdate = true;
     });
     return m;
@@ -3345,7 +3348,7 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
       for (let i = 0; i <= n; i += 1) { const x = x0 + ((x1 - x0) * i) / n; kitUV(box(Math.max(x0, x - 0.025), Math.min(x1, x + 0.025), base, H + 0.02, -W / 2 - 0.02, W / 2 + 0.02, zincoScuro())); } // giunti dei pannelli
       kitUV(box(x0 + 0.06, x1 - 0.06, H, H + 0.05, -W / 2 + 0.06, W / 2 - 0.06, steel)); // coperchio a pannelli
       for (let i = 1; i < n; i += 1) { const x = x0 + ((x1 - x0) * i) / n; box(x - 0.02, x + 0.02, H + 0.05, H + 0.08, -W / 2 + 0.06, W / 2 - 0.06, zincoScuro()); } // coprigiunti
-      kitUV(add(sectionTaper(x1, L / 2, [base + 0.05, H - 0.05, W / 2 - 0.05], [da, dh, dw / 2]), steel, 0, 0, 0));
+      kitUV(add(sectionTaper(x1 - 0.06, L / 2, [base + 0.05, H - 0.05, W / 2 - 0.05], [da, dh, dw / 2]), steel, 0, 0, 0)); // parte dentro il corpo: niente facce sovrapposte (sfarfallio, commento del 30/10)
       box(x1, L / 2, 0, da, -0.05, 0.05, staffe()); // sostegno del raccordo
       // cappa di testa (foto dell'utente del 30/10): sopra piatta, fronte inclinato a 45° che scende allargandosi verso l'esterno,
       // bocca grigliata sotto il fronte
@@ -4340,7 +4343,7 @@ void main() {
     pcv(xp, 0.82, 0.18, [1, 0, 0]); valve(xp, 0.72, 0.36, [0, 1, 0], 0.045); // PCV1, V1
     add(new THREE.CylinderGeometry(0.038, 0.038, 0.045, 18), blu, xp + 0.03, 1.02, 0.46).rotation.z = Math.PI / 2; // trasmettitore di pressione
     // erogazione del liquido V2 / V2 BIS sopra la palla di ghiaccio (bianca: è ghiaccio, indicazione dell'utente)
-    valve(sx(-0.44) + 0.12, 1.24, -0.44, [0, 1, 0], 0.05, nero, true);
+    valve(sx(-0.44) + 0.12, 1.24, -0.44, [0, 1, 0], 0.05, nero, true); grp.children[grp.children.length - 1].traverse((o) => { o.userData.sfiato = true; }); // V2: easter egg dello sfiato
     valve(sx(-0.56) + 0.12, 1.22, -0.56, [0, 1, 0], 0.05, once('azoto|ottone', () => stdMat({ color: 0x8a6a3a, roughness: 0.4, metalness: 0.7 })), true);
     const ice = add(lumpyGeometry(7), ghiaccio, sx(-0.5) + 0.12, 1.05, -0.5); ice.scale.set(0.15, 0.12, 0.17);
     const uscita = new THREE.Object3D(); uscita.position.set(sx(-0.5) + 0.12, 1.0, -0.5); grp.add(uscita); outer.userData.uscita = uscita;
@@ -4403,7 +4406,10 @@ void main() {
     const panel = (w, h, x, z, rotY) => { const p = add(new THREE.PlaneGeometry(w, h), meshMat, x, g0 + h / 2, z, false); p.rotation.y = rotY; p.material.map.repeat.set(w / 0.4, h / 0.4); return p; };
     const wu = G.u[1] - G.u[0], wv = G.v[1] - G.v[0];
     panel(wu, gh, (G.u[0] + G.u[1]) / 2, -G.v[0], 0); panel(wu, gh, (G.u[0] + G.u[1]) / 2, -G.v[1], 0);
-    panel(wv, gh, G.u[0], -(G.v[0] + G.v[1]) / 2, Math.PI / 2); panel(wv, gh, G.u[1], -(G.v[0] + G.v[1]) / 2, Math.PI / 2);
+    panel(wv, gh, G.u[1], -(G.v[0] + G.v[1]) / 2, Math.PI / 2);
+    // lato u−: la rete c'è solo fuori dal vano della porticina (commento del 30/10: non va sovrapposta alla porta)
+    if (PD) { for (const [a, b] of [[G.v[0], PD.v[0]], [PD.v[1], G.v[1]]]) if (b - a > 0.02) panel(b - a, gh, G.u[0], -(a + b) / 2, Math.PI / 2); }
+    else panel(wv, gh, G.u[0], -(G.v[0] + G.v[1]) / 2, Math.PI / 2);
     // porticina sul lato u− (foto del 19/10/2026): telaio fisso verde scuro dalla soglia nel cordolo alla sommità della gabbia;
     // anta con griglia di piatti (maglie fitte sotto il traverso largo, solo montanti e due correnti sopra)
     const pv0 = PD ? PD.v[0] : vm - 0.6, pv1 = PD ? PD.v[1] : vm + 0.6, pb = PD ? Number(PD.soglia) || 0.12 : g0, pt = PD ? Number(PD.sommita) || g0 + gh : g0 + gh;
@@ -4412,7 +4418,7 @@ void main() {
     const a0 = pv0 + 0.08, a1 = pv1 - 0.08, b0 = pb + 0.04, b1 = pt - 0.08, mid = b0 + (b1 - b0) * 0.48, f0 = du0 + 0.01, f1 = du0 + 0.04;
     { // anta: gruppo col cardine sul lato a1 (nella passeggiata si apre col tasto F); le coordinate restano quelle della gabbia
       const hingeU = (du0 + du1) / 2, leaf = new THREE.Group(); leaf.position.set(hingeU, 0, -a1); grp.add(leaf);
-      leaf.userData.anta = { punta: [0, 0, a1 - a0] };
+      leaf.userData.anta = { punta: [0, 0, a1 - a0] }; cageLeaf = leaf;
       const lb = partAdder(leaf).box, box = (u0, u1, h0, h1, v0, v1, m) => lb(u0 - hingeU, u1 - hingeU, h0, h1, v0 - a1, v1 - a1, m);
     box(du0, du1, b0, b0 + 0.05, a0, a1, doorMat); box(du0, du1, b1 - 0.05, b1, a0, a1, doorMat);
     box(du0, du1, b0, b1, a0, a0 + 0.05, doorMat); box(du0, du1, b0, b1, a1 - 0.05, a1, doorMat);
@@ -4461,6 +4467,43 @@ void main() {
     for (const hh of [0.15, 1.05]) { const r = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, L, 8), zinc); r.rotation.z = Math.PI / 2; r.position.set(L / 2, hh, 0); g.add(r); }
     for (let x = 0; x <= L + 0.01; x += 0.16) { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.9, 6), zinc); b.position.set(x, 0.6, 0); g.add(b); }
     return g;
+  }
+  /* easter egg (commento del 30/10): con la porticina della gabbia aperta, un clic sulla valvola V2 del serbatoio sfiata l'azoto: nebbia
+     bianca bassa (all'altezza dei pantaloni) che esce dalla valvola e si allarga fino a farsi fitta, poi si dirada */
+  let cageLeaf = null, fog = null;
+  function startFog(pos) {
+    if (fog) { scene.remove(fog.group); fog = null; }
+    const tex = courtOnce('azoto|nebbia', () => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,255,0.9)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); });
+    const group = new THREE.Group(), parts = [];
+    for (let i = 0; i < 70; i += 1) {
+      const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false }));
+      const a = Math.random() * Math.PI * 2; m.position.copy(pos); group.add(m);
+      parts.push({ m, a, v: 0.5 + Math.random() * 1.2, d: Math.random() * 1.5, y: 0.15 + Math.random() * 0.55 });
+    }
+    scene.add(group); fog = { group, parts, t: 0, pos: pos.clone() };
+  }
+  function updateFog(dt) {
+    if (!fog) return;
+    fog.t += dt; const t = fog.t, life = 40;
+    for (const p of fog.parts) {
+      const tt = Math.max(0, t - p.d), r = Math.min(6, p.v * Math.sqrt(tt) * 1.6), fade = Math.min(1, tt * 2) * Math.max(0, 1 - Math.max(0, t - life * 0.6) / (life * 0.4));
+      p.m.position.set(fog.pos.x + Math.cos(p.a) * r, (fog.groundY || 0) + p.y + Math.max(0, 1.1 - tt * 1.5), fog.pos.z + Math.sin(p.a) * r); // esce dalla valvola e scende a terra
+      const sz = 0.6 + r * 0.8; p.m.scale.set(sz, sz * 0.45, 1); p.m.material.opacity = 0.55 * fade;
+    }
+    if (t > life) { scene.remove(fog.group); fog = null; }
+  }
+  function setupFogClick() {
+    const rc = new THREE.Raycaster(), ndc = new THREE.Vector2(); let d0 = null;
+    renderer.domElement.addEventListener('pointerdown', (e) => { d0 = [e.clientX, e.clientY]; });
+    renderer.domElement.addEventListener('pointerup', (e) => {
+      if (!d0 || Math.hypot(e.clientX - d0[0], e.clientY - d0[1]) > 6 || !courtyardModel) return;
+      if (!(cageLeaf && cageLeaf.userData.anta && cageLeaf.userData.anta.aperta)) return; // prima si apre la porticina
+      const r = renderer.domElement.getBoundingClientRect(); ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      rc.setFromCamera(ndc, camera);
+      const hit = rc.intersectObject(courtyardModel, true).find((h) => h.object.userData.sfiato);
+      if (!hit) return;
+      startFog(hit.point); fog.groundY = hit.point.y - 1.2; // il serbatoio ha la valvola a circa 1,2 m da terra
+    });
   }
   async function loadCourtyardModel() {
     if (!courtyardFrame) return;
@@ -4666,13 +4709,15 @@ void main() {
     // evaporatori alettati dietro il silos (models/tubi-glb.json, modello dell'utente DVAP3: 6 tubi 3 × 2 con le valvole):
     // `tubi` = il modello intero, `tubi4` = dall'altro lato dei 6, gruppo da 4 (2 × 2) dello stesso modello; il serpentino HE1 sotto
     // il serbatoio usa una fila da 3 coricata. `colonne` e `file` scelgono quanti tubi tenere (colonne lungo la fila da 3, file da 2)
+    const banks = {};
     for (const key of ['tubi', 'tubi4']) {
       const TB = M[key]; if (!TB || TB.rimosso) continue;
       const slot = new THREE.Group(); slot.name = key;
       slot.position.set(Number(TB.u) || 0, Number(TB.base) || 0, -(Number(TB.v) || 0));
       slot.rotation.y = (Number(TB.ruota) || 0) * Math.PI / 180;
       slot.scale.setScalar(Number(TB.scala) || 1);
-      court.add(slot);
+      if (Number(TB.altezza) > 0) slot.scale.y *= Number(TB.altezza) / 1.67; // matrici più alte del modello (commento del 30/10)
+      court.add(slot); banks[key] = slot;
       loadTubiSubset(Number(TB.colonne) || 3, Number(TB.file) || 2).then((m) => {
         if (!m || courtyardModel !== holder) return; // modello non disponibile o cortile già ricostruito
         slot.add(m.clone(true));
@@ -4680,9 +4725,25 @@ void main() {
     }
     if (tank.userData.serpentino) loadTubiSubset(3, 1).then((m) => {
       if (!m || courtyardModel !== holder) return;
-      const c = m.clone(true); c.rotation.z = -Math.PI / 2; c.position.y = 0.11; // coricata: l'asse dei tubi verso il quadro
+      const c = m.clone(true), k = 0.55; c.scale.setScalar(k); c.rotation.z = -Math.PI / 2; c.position.y = 0.11 * k; // coricata, parallela al terreno, più piccola
       tank.userData.serpentino.add(c);
     });
+    // linea continua come nello schema: erogazione V2 (palla di ghiaccio) → tubo a terra coperto di ghiaccio → evaporatore da 6 →
+    // evaporatore da 4 → uscita del gas verso il portico
+    {
+      holder.updateMatrixWorld(true);
+      const P = (o, x = 0, y = 0, z = 0) => court.worldToLocal(o.localToWorld(new THREE.Vector3(x, y, z)));
+      const ice = courtOnce('azoto|ghiaccio', () => stdMat({ color: 0xf4f8fb, roughness: 0.8, emissive: 0x2e3438 })), inox = courtOnce('azoto|inox', () => stdMat({ color: 0xc8ccd0, roughness: 0.3, metalness: 0.8 }));
+      const line = (pts, r, mat) => { for (let i = 0; i < pts.length - 1; i += 1) { const a = pts[i], b = pts[i + 1], l = a.distanceTo(b); if (l < 1e-3) continue; const m = add(new THREE.CylinderGeometry(r, r, l, 10), mat, (a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize()); } for (const q of pts.slice(1, -1)) add(new THREE.SphereGeometry(r, 10, 8), mat, q.x, q.y, q.z); };
+      const out = tank.userData.uscita && P(tank.userData.uscita), b6 = banks.tubi, b4 = banks.tubi4, y = (Number(M.serbatoio.suolo) || 0.36) + 0.08;
+      if (out && b6) {
+        const in6 = P(b6, 0.33, 0, 0), end6 = P(b6, -0.33, 0, 0); in6.y = end6.y = y;
+        const via = new THREE.Vector3(out.x, y, out.z), sud = new THREE.Vector3(out.x, y, Math.max(out.z, in6.z)), est = new THREE.Vector3(in6.x, y, sud.z);
+        line([out, via, sud, est, in6], 0.045, ice);
+        if (b4) { const in4 = P(b4, 0.22, 0, 0); in4.y = y; line([end6, new THREE.Vector3(end6.x, y, in4.z), in4], 0.02, inox);
+          const e4 = P(b4, -0.22, 0, 0); e4.y = y; line([e4, new THREE.Vector3(e4.x, y, e4.z - 0.25), new THREE.Vector3(e4.x, 4.45, e4.z - 0.25)], 0.02, inox); }
+      }
+    }
 
     scene.add(holder);
     courtyardModel = holder;
@@ -4925,6 +4986,7 @@ void main() {
     updateMinerva(performance.now());
     updateWater(performance.now());
     updateFountains(performance.now());
+    { const now = performance.now(); updateFog(Math.min(0.1, (now - (renderFrame.last || now)) / 1000)); renderFrame.last = now; }
     if (frameHook) frameHook(); else { freeView(); controls.update(); }
     if (splatMat) splatMat.uniforms.uPx.value = renderer.domElement.height / 2;
     renderer.render(scene, camera);

@@ -107,7 +107,8 @@
   "base": 0.36,
   "colonne": 3,
   "file": 2,
-  "nota": "Evaporatore alettato dietro il silos: modello dell'utente intero (USDZ SystemPreviewAxO6vL, DVAP3, 6 tubi 3x2 con le valvole) in models/tubi-glb.json. Ripristinato il 27/10/2026 dopo l'eliminazione dall'editor: dentro la gabbia, fra il serbatoio e la rete lato corridoio (l'utente l'aveva messo in u 15,79 v 6,74)."
+  "nota": "Evaporatore alettato dietro il silos: modello dell'utente intero (USDZ SystemPreviewAxO6vL, DVAP3, 6 tubi 3x2 con le valvole) in models/tubi-glb.json. Ripristinato il 27/10/2026 dopo l'eliminazione dall'editor: dentro la gabbia, fra il serbatoio e la rete lato corridoio (l'utente l'aveva messo in u 15,79 v 6,74).",
+  "altezza": 3.2
  },
  "gabbia": {
   "u": [
@@ -147,11 +148,11 @@
    "u": 5.09,
    "larghezza": 1.0,
    "altezza": 0.5,
-   "profondita": 0.23,
+   "profondita": 0.45,
    "h0": 0.42,
    "tuboRosso": 0.78
   },
-  "nota_cassetta": "Cassetta antincendio (bocciolone, vetro scuro in cornice di alluminio) addossata alla faccia su strada del muretto, a sinistra del varco (commento con foto 22/10: u 5.09, h 0.67). Misure stimate dalla foto (cassetta circa 100 x 50 cm, a filo con la sommita del muretto) da confermare; il tubo rosso a sinistra corre a h 0.78. Nella foto le barre della ringhiera sono color crema.",
+  "nota_cassetta": "Cassetta antincendio (bocciolone, vetro scuro in cornice di alluminio) addossata alla faccia su strada del muretto, a sinistra del varco (commento con foto 22/10: u 5.09, h 0.67). Misure stimate dalla foto (cassetta circa 100 x 50 cm, a filo con la sommita del muretto) da confermare; il tubo rosso a sinistra corre a h 0.78. Nella foto le barre della ringhiera sono color crema. 30/10: profondità portata a 0,45 m (commento: «molto più sporgente, quasi il doppio»).",
   "nota_sporgenza": "Muretto e ringhiera si prolungano di \"sporgenza\" metri oltre i muri del cortile (u 0.2 e 16.6), con lo stesso passo delle barre (3 barre per lato), per chiudere il vuoto fra cancellata e ala (commento utente 21/10/2026).",
   "nota": "Cancello a U: anta principale arretrata di \"rientro\" metri verso il cortile, collegata al muretto da due cancelletti pedonali perpendicolari."
  },
@@ -343,6 +344,7 @@
   "base": 0.36,
   "colonne": 2,
   "file": 2,
-  "nota": "Dall'altro lato dei 6, gruppo da 4 tubi (2x2) dello stesso modello (indicazione dell'utente del 27/10/2026)."
+  "nota": "Dall'altro lato dei 6, gruppo da 4 tubi (2x2) dello stesso modello (indicazione dell'utente del 27/10/2026).",
+  "altezza": 3.2
  }
 }

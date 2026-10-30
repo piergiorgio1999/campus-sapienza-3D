@@ -713,17 +713,16 @@
   }
   /* tetti stilizzati (30/10/2026, richiesta dell'utente): come le facciate, niente foto aerea. Guaina grigio chiaro a teli di 1 m con i
      sormonti, qualche toppa e colatura, ripetuta in metri sulle UV dell'ortofoto (i tetti usano già quelle coordinate) */
-  function stylizedRoofTexture() {
+  function stylizedRoofTexture(blu) {
+    // guaina a teli di 1 m, paralleli: grigio-azzurra sulla Ginestra (foto dell'utente del 30/10), chiara sul resto di CU014
     const tile = 8, c = document.createElement('canvas'); c.width = c.height = 512;
-    const ctx = c.getContext('2d'), px = 512 / tile;
-    ctx.fillStyle = '#b9b6ae'; ctx.fillRect(0, 0, 512, 512);
-    for (let i = 0; i < 2600; i += 1) { const v = 150 + Math.floor(70 * hash01(i, 91)); ctx.fillStyle = `rgba(${v},${v - 3},${v - 9},0.35)`; ctx.fillRect(hash01(i, 92) * 512, hash01(i, 93) * 512, 2, 2); }
-    for (let k = 0; k < tile; k += 1) { // teli: sormonto più scuro e riga chiara
-      ctx.fillStyle = 'rgba(80,78,72,0.45)'; ctx.fillRect(0, k * px, 512, 3);
-      ctx.fillStyle = 'rgba(235,232,224,0.35)'; ctx.fillRect(0, k * px + 3, 512, 2);
-      for (let j = 0; j < 2; j += 1) { const x = (hash01(k, 94 + j) * 512) | 0; ctx.fillStyle = 'rgba(80,78,72,0.4)'; ctx.fillRect(x, k * px, 2, px); }
+    const ctx = c.getContext('2d'), px = 512 / tile, base = blu ? [140, 148, 162] : [185, 182, 174];
+    ctx.fillStyle = `rgb(${base})`; ctx.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 2600; i += 1) { const d = Math.floor(24 * hash01(i, 91)) - 12; ctx.fillStyle = `rgba(${base.map((x) => x + d)},0.35)`; ctx.fillRect(hash01(i, 92) * 512, hash01(i, 93) * 512, 2, 2); }
+    for (let k = 0; k < tile; k += 1) {
+      ctx.fillStyle = 'rgba(40,44,54,0.28)'; ctx.fillRect(0, k * px, 512, 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(0, k * px + 2, 512, 2);
     }
-    for (let i = 0; i < 7; i += 1) { ctx.fillStyle = `rgba(${hash01(i, 97) > 0.5 ? '120,118,110' : '210,207,198'},0.35)`; ctx.fillRect(hash01(i, 98) * 460, hash01(i, 99) * 460, 30 + 50 * hash01(i, 100), 20 + 40 * hash01(i, 101)); }
     const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(((ORTHO_BOUNDS.east - ORTHO_BOUNDS.west) * metersPerLon) / tile, ((ORTHO_BOUNDS.north - ORTHO_BOUNDS.south) * metersPerLat) / tile);
     return t;
@@ -1128,23 +1127,25 @@
      per pixel contro 1 m dell'ortofoto AGEA). Dentro il riquadro della foto i tetti la usano al posto dell'ortofoto, con una sfumatura
      ai bordi. `m` porta le coordinate dell'ortofoto dei tetti (applyRoofUVs: 0…1 su ORTHO_BOUNDS) in quelle della foto (s, t: 0…1, t dal
      basso): la foto è agganciata alla quota dei tetti sugli estremi dell'arco del ventaglio della sagoma OSM di CU014. */
-  const ROOF_PHOTOS = []; // 30/10: i tetti sono stilizzati come le facciate (stylizedRoofTexture); la foto dall'alto della Ginestra resta in tex/ come riferimento
+  const ROOF_PHOTOS = [{ src: 'tex/tetto-ginestra-maschera.png', m: [[17.251845, 4.706138, -6.467596], [-8.880557, 15.982978, -2.577765]], sfuma: 0.03 }]; // 30/10: maschera del tetto della Ginestra (guaina grigio-azzurra), nel riquadro della vecchia foto
   function withRoofPhotos(mat) {
     const P = ROOF_PHOTOS[0];
     if (!P) return mat;
     const tex = new THREE.TextureLoader().load(P.src, () => { mat.userData.fotoPronta = true; if (mat.userData.shader) mat.userData.shader.uniforms.roofPhotoOn.value = 1; });
-    tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 8; tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.anisotropy = 8; tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping; const blu = stylizedRoofTexture(true);
     mat.onBeforeCompile = (shader) => {
       Object.assign(shader.uniforms, { roofPhoto: { value: tex }, roofPhotoS: { value: new THREE.Vector3(...P.m[0]) }, roofPhotoT: { value: new THREE.Vector3(...P.m[1]) },
-        roofPhotoFade: { value: P.sfuma }, roofPhotoOn: { value: mat.userData.fotoPronta ? 1 : 0 } });
+        roofPhotoFade: { value: P.sfuma }, roofBlu: { value: blu }, roofRep: { value: blu.repeat.clone() }, roofPhotoOn: { value: mat.userData.fotoPronta ? 1 : 0 } });
       shader.fragmentShader = shader.fragmentShader.replace('#include <map_pars_fragment>', `#include <map_pars_fragment>
-uniform sampler2D roofPhoto; uniform vec3 roofPhotoS; uniform vec3 roofPhotoT; uniform float roofPhotoFade; uniform float roofPhotoOn;`)
+uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; uniform vec3 roofPhotoS; uniform vec3 roofPhotoT; uniform float roofPhotoFade; uniform float roofPhotoOn;`)
         .replace('#include <map_fragment>', `#ifdef USE_MAP
   vec4 texelColor = texture2D( map, vUv );
-  vec2 fq = vec2( dot( roofPhotoS, vec3( vUv, 1.0 ) ), dot( roofPhotoT, vec3( vUv, 1.0 ) ) );
+  vec2 ou = vUv / roofRep; // vUv è già ripetuta dalla mappa (teli): torna alle coordinate dell'ortofoto
+  vec2 fq = vec2( dot( roofPhotoS, vec3( ou, 1.0 ) ), dot( roofPhotoT, vec3( ou, 1.0 ) ) );
   if ( roofPhotoOn > 0.5 && fq.x > 0.0 && fq.x < 1.0 && fq.y > 0.0 && fq.y < 1.0 ) {
     vec2 e = min( fq, 1.0 - fq ) / roofPhotoFade;
-    texelColor = mix( texelColor, texture2D( roofPhoto, fq ), clamp( min( e.x, e.y ), 0.0, 1.0 ) );
+    float k = texture2D( roofPhoto, fq ).r * clamp( min( e.x, e.y ), 0.0, 1.0 );
+    texelColor = mix( texelColor, texture2D( roofBlu, vUv ), k );
   }
   texelColor = mapTexelToLinear( texelColor );
   diffuseColor *= texelColor;
@@ -3346,12 +3347,14 @@ uniform sampler2D roofPhoto; uniform vec3 roofPhotoS; uniform vec3 roofPhotoT; u
       for (let i = 1; i < n; i += 1) { const x = x0 + ((x1 - x0) * i) / n; box(x - 0.02, x + 0.02, H + 0.05, H + 0.08, -W / 2 + 0.06, W / 2 - 0.06, zincoScuro()); } // coprigiunti
       kitUV(add(sectionTaper(x1, L / 2, [base + 0.05, H - 0.05, W / 2 - 0.05], [da, dh, dw / 2]), steel, 0, 0, 0));
       box(x1, L / 2, 0, da, -0.05, 0.05, staffe()); // sostegno del raccordo
-      const hh = base + (H - base) * 0.62, hw = W * 0.7; // cappa
-      kitUV(box(-L / 2 + 0.03, x0, base, hh, -hw / 2, hw / 2, steel));
-      kitUV(box(-L / 2 - 0.05, x0 + 0.05, hh, hh + 0.05, -hw / 2 - 0.06, hw / 2 + 0.06, zincoScuro())); // tesa
-      box(-L / 2, -L / 2 + 0.03, base + 0.1, hh - 0.1, -hw / 2 + 0.08, hw / 2 - 0.08, dark); // griglia
-      const nl = Math.max(3, Math.round((hh - base) / 0.12));
-      for (let i = 1; i < nl; i += 1) { const y = base + 0.1 + ((hh - base - 0.2) * i) / nl; box(-L / 2 - 0.02, -L / 2 + 0.03, y - 0.012, y + 0.012, -hw / 2 + 0.08, hw / 2 - 0.08, zincoScuro()); } // lamelle
+      // cappa di testa (foto dell'utente del 30/10): sopra piatta, fronte inclinato a 45° che scende allargandosi verso l'esterno,
+      // bocca grigliata sotto il fronte
+      const hh = base + (H - base) * 0.62, hw = W * 0.8, sl = hh - base, top = Math.max(0.1, e - sl * 0.25);
+      const prof = new THREE.Shape(); prof.moveTo(x0, base); prof.lineTo(x0 - top - sl, base); prof.lineTo(x0 - top, hh); prof.lineTo(x0, hh); prof.lineTo(x0, base);
+      const hood = new THREE.ExtrudeGeometry(prof, { depth: hw, bevelEnabled: false }); hood.translate(0, 0, -hw / 2);
+      kitUV(add(hood, steel, 0, 0, 0));
+      const face = add(new THREE.PlaneGeometry(sl * Math.SQRT2 * 0.8, hw * 0.85), dark, x0 - top - sl / 2 - 0.006, (base + hh) / 2 - 0.004, 0);
+      face.rotation.set(0, -Math.PI / 2, 0); face.rotateX(Math.PI / 4); // griglia sul fronte inclinato
     }) },
     // unità esterna: telaio in lamiera del kit, una ventola ogni quadrato lungo il lato più lungo (nelle foto: due ventole per unità)
     ventilatore: { nome: 'Unità esterna da tetto (ventole sopra)', crea: (pr) => group((g) => {
@@ -3378,6 +3381,13 @@ uniform sampler2D roofPhoto; uniform vec3 roofPhotoS; uniform vec3 roofPhotoT; u
       const [L, W, H] = ductDims(pr, 0.7, 0.7, 0.75), { add } = partAdder(g), R = Math.min(L, W) / 2;
       add(new THREE.CylinderGeometry(R * 0.32, R * 0.32, H * 0.5, 16), zinco(), 0, H * 0.25, 0);
       add(new THREE.CylinderGeometry(R, R * 0.32, H * 0.5, 24), zinco(), 0, H * 0.75, 0);
+    }) },
+    // bocca di ripresa in cima a un montante: cappello a tramoggia rovesciata (punta in basso), come in fondo al canale nord (foto del 30/10)
+    cappelloPiramide: { nome: 'Bocca a cappello piramidale su montante', crea: (pr) => group((g) => {
+      const [L, W, H] = ductDims(pr, 0.8, 0.8, 1.6), { box, add } = partAdder(g), c = Math.min(L, W), hp = Math.min(c * 0.7, H * 0.4);
+      kitUV(box(-c * 0.25, c * 0.25, 0, H - hp, -c * 0.25, c * 0.25, kitSteel()));
+      const cone = add(new THREE.ConeGeometry(c * 0.71, hp, 4, 1), kitSteel(), 0, H - hp / 2, 0); cone.rotation.set(Math.PI, Math.PI / 4, 0);
+      kitUV(box(-c / 2, c / 2, H - 0.03, H, -c / 2, c / 2, zincoScuro()));
     }) },
     curvaCondotta: { nome: 'Curva della condotta verso l’alto, con cappello', crea: (pr) => group((g) => {
       const [L, W, H] = ductDims(pr, 1.5, 1, 2.2), { box } = partAdder(g), s = Math.min(0.25, H * 0.1), d = Math.min(W, L * 0.6), hs = Math.min(0.8, H * 0.4);

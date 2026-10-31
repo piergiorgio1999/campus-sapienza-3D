@@ -1963,14 +1963,32 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
     const b = lookup.get(code), n0 = buildingGroup.children.length;
     if (code === 'CU014' && b) {
       for (const { shape, h, y0 } of parts) addCodedShape(shape, feature, props, code, b, h, y0);
-      if (solido && solido.cornici) { // cornici di travertino: lastre di 45 cm (10 cm a sbalzo), 12 cm sopra il tetto
-        const f = cuFrame(), mat = travPhoto(2.4);
-        for (const c of solido.cornici) {
-          const dx = c.b[0] - c.a[0], dv = c.b[1] - c.a[1], L = Math.hypot(dx, dv), off = 0.1 - 0.225; // centro della lastra verso l'interno
-          const m = f.toXN([(c.a[0] + c.b[0]) / 2 + c.o[0] * off, (c.a[1] + c.b[1]) / 2 + c.o[1] * off]), p0 = f.toXN(c.a), p1 = f.toXN(c.b);
-          const box = new THREE.Mesh(new THREE.BoxGeometry(L + 0.45, 0.16, 0.45), mat);
-          box.position.set(m.x, 0.04 + c.h + 0.06, -m.n); box.rotation.y = Math.atan2(p1.n - p0.n, p1.x - p0.x);
-          box.castShadow = true; box.receiveShadow = true; buildingGroup.add(box);
+      if (solido && solido.cornici) { // cornici di travertino: lastra orizzontale larga 45 cm (10 fuori dal muro), 16 cm, raccordata ad angolo
+        const f = cuFrame(), mat = travPhoto(2.4), OUT = 0.1, IN = 0.35;
+        const off = (e, d) => [[e.a[0] + e.nx * d, e.a[1] + e.ny * d], [e.b[0] + e.nx * d, e.b[1] + e.ny * d]];
+        const meet = (p, q, r, t) => { // intersezione delle rette p-q e r-t (null se parallele)
+          const d = (q[0] - p[0]) * (t[1] - r[1]) - (q[1] - p[1]) * (t[0] - r[0]); if (Math.abs(d) < 1e-6) return null;
+          const k = ((r[0] - p[0]) * (t[1] - r[1]) - (r[1] - p[1]) * (t[0] - r[0])) / d; return [p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k];
+        };
+        for (const { ed, h } of solido.cornici) {
+          const n = ed.length;
+          ed.forEach((e, i) => {
+            if (!e || !e.on) return;
+            const pts = {};
+            for (const [d, key] of [[OUT, 'o'], [-IN, 'i']]) {
+              const [p, q] = off(e, d); let s0 = p, s1 = q;
+              const pr = ed[(i - 1 + n) % n], nx = ed[(i + 1) % n];
+              if (pr && pr.on) { const [pp, pq] = off(pr, d); s0 = meet(pp, pq, p, q) || p; }
+              if (nx && nx.on) { const [np, nq] = off(nx, d); s1 = meet(p, q, np, nq) || q; }
+              pts[key] = [s0, s1];
+            }
+            const quad = [pts.o[0], pts.o[1], pts.i[1], pts.i[0]].map((q) => f.toXN(q));
+            const v2 = quad.map((q) => new THREE.Vector2(q.x, q.n)); if (THREE.ShapeUtils.isClockWise(v2)) v2.reverse();
+            const sh = new THREE.Shape(v2);
+            const g = new THREE.ExtrudeGeometry(sh, { depth: 0.16, bevelEnabled: false }); g.rotateX(-Math.PI / 2); g.translate(0, 0.04 + h - 0.02, 0);
+            planarUVs(g, 2.4);
+            const m = new THREE.Mesh(g, mat); m.castShadow = true; m.receiveShadow = true; buildingGroup.add(m);
+          });
         }
       }
       for (const o of buildingGroup.children.slice(n0)) o.userData.cuCorpo = true; return;
@@ -2060,11 +2078,17 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
       // cornice di travertino (commento del 30/10): lastra orizzontale sopra i muri, dove il tetto confina col vuoto o con un'ala più bassa
       const cornice = (poly, h) => {
         const hh = h > 0 ? h : 0;
-        for (const ring of poly) for (let i = 0; i < ring.length - 1; i += 1) {
-          const [a, b] = [ring[i], ring[i + 1]], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 0.3) continue;
-          const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], nx = -(b[1] - a[1]) / L, ny = (b[0] - a[0]) / L;
-          let o = [m[0] + nx * 0.3, m[1] + ny * 0.3]; if (inMulti([poly], o)) o = [m[0] - nx * 0.3, m[1] - ny * 0.3];
-          if (!inMulti(full, o) || cuAltezzaIn(o[0], o[1]) < hh - 0.5) cornici.push({ a, b, o: [(o[0] - m[0]) / 0.3, (o[1] - m[1]) / 0.3], h: hh });
+        for (const ring0 of poly) {
+          const ring = ring0.slice(0, -1), n = ring.length, ed = []; if (n < 3) continue;
+          for (let i = 0; i < n; i += 1) {
+            const a = ring[i], b = ring[(i + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+            if (L < 1e-3) { ed.push(null); continue; }
+            const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; let nx = -(b[1] - a[1]) / L, ny = (b[0] - a[0]) / L;
+            if (inMulti([poly], [m[0] + nx * 0.3, m[1] + ny * 0.3])) { nx = -nx; ny = -ny; } // normale verso fuori
+            const o = [m[0] + nx * 0.3, m[1] + ny * 0.3];
+            ed.push({ a, b, nx, ny, on: !inMulti(full, o) || cuAltezzaIn(o[0], o[1]) < hh - 0.5 });
+          }
+          if (ed.some((e) => e && e.on)) cornici.push({ ed, h: hh });
         }
       };
       const push = (multi, h) => {

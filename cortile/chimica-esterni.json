@@ -1953,7 +1953,6 @@
    "modello": "cancelloScala",
    "ruota": 0,
    "angolo": 340.11,
-   "colore": "#a8492b",
    "box": {
     "u0": 15.51,
     "u1": 17.35,
@@ -2556,7 +2555,6 @@
    "modello": "cancelloScala",
    "ruota": 0,
    "angolo": 199.89,
-   "colore": "#a8492b",
    "box": {
     "u0": 40.09,
     "u1": 41.93,
@@ -2802,7 +2800,6 @@
    "modello": "cancelloScala",
    "ruota": 0,
    "angolo": 248.71,
-   "colore": "#a8492b",
    "box": {
     "u0": 14.7,
     "u1": 15.9,
@@ -2820,7 +2817,6 @@
    "modello": "cancelloScala",
    "ruota": 0,
    "angolo": 291.29,
-   "colore": "#a8492b",
    "box": {
     "u0": 41.54,
     "u1": 42.74,
@@ -3340,7 +3336,6 @@
    "modello": "corrimano",
    "ruota": 0,
    "angolo": 166.18,
-   "colore": "#a8492b",
    "box": {
     "u0": 18.06,
     "u1": 21.97,
@@ -3359,7 +3354,6 @@
    "ruota": 0,
    "angolo": 13.82,
    "specchio": "v",
-   "colore": "#a8492b",
    "box": {
     "u0": 35.47,
     "u1": 39.38,
@@ -3409,7 +3403,6 @@
    "modello": "corrimano",
    "ruota": 0,
    "angolo": 346.98,
-   "colore": "#1d1f20",
    "box": {
     "u0": 17.57,
     "u1": 23.75,
@@ -3428,7 +3421,6 @@
    "ruota": 0,
    "angolo": 193.02,
    "specchio": "v",
-   "colore": "#1d1f20",
    "box": {
     "u0": 33.69,
     "u1": 39.87,

@@ -983,13 +983,15 @@
     }
     return tex;
   }
+  // un'apertura «scavata» nel muro (nicchia del catalogo) segna lo stencil a 1: lì le facciate non si disegnano e si vede la rientranza
+  const FORO_STENCIL = { stencilWrite: true, stencilRef: 1, stencilFunc: 517, stencilWriteMask: 0 }; // 517 = THREE.NotEqualStencilFunc (THREE qui non è ancora caricato)
   function createFacadeSets() {
     facadeSets = {};
     for (const [name, p] of Object.entries(FACADE_PALETTES)) {
       facadeSets[name] = [0, 1].map((seed) => ({
-        body: new THREE.MeshStandardMaterial({ map: windowCanvas(p, seed + 1), roughness: 0.88, metalness: 0, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }),
-        base: new THREE.MeshStandardMaterial({ map: baseCanvas2(p, seed + 1), roughness: 0.9, metalness: 0, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }),
-        attic: new THREE.MeshStandardMaterial({ color: new THREE.Color(p.attic).convertSRGBToLinear(), roughness: 0.8, metalness: 0, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }),
+        body: new THREE.MeshStandardMaterial({ map: windowCanvas(p, seed + 1), roughness: 0.88, metalness: 0, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, ...FORO_STENCIL }),
+        base: new THREE.MeshStandardMaterial({ map: baseCanvas2(p, seed + 1), roughness: 0.9, metalness: 0, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, ...FORO_STENCIL }),
+        attic: new THREE.MeshStandardMaterial({ color: new THREE.Color(p.attic).convertSRGBToLinear(), roughness: 0.8, metalness: 0, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, ...FORO_STENCIL }),
       }));
     }
   }
@@ -1029,7 +1031,7 @@
     const key = `${name}|${kind}|${tipo}`;
     if (patchMats.has(key)) return patchMats.get(key);
     const p = FACADE_PALETTES[name] || FACADE_PALETTES.cortina;
-    const common = { roughness: 0.88, metalness: 0, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 };
+    const common = { roughness: 0.88, metalness: 0, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, ...FORO_STENCIL };
     const mat = tipo === 'finestra' ? new THREE.MeshStandardMaterial(Object.assign({ map: singleWindowTex(p, kind), transparent: true, alphaTest: 0.4 }, common))
       : tipo === 'facciata' && kind !== 'attic' ? new THREE.MeshStandardMaterial(Object.assign({ map: kind === 'base' ? baseCanvas2(p, 1) : windowCanvas(p, 1) }, common)) // un muro con un'altra texture, finestre comprese
       : kind === 'attic' ? new THREE.MeshStandardMaterial(Object.assign({ color: new THREE.Color(p.attic).convertSRGBToLinear() }, common))
@@ -3607,6 +3609,37 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
       box(-W / 2, -W / 2 + 0.1, 0, H, -0.06, 0.06, frame); box(W / 2 - 0.1, W / 2, 0, H, -0.06, 0.06, frame);
       box(-W / 2 + 0.1, W / 2 - 0.1, 0.1, H - 0.1, -0.02, 0.02, glass);
       box(-0.02, 0.02, 0.1, H - 0.1, -0.035, 0.035, frame);
+    }) },
+    // finestra «a nastro» rientrante (commento con foto del 31/10, facciata ovest di CU014): un'unica apertura lunga quanto tre finestre,
+    // scavata nel muro (lo stencil toglie lì la facciata con le sue finestre dipinte), spalle e cielino in intonaco, davanzale e cornice
+    // chiari, tre serrande avvolgibili marroni abbassate in fondo. Coordinate come nel dato: u verso l'interno del muro (il muro è a u = 0,
+    // il davanzale sporge a u < 0), z = −v lungo la facciata. Le misure vengono dalla scatola, così l'oggetto non si stira.
+    nicchiaSerrande: { nome: 'Finestra a nastro rientrante con tre serrande', crea: (pr) => group((g) => {
+      const b = pr.box || {}, sp = 0.08, L = Math.max(1, (b.v1 - b.v0) || 9.2), H = Math.max(0.5, (b.h1 - b.h0) || 2.3), D = Math.max(0.1, ((b.u1 - b.u0) || 0.48) - sp);
+      const { box } = partAdder(g), part = (u0, u1, h0, h1, v0, v1, mat) => { const m = box(u0, u1, h0, h1, v0, v1, mat); m.castShadow = false; m.receiveShadow = false; return m; };
+      // partAdder: primo asse = x, terzo = −z; qui x = u (verso l'interno) e −z = v (lungo il muro)
+      const intonaco = courtOnce('nicchia|intonaco', () => plainMat('#a86c48', 0.95)), cielino = courtOnce('nicchia|cielino', () => plainMat('#7a4a30', 0.95));
+      const chiaro = courtOnce('nicchia|cornice', () => plainMat('#e6dcc8', 0.85)), trav = primitiveMaterial('travertino');
+      const serranda = courtOnce('nicchia|serranda', () => new THREE.MeshStandardMaterial({ roughness: 0.6, metalness: 0.15, map: canvasTex(64, 128, (ctx, w, h) => {
+        ctx.fillStyle = '#6e4632'; ctx.fillRect(0, 0, w, h); ctx.fillStyle = 'rgba(35,20,12,.45)'; for (let y = 2; y < h; y += 4) ctx.fillRect(0, y, w, 1);
+        ctx.fillStyle = 'rgba(255,230,200,.10)'; for (let y = 0; y < h; y += 4) ctx.fillRect(0, y, w, 1);
+      }, 1, 6) }));
+      const sill = 0.12, top = H, hv = L / 2, cf = 0.06; // davanzale alto 12 cm, cornice chiara larga 6 cm sul filo del muro
+      part(0, D, sill, top, -hv, -hv + 0.01, intonaco); part(0, D, sill, top, hv - 0.01, hv, intonaco); // spalle
+      part(0, D, top - 0.01, top, -hv, hv, cielino);                                                       // cielino
+      part(-sp, D, 0, sill, -hv, hv, trav);                                                                // davanzale in travertino, sporgente
+      for (const [v0, v1] of [[-hv - cf, -hv], [hv, hv + cf]]) part(-0.02, 0, 0, top + cf, v0, v1, chiaro); // cornice chiara ai lati
+      part(-0.02, 0, top, top + cf, -hv - cf, hv + cf, chiaro);                                             // e sopra
+      const w3 = L / 3;
+      for (let k = 0; k < 3; k += 1) {
+        const a = -hv + k * w3, m = part(D - 0.04, D, sill, top - 0.01, a + 0.04, a + w3 - 0.04, serranda); // serranda abbassata
+        part(D - 0.08, D - 0.04, sill, sill + 0.05, a + 0.04, a + w3 - 0.04, cielino);                        // battuta in basso
+        if (k) part(D - 0.1, D, sill, top, a - 0.05, a + 0.05, intonaco);                                    // montante fra due serrande
+        m.receiveShadow = false;
+      }
+      // maschera: segna lo stencil sull'apertura prima che si disegnino le facciate
+      const mask = new THREE.Mesh(new THREE.PlaneGeometry(L, top - sill), new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, depthTest: false, stencilWrite: true, stencilRef: 1, stencilFunc: THREE.AlwaysStencilFunc, stencilZPass: THREE.ReplaceStencilOp }));
+      mask.rotation.y = -Math.PI / 2; mask.position.set(-0.003, (sill + top) / 2, 0); mask.renderOrder = -10; mask.castShadow = false; mask.frustumCulled = false; g.add(mask);
     }) },
     // tubo rosso: orizzontale lungo x, oppure verticale se la scatola è più alta che lunga (montante); sfere ai capi per unirsi ai tubi vicini
     tuboRosso: { nome: 'Tubo rosso a muro', crea: (pr) => group((g) => {

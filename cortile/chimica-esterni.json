@@ -3430,6 +3430,23 @@
     "h1": 4.11
    },
    "nota": "Retro della Ginestra dalla scansione Scaniverse dell'utente del 23/10, seconda lettura (viste dall'alto tagliate a più quote, sezioni, media fra lato nord e sud specchiato), asse a −90° come la vista dall'alto del 27/10: misure in tools/ginestra_scale_da_scansione.py."
+  },
+  {
+   "id": "cu-ovest-nastro-1p",
+   "nome": "Finestra a nastro rientrante del primo piano (facciata ovest)",
+   "forma": "oggetto",
+   "modello": "nicchiaSerrande",
+   "cornice": "lato0",
+   "ruota": 0,
+   "box": {
+    "u0": -0.05,
+    "u1": 0.53,
+    "v0": -34.35,
+    "v1": -25.15,
+    "h0": 4.97,
+    "h1": 7.35
+   },
+   "nota": "Commento con foto del 31/10: al primo piano, verso l'angolo col cortile dell'azoto, le tre finestre delle campate 8-10 (dall'angolo nord) sono un'unica apertura rientrante con tre serrande marroni. La nicchia toglie le finestre dipinte della facciata (stencil) e ha spalle, cielino, davanzale e cornice chiara."
   }
  ]
 }

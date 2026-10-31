@@ -1961,7 +1961,20 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
     if (code && officialPlanCodes.has(code)) return;
     if (code === 'CU014') { cuDisegnato = true; if (solido) cuSolidoUsato = true; }
     const b = lookup.get(code), n0 = buildingGroup.children.length;
-    if (code === 'CU014' && b) { for (const { shape, h, y0 } of parts) addCodedShape(shape, feature, props, code, b, h, y0); for (const o of buildingGroup.children.slice(n0)) o.userData.cuCorpo = true; return; }
+    if (code === 'CU014' && b) {
+      for (const { shape, h, y0 } of parts) addCodedShape(shape, feature, props, code, b, h, y0);
+      if (solido && solido.cornici) { // cornici di travertino: lastre di 45 cm (10 cm a sbalzo), 12 cm sopra il tetto
+        const f = cuFrame(), mat = travPhoto(2.4);
+        for (const c of solido.cornici) {
+          const dx = c.b[0] - c.a[0], dv = c.b[1] - c.a[1], L = Math.hypot(dx, dv), off = 0.1 - 0.225; // centro della lastra verso l'interno
+          const m = f.toXN([(c.a[0] + c.b[0]) / 2 + c.o[0] * off, (c.a[1] + c.b[1]) / 2 + c.o[1] * off]), p0 = f.toXN(c.a), p1 = f.toXN(c.b);
+          const box = new THREE.Mesh(new THREE.BoxGeometry(L + 0.45, 0.16, 0.45), mat);
+          box.position.set(m.x, 0.04 + c.h + 0.06, -m.n); box.rotation.y = Math.atan2(p1.n - p0.n, p1.x - p0.x);
+          box.castShadow = true; box.receiveShadow = true; buildingGroup.add(box);
+        }
+      }
+      for (const o of buildingGroup.children.slice(n0)) o.userData.cuCorpo = true; return;
+    }
     if (!b) { if (insideCampus(polygonCentroid(outer))) for (const { shape } of parts) addContextPolygon(shape, props); return; } // edifici del quartiere: volumi uniti, non selezionabili
     for (const { shape, h } of parts) addCodedShape(shape, feature, props, code, b, h);
   }
@@ -1996,6 +2009,7 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
     return {
       toLocal: (q) => { const w = project(q), dx = w.x - a.x, dn = w.n - a.n; return [dx * tx + dn * tn, -dx * tn + dn * tx]; },
       toLL: ([u, v]) => { const x = a.x + u * tx - v * tn, n = a.n + u * tn + v * tx; return [(x + mapWidth / 2) / metersPerLon + bounds.west, (n + mapDepth / 2) / metersPerLat + bounds.south]; },
+      toXN: ([u, v]) => ({ x: a.x + u * tx - v * tn, n: a.n + u * tn + v * tx }),
     };
   }
   const rectRing = ([u0, v0, u1, v1]) => [[u0, v0], [u1, v0], [u1, v1], [u0, v1], [u0, v0]];
@@ -2041,16 +2055,28 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
         if (Lg && Number(Lg.rInterno) > 0) fuori.push([cuCorona(vent.centro, Number(Lg.rInterno), vent.raggioFacciata, Math.min(Lg.a0, Lg.a1), Math.max(Lg.a0, Lg.a1))]);
         rest = pc.difference(rest, ...fuori);
       }
-      const out = [];
+      const out = [], full = rest, cornici = [];
+      const inMulti = (m, p) => m.some((poly) => poly.length && pointInRing(p, poly[0]) && !poly.slice(1).some((hl) => pointInRing(p, hl)));
+      // cornice di travertino (commento del 30/10): lastra orizzontale sopra i muri, dove il tetto confina col vuoto o con un'ala più bassa
+      const cornice = (poly, h) => {
+        const hh = h > 0 ? h : 0;
+        for (const ring of poly) for (let i = 0; i < ring.length - 1; i += 1) {
+          const [a, b] = [ring[i], ring[i + 1]], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 0.3) continue;
+          const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], nx = -(b[1] - a[1]) / L, ny = (b[0] - a[0]) / L;
+          let o = [m[0] + nx * 0.3, m[1] + ny * 0.3]; if (inMulti([poly], o)) o = [m[0] - nx * 0.3, m[1] - ny * 0.3];
+          if (!inMulti(full, o) || cuAltezzaIn(o[0], o[1]) < hh - 0.5) cornici.push({ a, b, o: [(o[0] - m[0]) / 0.3, (o[1] - m[1]) / 0.3], h: hh });
+        }
+      };
       const push = (multi, h) => {
         for (const poly of multi) {
           if (!poly.length || polyArea(poly[0]) < 0.5) continue;
           const shape = makeShape(poly.map((r) => r.map(f.toLL)));
-          if (shape) out.push({ shape, h });
+          if (shape) { out.push({ shape, h }); cornice(poly, h); }
         }
       };
       for (const { multi, h } of cuAliSplit(rest, pc)) push(multi, h);
       for (const sc of sotto) { const n0 = out.length; for (const { multi, h } of cuAliSplit(sc.multi, pc)) push(multi, h); for (const o of out.slice(n0)) o.y0 = sc.y0; }
+      out.cornici = cornici;
       return out;
     } catch (_) { return null; }
   }

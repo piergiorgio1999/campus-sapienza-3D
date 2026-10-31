@@ -47,7 +47,7 @@
   "settori": [{ "id": "fronte", "a0": -120, "a1": -60 }],
   "loggia": {
    "nota": "Primo piano arretrato lungo tutto l'arco (commento 11: «almeno 3 se non 5 metri»; l'STL vede un piano a 3,2-3,6 m fino a r 34 sotto l'anfiteatro): la pagina toglie alla sagoma la corona fra rInterno e raggioFacciata fra a0 e a1 e la ricostruisce: piano terra, pavimento della loggia a balconata.quota, fondo rivestito di travertino, soffitto, volume sopra alle quote delle ali.",
-   "rInterno": 33.3, "a0": -117, "a1": -63
+   "rInterno": 33.3, "a0": -111.81, "a1": -68.19, "nota_estremi": "31/10: la loggia finisce dove finiscono le pensiline (e il sottoscala): oltre, il corpo scende pieno fino a terra"
   },
   "balconata": {
    "nota": "Piloni, balaustre e porte sono primitive dell'editor (id gin-pilone-…, gin-balaustra-…, gin-porta-…); qui le colonne servono ancora per arretrare il volume sopra la loggia fra il primo e l'ultimo pilone. Centro dell'arco: 4 piloni arancioni sul filo della facciata (0,9 × 0,9 m, salgono fino al tetto come lesene; sopra la loggia il volume fra i piloni è arretrato di `arretramento`), 3 parapetti di travertino fra i piloni, porte a vetri sul fondo della loggia (l'utente ricorda 3 o 4: qui una per campata). La balconata inizia appena prima del primo pilone, dove arrivano le scale.",

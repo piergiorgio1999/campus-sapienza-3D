@@ -1978,8 +1978,9 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
             for (const [d, key] of [[OUT, 'o'], [-IN, 'i']]) {
               const [p, q] = off(e, d); let s0 = p, s1 = q;
               const pr = ed[(i - 1 + n) % n], nx = ed[(i + 1) % n];
-              if (pr && pr.on) { const [pp, pq] = off(pr, d); s0 = meet(pp, pq, p, q) || p; }
-              if (nx && nx.on) { const [np, nq] = off(nx, d); s1 = meet(p, q, np, nq) || q; }
+              const near = (x, v) => x && Math.hypot(x[0] - v[0], x[1] - v[1]) < 0.8 ? x : null; // niente punte negli angoli acuti
+              if (pr && pr.on) { const [pp, pq] = off(pr, d); s0 = near(meet(pp, pq, p, q), p) || p; }
+              if (nx && nx.on) { const [np, nq] = off(nx, d); s1 = near(meet(p, q, np, nq), q) || q; }
               pts[key] = [s0, s1];
             }
             const quad = [pts.o[0], pts.o[1], pts.i[1], pts.i[0]].map((q) => f.toXN(q));
@@ -2073,7 +2074,9 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
         if (Lg && Number(Lg.rInterno) > 0) fuori.push([cuCorona(vent.centro, Number(Lg.rInterno), vent.raggioFacciata, Math.min(Lg.a0, Lg.a1), Math.max(Lg.a0, Lg.a1))]);
         rest = pc.difference(rest, ...fuori);
       }
-      const out = [], full = rest, cornici = [];
+      // il volume sopra la loggia (addCuVentaglio) conta come pieno per le cornici: niente lastra sul tetto lungo il fondo della loggia
+      const sopra = cuLoggiaSopra().map((z) => [cuCorona(vent.centro, z.r0, z.r1, z.b0, z.b1)]);
+      const out = [], full = sopra.length ? pc.union(rest, ...sopra) : rest, cornici = [];
       const inMulti = (m, p) => m.some((poly) => poly.length && pointInRing(p, poly[0]) && !poly.slice(1).some((hl) => pointInRing(p, hl)));
       // cornice di travertino (commento del 30/10): lastra orizzontale sopra i muri, dove il tetto confina col vuoto o con un'ala più bassa
       const cornice = (poly, h) => {
@@ -2100,6 +2103,8 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
       };
       for (const { multi, h } of cuAliSplit(rest, pc)) push(multi, h);
       for (const sc of sotto) { const n0 = out.length; for (const { multi, h } of cuAliSplit(sc.multi, pc)) push(multi, h); for (const o of out.slice(n0)) o.y0 = sc.y0; }
+      // cornice anche sul filo del volume sopra la loggia, così corre continua lungo tutto l'arco
+      for (const z of sopra) for (const { multi, h } of cuAliSplit(z, pc)) for (const poly of multi) if (poly.length && polyArea(poly[0]) >= 0.05) cornice(poly, h);
       out.cornici = cornici;
       return out;
     } catch (_) { return null; }
@@ -2150,6 +2155,25 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
     }
     return Number(cuSolido.altezzaBase) || 15;
   }
+  // impronta del volume sopra la loggia (coordinate del lato 0): fino alla facciata ai lati, arretrato fra il primo e l'ultimo pilone.
+  // La usano addCuVentaglio (volumi e soffitto) e cuSolidoParts (cornici), così le due cose combaciano.
+  function cuLoggiaSopra() {
+    const vent = cuSolido && cuSolido.ventaglio, B = vent && vent.balconata, Lg = vent && vent.loggia;
+    if (!vent || !B || !Lg || !(Number(Lg.rInterno) > 0)) return [];
+    const rf = Number(vent.raggioFacciata), ri = Number(Lg.rInterno), rc = rf - (Number(B.arretramento) || 0.4);
+    const lo = Math.min(Number(Lg.a0), Number(Lg.a1)), hi = Math.max(Number(Lg.a0), Number(Lg.a1));
+    const { cols, ha } = cuColonne();
+    const c0 = Math.max(lo, cols[0] - ha), c1 = Math.min(hi, cols[cols.length - 1] + ha);
+    return [{ r0: ri, r1: rf, b0: lo, b1: c0 }, { r0: ri, r1: rc, b0: c0, b1: c1 }, { r0: ri, r1: rf, b0: c1, b1: hi }].filter((z) => z.b1 - z.b0 > 1e-3);
+  }
+  // angoli dei piloni della balconata (gradi) e mezza larghezza angolare di un pilone sulla facciata
+  function cuColonne() {
+    const vent = cuSolido.ventaglio, B = vent.balconata, rf = Number(vent.raggioFacciata), col = B.colonne || {};
+    const a0 = Math.min(Number(B.a0), Number(B.a1)), a1 = Math.max(Number(B.a0), Number(B.a1)), nc = Math.max(2, Number(col.n) || 4);
+    const deg = (len) => (len / rf) * 180 / Math.PI, mg = deg(Number(col.margine) || 1.05), ha = deg((Number(col.larghezza) || 0.9) / 2), cols = [];
+    for (let i = 0; i < nc; i += 1) cols.push(a0 + mg + ((a1 - a0 - 2 * mg) * i) / (nc - 1));
+    return { cols, ha };
+  }
   /* fronte sud a ventaglio (cu014-solido.json → ventaglio; descrizione dell'utente, foto e commenti 10 e 11 del 22/10/2026).
      Il primo piano è arretrato lungo tutto l'arco (loggia profonda 4 m fra loggia.rInterno e la facciata, fondo rivestito di
      travertino): sotto il piano terra con le sue finestre, sopra il volume dell'anfiteatro che sporge fino al filo della facciata.
@@ -2194,9 +2218,7 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
     const F = Number(cuSolido.interpiano) > 0 ? Number(cuSolido.interpiano) : 3.425;
     const rf = Number(vent.raggioFacciata), ri = Number(Lg.rInterno) || rf - 4, q = Number(B.quota) || 4.4;
     const a0 = Math.min(Number(B.a0), Number(B.a1)), a1 = Math.max(Number(B.a0), Number(B.a1)), lo = Math.min(Number(Lg.a0), Number(Lg.a1)), hi = Math.max(Number(Lg.a0), Number(Lg.a1));
-    const col = B.colonne || {}, nc = Math.max(2, Number(col.n) || 4), cw = Number(col.larghezza) || 0.9, rc = rf - (Number(B.arretramento) || 0.4);
-    const mg = deg(Number(col.margine) || 1.05, rf), ha = deg(cw / 2, rf), cols = [];
-    for (let i = 0; i < nc; i += 1) cols.push(a0 + mg + ((a1 - a0 - 2 * mg) * i) / (nc - 1));
+    const { cols, ha } = cuColonne(), nc = cols.length;
     // dove passano le seconde rampe (primitive gin-…): sottoscala aperto nel piano terra e soletta della loggia aperta sopra la rampa
     const n = Math.max(4, Number(S && S.gradini) || 13), tread = Number(S && S.pedata) || 0.32;
     const [rU0, rU1] = S && Array.isArray(S.sottoscala) ? S.sottoscala.map(Number) : [rf - 1.9, rf];
@@ -2224,9 +2246,11 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
     // pavimento della loggia in travertino, aperto sopra le seconde rampe
     sector(ri, rU0, lo, hi, q - 0.15, q, trav);
     for (const [x, y] of minus(lo, hi, sides.map((d) => [d.aP, d.aG1]))) sector(rU0, rf, x, y, q - 0.15, q, trav); // aperta sopra rampe e pianerottolo (sopra c'è la pensilina)
-    // fondo della loggia rivestito di travertino e soffitto
+    // fondo e testate della loggia rivestiti di travertino; soffitto a quota unica, solo sotto il volume di sopra (niente lastre che sporgono)
+    const sopra = cuLoggiaSopra(), eL = deg(0.05, rf);
     sector(ri, ri + 0.05, lo, hi, q, q + F, trav);
-    sector(ri + 0.05, rf, lo, hi, q + F - 0.06, q + F, plaster);
+    sector(ri + 0.05, rf, lo, lo + eL, q, q + F, trav); sector(ri + 0.05, rf, hi - eL, hi, q, q + F, trav);
+    for (const z of sopra) sector(ri + 0.05, z.r1, Math.max(z.b0, lo + eL), Math.min(z.b1, hi - eL), q + F - 0.06, q + F, plaster);
     // volume sopra la loggia alle quote delle ali: fino alla facciata ai lati, arretrato fra i piloni al centro
     const upper = (r0, r1, b0, b1) => {
       if (Math.abs(b1 - b0) < 1e-3) return;
@@ -2250,7 +2274,7 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
         }
       }
     };
-    upper(ri, rf, lo, cols[0] - ha); upper(ri, rc, cols[0] - ha, cols[nc - 1] + ha); upper(ri, rf, cols[nc - 1] + ha, hi); // il primo pilone è a filo con la facciata dei lati
+    for (const z of sopra) upper(z.r0, z.r1, z.b0, z.b1); // il primo pilone è a filo con la facciata dei lati
     // piloni, parapetti, porte, scale, pensiline, piloni di travertino, cancelli e staccionate sono primitive dell'editor
     // (cortile/chimica-esterni.json → primitive, id gin-…): l'utente li sposta e li modifica. Qui restano i vuoti e la struttura.
   }
@@ -4775,7 +4799,7 @@ void main() {
     }
     if (tank.userData.serpentino) loadTubiSubset(3, 1).then((m) => {
       if (!m || courtyardModel !== holder) return;
-      const c = m.clone(true), k = 0.55; c.scale.setScalar(k); c.rotation.z = -Math.PI / 2; c.position.y = 0.11 * k; // coricata, parallela al terreno, più piccola
+      const c = m.clone(true), k = 0.55; c.scale.setScalar(k); c.rotation.x = Math.PI / 2; c.position.set(0.3, 0.12, -0.85 * k); // coricata: i 3 tubi paralleli al terreno, affiancati alla stessa quota (commento del 31/10)
       tank.userData.serpentino.add(c);
     });
     // linea continua come nello schema: erogazione V2 (palla di ghiaccio) → tubo a terra coperto di ghiaccio → evaporatore da 6 →

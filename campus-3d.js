@@ -2763,7 +2763,7 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
   // acciaio verniciato marrone ruggine delle scale antincendio, come nel rilievo (non ocra: niente pareti piene)
   let stairMats = null;
   function fireStairMats() {
-    if (!stairMats) stairMats = { ocra: plainMat(0x86603f, 0.6, 0.35), ocraScura: plainMat(0x7d6a58, 0.75, 0.2) };
+    if (!stairMats) stairMats = { ocra: plainMat(0xd9a640, 0.55, 0.3), ocraScura: plainMat(0xb88a35, 0.7, 0.2) }; // giallo ocra scuro come all'inizio (31/10)
     return stairMats;
   }
   // panchine in travertino: una lastra orizzontale che sporge oltre due lastre verticali, rientrate poco prima delle estremità

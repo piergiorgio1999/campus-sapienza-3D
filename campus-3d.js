@@ -2421,6 +2421,19 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
     });
     window.addEventListener('keyup', (event) => orbitKeys.delete(event.code));
     window.addEventListener('blur', () => orbitKeys.clear());
+    // tasti 1–9: velocità di zoom, rotazione, spostamento e WASD nella vista libera e nell'editor (in Cammina li usa cammina.js)
+    window.addEventListener('keydown', (event) => {
+      const m = /^(?:Digit|Numpad)([1-9])$/.exec(event.code);
+      if (!m || frameHook || currentView !== '3d' || typing(event.target) || event.metaKey || event.ctrlKey || event.altKey) return;
+      setNavSpeed(Number(m[1])); event.preventDefault();
+    });
+    // trascinamento rimasto «attaccato» (rilascio fuori dalla scena, finestra persa, clic su un pulsante sopra): chiudi il gesto di OrbitControls
+    const releaseDrag = (e) => { if (e && e.type === 'pointermove' && e.buttons) return; renderer.domElement.ownerDocument.dispatchEvent(new PointerEvent('pointerup', { pointerId: (e && e.pointerId) || 1, pointerType: (e && e.pointerType) || 'mouse', button: 0, bubbles: true })); };
+    window.addEventListener('blur', releaseDrag);
+    window.addEventListener('pointercancel', releaseDrag);
+    window.addEventListener('mouseup', releaseDrag, true);
+    renderer.domElement.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse' && !e.buttons && controls && controls.enabled) releaseDrag(e); });
+    setNavSpeed(navSpeed, true);
     if (pendingCamera) {
       const command = pendingCamera; pendingCamera = null;
       if (command.action === 'fit') flyTo(campusCentroid(), campusFitDistance(), 0);
@@ -5037,6 +5050,19 @@ void main() {
      S / ↓ indietro, A / ← e D / → girano attorno al punto guardato con velocità angolare che dipende dal raggio; Maiusc ×3. */
   const orbitKeys = new Set();
   let zoomGoal = null, keysAt = 0;
+  // velocità di navigazione 1–9 (5 = normale), ricordata nel browser
+  const NAV_K = [0.25, 0.4, 0.6, 0.8, 1, 1.4, 2, 3, 4];
+  let navSpeed = 5; try { navSpeed = Math.max(1, Math.min(9, Number(localStorage.getItem('vista-velocita')) || 5)); } catch (_) { /* senza memoria */ }
+  const navK = () => NAV_K[navSpeed - 1];
+  function setNavSpeed(n, quiet) {
+    navSpeed = Math.max(1, Math.min(9, n));
+    try { localStorage.setItem('vista-velocita', String(navSpeed)); } catch (_) { /* senza memoria */ }
+    if (controls) { controls.rotateSpeed = navK(); controls.panSpeed = navK(); }
+    if (quiet) return;
+    let el = document.getElementById('vistaVelocita');
+    if (!el) { el = document.createElement('div'); el.id = 'vistaVelocita'; el.style.cssText = 'position:fixed;left:50%;top:38%;transform:translateX(-50%);padding:10px 18px;border-radius:12px;background:#211d1dd9;color:#fff;font:700 20px/1.2 Arial,Helvetica,sans-serif;pointer-events:none;z-index:50;transition:opacity .25s'; document.body.appendChild(el); }
+    el.textContent = `Velocità ${navSpeed}`; el.style.opacity = '1'; clearTimeout(setNavSpeed.t); setNavSpeed.t = setTimeout(() => { el.style.opacity = '0'; }, 1400);
+  }
   const zoomPace = (d) => Math.min(1, Math.max(0.2, Math.sqrt(d / 150)));
   function onWheelZoom(event) {
     if (!controls || !controls.enabled || !controls.enableZoom || frameHook) return;
@@ -5045,7 +5071,7 @@ void main() {
     const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 100 : 1;
     const dy = Math.max(-120, Math.min(120, event.deltaY * unit)) * (event.ctrlKey ? 10 : 1); // ctrlKey: pizzico del trackpad, scatti piccoli
     const from = zoomGoal ?? camera.position.distanceTo(controls.target);
-    zoomGoal = Math.min(controls.maxDistance, Math.max(controls.minDistance, from * Math.exp(dy * 0.0006 * zoomPace(from))));
+    zoomGoal = Math.min(controls.maxDistance, Math.max(controls.minDistance, from * Math.exp(dy * 0.0006 * zoomPace(from) * navK())));
   }
   // ultimo punto del mouse sulla scena (coordinate normalizzate), per WASD nella vista libera
   let cursorNdc = null;
@@ -5062,7 +5088,7 @@ void main() {
     if (!controls.enabled) { zoomGoal = null; return; }
     const off = camera.position.clone().sub(controls.target);
     let d = off.length();
-    controls.zoomSpeed = Math.max(0.4, zoomPace(d)); // pizzico con due dita sul touch
+    controls.zoomSpeed = Math.max(0.4, zoomPace(d)) * navK(); // pizzico con due dita sul touch
     if (zoomGoal != null) {
       const next = d + (zoomGoal - d) * 0.25;
       d = Math.abs(zoomGoal - next) < zoomGoal * 0.002 ? zoomGoal : next;
@@ -5070,7 +5096,7 @@ void main() {
       off.setLength(d); camera.position.copy(controls.target).add(off);
     }
     if (!orbitKeys.size || !dt) return;
-    const k = (c) => orbitKeys.has(c), fast = k('ShiftLeft') || k('ShiftRight') ? 3 : 1;
+    const k = (c) => orbitKeys.has(c), fast = (k('ShiftLeft') || k('ShiftRight') ? 3 : 1) * navK();
     const fwd = (k('KeyW') || k('ArrowUp') ? 1 : 0) - (k('KeyS') || k('ArrowDown') ? 1 : 0);
     const side = (k('KeyD') || k('ArrowRight') ? 1 : 0) - (k('KeyA') || k('ArrowLeft') ? 1 : 0);
     // direzione del cursore: W va verso il punto del terreno (alla quota del punto guardato) sotto il mouse, non verso il centro della vista

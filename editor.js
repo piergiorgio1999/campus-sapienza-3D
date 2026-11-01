@@ -1786,10 +1786,52 @@
   }
   function loop() { syncRot(); scaleHandles(); requestAnimationFrame(loop); }
 
+  /* commenti di claude.ai ancorati a un punto della scena 3D (1/11/2026): in modalità commento della shell un clic sulla scena apre il
+     composer della shell con l'ancora «p3d:x,y,z l0:u,v,h» (coordinate del mondo e del lato 0, che Claude legge come posizione del commento);
+     i pin seguono la camera e «apri» un commento porta la vista sul suo punto */
+  let cmAnch = null, cmThreads = [], cmOn = false;
+  async function connectComments(cl) {
+    let cm = null; try { cm = await cl.use('comments'); } catch (_) { cm = null; }
+    if (!cm || typeof cm.customAnchors !== 'function') return;
+    const parse = (a) => { const m = /^p3d:(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)/.exec(a || ''); return m ? new T.Vector3(+m[1], +m[2], +m[3]) : null; };
+    const report = () => {
+      if (!cmAnch) return;
+      const r = canvas.getBoundingClientRect(), map = {};
+      for (const t of cmThreads) {
+        const p = parse(t.anchor); if (!p) continue;
+        const q = p.clone().project(camera); if (q.z > 1 || Math.abs(q.x) > 1.02 || Math.abs(q.y) > 1.02) continue;
+        map[t.id] = { x: r.left + window.scrollX + ((q.x + 1) / 2) * r.width, y: r.top + window.scrollY + ((1 - q.y) / 2) * r.height };
+      }
+      cmAnch.placed(map);
+    };
+    try {
+      cmAnch = await cm.customAnchors({
+        mode: (v) => { cmOn = v; if (!v) cmThreads = []; },
+        threads: (list) => { cmThreads = list; report(); },
+        reveal: (id) => {
+          const t = cmThreads.find((x) => x.id === id), p = t && parse(t.anchor);
+          if (p && controls) { const off = camera.position.clone().sub(controls.target); controls.target.copy(p); camera.position.copy(p).add(off.setLength(Math.min(off.length(), 40))); controls.update(); }
+          report();
+        },
+      });
+    } catch (_) { cmAnch = null; return; }
+    let last = '';
+    (function tick() { if (cmAnch && cmThreads.length) { const k = camera.position.toArray().concat(camera.quaternion.toArray()).map((x) => x.toFixed(3)).join(); if (k !== last) { last = k; report(); } } requestAnimationFrame(tick); })();
+    canvas.addEventListener('click', (e) => {
+      if (!cmOn || !cmAnch) return;
+      const hit = hits(e)[0]; if (!hit) return;
+      e.preventDefault(); e.stopPropagation();
+      const d = commentDoc(hit, ''), w = d.punto, l = d.lato0;
+      const anchor = `p3d:${w.x},${w.y},${w.z}` + (l ? ` l0:${l.u},${l.v},${l.h}` : '');
+      const label = `${d.oggetto || 'punto'} · u ${l ? l.u : '?'} v ${l ? l.v : '?'} h ${l ? l.h : '?'}`;
+      cmAnch.compose(anchor.slice(0, 120), { x: e.pageX, y: e.pageY }, { label: label.slice(0, 200) }).catch(() => {});
+    }, true);
+  }
   /* ---------- avvio ---------- */
   async function connect() {
     const cl = window.claude;
     if (!cl || typeof cl.use !== 'function') return;
+    connectComments(cl);
     try {
       const [d, u, a] = await Promise.all([cl.use('db'), cl.use('user'), cl.use('assets').catch(() => null)]);
       db = d; assets = a; myId = u ? await u.id() : null; // assets: null per chi non può modificare l'artifact (niente tasto foto)

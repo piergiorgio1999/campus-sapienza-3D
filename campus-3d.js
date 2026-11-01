@@ -2112,7 +2112,7 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
             const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; let nx = -(b[1] - a[1]) / L, ny = (b[0] - a[0]) / L;
             if (inMulti([poly], [m[0] + nx * 0.3, m[1] + ny * 0.3])) { nx = -nx; ny = -ny; } // normale verso fuori
             const o = [m[0] + nx * 0.3, m[1] + ny * 0.3];
-            ed.push({ a, b, nx, ny, on: !inMulti(full, o) || cuAltezzaIn(o[0], o[1]) < hh - 0.5 });
+            ed.push({ a, b, nx, ny, on: !inMulti(full, o) });
           }
           if (ed.some((e) => e && e.on)) cornici.push({ ed, h: hh });
         }

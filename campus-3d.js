@@ -727,6 +727,26 @@
     t.repeat.set(((ORTHO_BOUNDS.east - ORTHO_BOUNDS.west) * metersPerLon) / tile, ((ORTHO_BOUNDS.north - ORTHO_BOUNDS.south) * metersPerLat) / tile);
     return t;
   }
+  /* tetto della Ginestra (commento del 1/11): ogni falda chiusa dalle cornici di travertino è un riempimento unico. Le falde di CU014 il cui
+     centro cade nel settore del ventaglio prendono per intero la guaina grigio-azzurra, le altre restano con l'ortofoto: niente falde a metà */
+  let ginestraRoofMat = null;
+  function paintGinestraRoofs() {
+    if (!buildingGroup || !cuSolido || !cuSolido.ventaglio) return;
+    const f = cuFrame(); if (!f) return;
+    const V = cuSolido.ventaglio, [cx, cy] = V.centro, rOut = Number(V.raggioEsterno) || 40.3;
+    if (!ginestraRoofMat) ginestraRoofMat = new THREE.MeshBasicMaterial({ map: stylizedRoofTexture(true), toneMapped: false });
+    for (const m of buildingGroup.children) {
+      if (!m.isMesh || !Array.isArray(m.material) || m.material[0] !== normalRoof || m.userData.ginestraTetto === false) continue;
+      if (m.userData.ginestraTetto == null) {
+        m.geometry.computeBoundingBox(); const c = m.geometry.boundingBox.getCenter(new THREE.Vector3()); m.localToWorld(c);
+        const { u, v } = f.toUV({ x: c.x, n: -c.z }), r = Math.hypot(u - cx, v - cy), a = Math.atan2(v - cy, u - cx) * 180 / Math.PI;
+        m.userData.ginestraTetto = r >= 12 && r <= rOut + 0.5 && a >= -121 && a <= -59;
+      }
+      const dentro = m.userData.ginestraTetto;
+      if (dentro) { m.material = [ginestraRoofMat].concat(m.material.slice(1)); if (m.userData.mats) m.userData.mats = m.material; }
+    }
+  }
+  setInterval(() => { try { paintGinestraRoofs(); } catch (_) { /* scena non pronta */ } }, 1500);
   function createOrthoTexture() {
     const { width, height } = orthoSize();
     orthoCanvas = document.createElement('canvas');
@@ -1131,7 +1151,7 @@
      per pixel contro 1 m dell'ortofoto AGEA). Dentro il riquadro della foto i tetti la usano al posto dell'ortofoto, con una sfumatura
      ai bordi. `m` porta le coordinate dell'ortofoto dei tetti (applyRoofUVs: 0…1 su ORTHO_BOUNDS) in quelle della foto (s, t: 0…1, t dal
      basso): la foto è agganciata alla quota dei tetti sugli estremi dell'arco del ventaglio della sagoma OSM di CU014. */
-  const ROOF_PHOTOS = [{ src: 'tex/tetto-ginestra-maschera.png', m: [[17.251845, 4.706138, -6.467596], [-8.880557, 15.982978, -2.577765]], sfuma: 0.03 }]; // 30/10: solo il tetto della Ginestra in guaina grigio-azzurra (maschera nel riquadro della vecchia foto); gli altri tetti restano l'ortofoto
+  const ROOF_PHOTOS = [] && [{ src: 'tex/tetto-ginestra-maschera.png', m: [[17.251845, 4.706138, -6.467596], [-8.880557, 15.982978, -2.577765]], sfuma: 0.03 }]; // 30/10: solo il tetto della Ginestra in guaina grigio-azzurra (maschera nel riquadro della vecchia foto); gli altri tetti restano l'ortofoto
   function withRoofPhotos(mat) {
     const P = ROOF_PHOTOS[0];
     if (!P) return mat;
@@ -2031,6 +2051,7 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
       toLocal: (q) => { const w = project(q), dx = w.x - a.x, dn = w.n - a.n; return [dx * tx + dn * tn, -dx * tn + dn * tx]; },
       toLL: ([u, v]) => { const x = a.x + u * tx - v * tn, n = a.n + u * tn + v * tx; return [(x + mapWidth / 2) / metersPerLon + bounds.west, (n + mapDepth / 2) / metersPerLat + bounds.south]; },
       toXN: ([u, v]) => ({ x: a.x + u * tx - v * tn, n: a.n + u * tn + v * tx }),
+      toUV: ({ x, n }) => { const dx = x - a.x, dn = n - a.n; return { u: dx * tx + dn * tn, v: -dx * tn + dn * tx }; },
     };
   }
   const rectRing = ([u0, v0, u1, v1]) => [[u0, v0], [u1, v0], [u1, v1], [u0, v1], [u0, v0]];

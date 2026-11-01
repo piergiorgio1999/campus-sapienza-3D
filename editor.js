@@ -1789,11 +1789,12 @@
   /* commenti di claude.ai ancorati a un punto della scena 3D (1/11/2026): in modalità commento della shell un clic sulla scena apre il
      composer della shell con l'ancora «p3d:x,y,z l0:u,v,h» (coordinate del mondo e del lato 0, che Claude legge come posizione del commento);
      i pin seguono la camera e «apri» un commento porta la vista sul suo punto */
-  let cmAnch = null, cmThreads = [], cmOn = false;
+  let cmAnch = null, cmThreads = [], cmOn = false, cmPts = {};
   async function connectComments(cl) {
     let cm = null; try { cm = await cl.use('comments'); } catch (_) { cm = null; }
     if (!cm || typeof cm.customAnchors !== 'function') return;
-    const parse = (a) => { const m = /^p3d:(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)/.exec(a || ''); return m ? new T.Vector3(+m[1], +m[2], +m[3]) : null; };
+    try { cmPts = JSON.parse(localStorage.getItem('commenti-3d') || '{}') || {}; } catch (_) { cmPts = {}; }
+    const parse = (a) => { const q = cmPts[a]; if (q) return new T.Vector3(q[0], q[1], q[2]); const m = /^p3d:(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)/.exec(a || ''); return m ? new T.Vector3(+m[1], +m[2], +m[3]) : null; };
     const report = () => {
       if (!cmAnch) return;
       const r = canvas.getBoundingClientRect(), map = {};
@@ -1821,10 +1822,13 @@
       if (!cmOn || !cmAnch) return;
       const hit = hits(e)[0]; if (!hit) return;
       e.preventDefault(); e.stopPropagation();
-      const d = commentDoc(hit, ''), w = d.punto, l = d.lato0;
-      const anchor = `p3d:${w.x},${w.y},${w.z}` + (l ? ` l0:${l.u},${l.v},${l.h}` : '');
-      const label = `${d.oggetto || 'punto'} · u ${l ? l.u : '?'} v ${l ? l.v : '?'} h ${l ? l.h : '?'}`;
-      cmAnch.compose(anchor.slice(0, 120), { x: e.pageX, y: e.pageY }, { label: label.slice(0, 200) }).catch(() => {});
+      const d = commentDoc(hit, ''), w = d.punto, l = d.lato0, c = d.cortile;
+      // ancora DOM sulla scena (così etichetta e dettaglio restano salvati e Claude li legge), più la mappa ancora → punto 3D per i pin
+      const [anchor, at] = cmAnch.domAnchor(canvas, e);
+      const label = `${d.oggetto || 'punto'} · lato0 u ${l ? l.u : '?'} v ${l ? l.v : '?'} h ${l ? l.h : '?'}`;
+      const detail = `punto 3D x ${w.x} y ${w.y} z ${w.z}` + (c ? ` · cortile u ${c.u} v ${c.v} h ${c.h}` : '') + (d.elemento ? ` · elemento ${d.elemento.chiave}` : '') + ` · camera ${d.vista.camera.join(',')} → ${d.vista.target.join(',')}`;
+      cmPts[anchor] = [w.x, w.y, w.z]; try { localStorage.setItem('commenti-3d', JSON.stringify(cmPts)); } catch (_) { /* senza memoria */ }
+      cmAnch.compose(anchor, at, { label: label.slice(0, 200), detail: detail.slice(0, 900) }).catch(() => {});
     }, true);
   }
   /* ---------- avvio ---------- */

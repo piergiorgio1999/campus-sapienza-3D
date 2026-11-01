@@ -3231,6 +3231,18 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
     let m;
     if (terreno === 'prato') m = primitiveMaterial('erba');
     else if (terreno === 'foglie') m = primitiveMaterial('terra');
+    else if (terreno === 'grigliato') { // masselli erbosi (grigliato salvaprato, foto dell'angolo sud-ovest di CU014): calcestruzzo chiaro a celle quadre con l'erba dentro, 8 celle al metro, giunti dei masselli ogni 50 cm
+      const t = canvasTex(256, 256, (ctx, w) => {
+        noiseFill(ctx, w, w, '#c9c5bb', '#b3afa5', 6000);
+        for (let i = 0; i < 8; i += 1) for (let j = 0; j < 8; j += 1) {
+          const x = i * 32 + 8, y = j * 32 + 7, k = hash01(i * 8 + j, 41);
+          ctx.fillStyle = k > 0.85 ? '#7d7a62' : k > 0.4 ? '#4f7a2f' : '#3f6a26'; ctx.fillRect(x, y, 17, 19); // erba (qualche cella spelacchiata)
+          ctx.fillStyle = 'rgba(30,45,20,.35)'; ctx.fillRect(x, y, 17, 3);
+        }
+        ctx.fillStyle = 'rgba(70,66,58,.45)'; for (const p of [0, 128]) { ctx.fillRect(p, 0, 2, w); ctx.fillRect(0, p, w, 2); }
+      }, 1, 1);
+      m = new THREE.MeshStandardMaterial({ map: t, roughness: 0.95 });
+    }
     else { const t = canvasTex(256, 256, (ctx, w) => { noiseFill(ctx, w, w, '#5e4a39', '#433428', 3000); for (let i = 0; i < 60; i += 1) { ctx.fillStyle = 'rgba(150,135,115,.5)'; ctx.beginPath(); ctx.arc(hash01(i, 71) * w, hash01(i, 72) * w, 1 + 2 * hash01(i, 73), 0, Math.PI * 2); ctx.fill(); } }, 0.5, 0.5); m = new THREE.MeshStandardMaterial({ map: t, roughness: 1 }); }
     primMats.set(key, m);
     return m;
@@ -3682,6 +3694,60 @@ uniform sampler2D roofPhoto; uniform sampler2D roofBlu; uniform vec2 roofRep; un
       if (up) p.position.y = k / 2; else { p.rotation.z = Math.PI / 2; p.position.y = 0.045; }
       p.castShadow = true; g.add(p);
       for (const e of [-k / 2, k / 2]) { const j = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), red); if (up) j.position.set(0, k / 2 + e, 0); else j.position.set(e, 0.045, 0); g.add(j); }
+    }) },
+    /* arredo dell'angolo sud-ovest di CU014 (22 foto del commento sul fronte sud della Ginestra, 01/11) */
+    // bocca di aerazione sul grigliato: cassone intonacato rosa, piano in travertino che sporge di 5 cm, griglia a lamelle sul lato lungo (verso +z)
+    bocchetta: { nome: 'Bocca di aerazione (cassone rosa, piano in travertino, griglia)', crea: () => group((g) => {
+      const { box } = partAdder(g), L = 1.9, W = 1.0, H = 0.65, t = 0.08, rosa = courtOnce('bocchetta|intonaco', () => plainMat('#d79c86', 0.95));
+      const griglia = courtOnce('bocchetta|griglia', () => new THREE.MeshStandardMaterial({ roughness: 0.6, metalness: 0.3, map: canvasTex(64, 32, (ctx, w, h) => { ctx.fillStyle = '#2c2a28'; ctx.fillRect(0, 0, w, h); ctx.fillStyle = '#6b6560'; for (let y = 1; y < h; y += 4) ctx.fillRect(0, y, w, 2); }) }));
+      box(-L / 2 + 0.05, L / 2 - 0.05, 0, H - t, -W / 2 + 0.05, W / 2 - 0.05, rosa);
+      meshUV(box(-L / 2, L / 2, H - t, H, -W / 2, W / 2, primitiveMaterial('travertino')));
+      const gr = box(-L / 2 + 0.25, L / 2 - 0.25, 0.12, H - t - 0.08, -W / 2 + 0.04, -W / 2 + 0.06, griglia); gr.castShadow = false; // −v locale = +z: lato verso chi guarda da fuori
+    }) },
+    // bacheca per manifesti: telaio scuro su due gambe, manifesti strappati da un lato e dall'altro, targhetta «R.S.U.» sopra
+    bacheca: { nome: 'Bacheca per manifesti (R.S.U.)', crea: () => group((g) => {
+      const { box } = partAdder(g), L = 2.6, scuro = courtOnce('bacheca|telaio', () => stdMat({ color: 0x2a2b2d, roughness: 0.5, metalness: 0.5 }));
+      const carta = courtOnce('bacheca|manifesti', () => new THREE.MeshStandardMaterial({ roughness: 0.9, map: canvasTex(256, 160, (ctx, w, h) => {
+        ctx.fillStyle = '#d8d6d0'; ctx.fillRect(0, 0, w, h);
+        for (let i = 0; i < 26; i += 1) { ctx.fillStyle = ['#6fa8d8', '#e9e6df', '#1b1b1d', '#b9c7d6', '#f2d24b', '#9fb4c9'][i % 6]; ctx.globalAlpha = 0.85; ctx.fillRect(hash01(i, 51) * w * 0.9, hash01(i, 52) * h * 0.9, 20 + 70 * hash01(i, 53), 16 + 50 * hash01(i, 54)); }
+        ctx.globalAlpha = 1;
+      }) }));
+      for (const x of [-L / 2 + 0.08, L / 2 - 0.08]) box(x - 0.04, x + 0.04, 0, 0.6, -0.04, 0.04, scuro);
+      box(-L / 2, L / 2, 0.55, 2.3, -0.06, 0.06, scuro);
+      for (const [a, b] of [[0.061, 0.063], [-0.063, -0.061]]) { const p = box(-L / 2 + 0.08, L / 2 - 0.08, 0.63, 2.22, a, b, carta); p.castShadow = false; }
+      box(-0.35, 0.35, 2.3, 2.5, -0.03, 0.03, scuro); // targhetta R.S.U.
+    }) },
+    // paracarro di travertino davanti alla bacheca
+    paracarro: { nome: 'Paracarro in travertino', crea: () => group((g) => { const { box } = partAdder(g); meshUV(box(-0.14, 0.14, 0, 0.85, -0.11, 0.11, primitiveMaterial('travertino'))); }) },
+    // pannello con la pianta della Città universitaria su zoccolo di travertino (lato col disegno verso +z)
+    mappaCampus: { nome: 'Pannello con la pianta della Città universitaria', crea: () => group((g) => {
+      const { box } = partAdder(g), scuro = courtOnce('bacheca|telaio', () => stdMat({ color: 0x2a2b2d, roughness: 0.5, metalness: 0.5 }));
+      const mappa = courtOnce('mappa campus', () => new THREE.MeshStandardMaterial({ roughness: 0.7, map: canvasTex(128, 160, (ctx, w, h) => {
+        ctx.fillStyle = '#efece4'; ctx.fillRect(0, 0, w, h); ctx.fillStyle = '#7a1f2b'; ctx.fillRect(0, h - 10, w, 10); ctx.fillStyle = '#333'; ctx.fillRect(6, 6, 50, 6);
+        for (let i = 0; i < 40; i += 1) { ctx.fillStyle = hash01(i, 57) > 0.8 ? '#a3343e' : '#8d8a85'; ctx.fillRect(8 + hash01(i, 55) * 70, 20 + hash01(i, 56) * 120, 4 + 8 * hash01(i, 58), 4 + 8 * hash01(i, 59)); }
+        for (let i = 0; i < 14; i += 1) { ctx.fillStyle = '#555'; ctx.fillRect(88, 20 + i * 9, 32, 3); }
+      }) }));
+      meshUV(box(-0.75, 0.75, 0, 0.3, -0.25, 0.25, primitiveMaterial('travertino')));
+      box(-0.6, 0.6, 0.3, 1.95, -0.05, 0.05, scuro);
+      const p = box(-0.54, 0.54, 0.38, 1.87, 0.05, 0.052, mappa); p.castShadow = false;
+    }) },
+    // leggio informativo grigio scuro: colonna e piano inclinato
+    leggio: { nome: 'Leggio informativo (grigio scuro)', crea: () => group((g) => {
+      const { box } = partAdder(g), scuro = courtOnce('leggio', () => stdMat({ color: 0x3b3e42, roughness: 0.55, metalness: 0.4 }));
+      box(-0.2, 0.2, 0, 0.95, -0.12, 0.12, scuro);
+      const top = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.04, 0.55), scuro); top.position.set(0, 1.05, 0.05); top.rotation.x = 0.5; top.castShadow = true; g.add(top);
+    }) },
+    // palo con segnale stradale tondo: pr.segnale = 'divieto' (senso vietato, rosso) oppure 'destra' (direzione obbligatoria, blu); faccia verso +z
+    segnale: { nome: 'Segnale stradale su palo (senso vietato o direzione obbligatoria)', crea: (pr) => group((g) => {
+      const destra = String(pr.segnale || '') === 'destra', palo = courtOnce('segnale|palo', () => stdMat({ color: 0x8a8d90, roughness: 0.45, metalness: 0.6 }));
+      const faccia = courtOnce('segnale|' + (destra ? 'destra' : 'divieto'), () => new THREE.MeshStandardMaterial({ roughness: 0.5, transparent: true, alphaTest: 0.5, map: canvasTex(128, 128, (ctx, w) => {
+        ctx.clearRect(0, 0, w, w); ctx.fillStyle = '#f4f4f2'; ctx.beginPath(); ctx.arc(64, 64, 63, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = destra ? '#1f5fae' : '#c0202a'; ctx.beginPath(); ctx.arc(64, 64, 58, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#f4f4f2';
+        if (destra) { ctx.fillRect(26, 56, 50, 16); ctx.beginPath(); ctx.moveTo(72, 36); ctx.lineTo(104, 64); ctx.lineTo(72, 92); ctx.fill(); } else ctx.fillRect(22, 54, 84, 20);
+      }, 1, 1, true) }));
+      const p = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.9, 10), palo); p.position.y = 1.45; p.castShadow = true; g.add(p);
+      const d = new THREE.Mesh(new THREE.CircleGeometry(0.3, 28), faccia); d.position.set(0, destra ? 2.0 : 2.55, 0.04); g.add(d);
+      const r = new THREE.Mesh(new THREE.CircleGeometry(0.3, 28), palo); r.rotation.y = Math.PI; r.position.set(0, d.position.y, 0.035); g.add(r);
     }) },
     cartello: { nome: 'Cartello di sicurezza', crea: () => group((g) => {
       const sign = courtOnce('cartello', () => stdMat({ roughness: 0.6, map: canvasTex(180, 280, (ctx, w, h) => {

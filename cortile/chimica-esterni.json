@@ -3447,6 +3447,273 @@
     "h1": 7.35
    },
    "nota": "Commento con foto del 31/10: al primo piano, verso l'angolo col cortile dell'azoto, le tre finestre delle campate 8-10 (dall'angolo nord) sono un'unica apertura rientrante con tre serrande marroni. La nicchia toglie le finestre dipinte della facciata (stencil) e ha spalle, cielino, davanzale e cornice chiara."
+  },
+  {
+   "id": "sw-marciapiede",
+   "nome": "Marciapiede attorno all'angolo sud-ovest (cordolo in travertino)",
+   "forma": "marciapiede",
+   "base": -0.09,
+   "altezza": 0.15,
+   "raggio": 0.3,
+   "raggi": [
+    0,
+    0.3,
+    3.0,
+    0.3,
+    0,
+    0
+   ],
+   "poligono": [
+    [
+     0.75,
+     -76.0
+    ],
+    [
+     -5.2,
+     -76.0
+    ],
+    [
+     -5.2,
+     -95.3
+    ],
+    [
+     10.3,
+     -94.6
+    ],
+    [
+     10.3,
+     -85.27
+    ],
+    [
+     0.75,
+     -85.75
+    ]
+   ],
+   "nota": "Foto del commento all'angolo sud-ovest di CU014 (01/11, 22 foto, lato 0 u 3.15 v -86.47): marciapiede in conglomerato grigio con cordolo di travertino che gira l'angolo con un raggio largo (foto 5517cb39, cff9065b, 072b52a8); verso est finisce dove inizia lo spazio asfaltato davanti all'ingresso CUSTODI."
+  },
+  {
+   "id": "sw-prato-ovest",
+   "nome": "Striscia di prato lungo la facciata ovest",
+   "forma": "aiuola",
+   "tipo": "squadrata",
+   "terreno": "prato",
+   "base": -0.09,
+   "altezza": 0.25,
+   "cordolo": 0.14,
+   "poligono": [
+    [
+     -2.2,
+     -87.0
+    ],
+    [
+     0.75,
+     -87.0
+    ],
+    [
+     0.75,
+     -76.0
+    ],
+    [
+     -2.2,
+     -76.0
+    ]
+   ],
+   "nota": "Foto del commento all'angolo sud-ovest di CU014 (01/11, 22 foto, lato 0 u 3.15 v -86.47): prato con cordolo basso di travertino fra la facciata ovest e il marciapiede (foto 48f33710, ac69488f)."
+  },
+  {
+   "id": "sw-grigliato",
+   "nome": "Grigliato salvaprato davanti alla facciata sud (ala ovest)",
+   "forma": "aiuola",
+   "tipo": "squadrata",
+   "terreno": "grigliato",
+   "base": -0.09,
+   "altezza": 0.25,
+   "cordolo": 0.14,
+   "poligono": [
+    [
+     -2.14,
+     -87.19
+    ],
+    [
+     10.2,
+     -86.61
+    ],
+    [
+     10.44,
+     -91.6
+    ],
+    [
+     -1.9,
+     -92.18
+    ]
+   ],
+   "nota": "Foto del commento all'angolo sud-ovest di CU014 (01/11, 22 foto, lato 0 u 3.15 v -86.47): masselli erbosi chiari con l'erba nelle celle (foto 12504eea, 0e6f7ff6, 3c47dc6b, e55e325d), cordolo di travertino; fra il grigliato e il muro resta una striscia di conglomerato di circa 1,3 m (foto 964de25b)."
+  },
+  {
+   "id": "sw-bocchetta-1",
+   "nome": "Bocca di aerazione sul grigliato (ovest)",
+   "forma": "oggetto",
+   "modello": "bocchetta",
+   "ruota": 0,
+   "angolo": 2.7,
+   "box": {
+    "u0": 1.57,
+    "u1": 3.47,
+    "v0": -89.77,
+    "v1": -88.77,
+    "h0": 0.1,
+    "h1": 0.75
+   },
+   "nota": "Foto del commento all'angolo sud-ovest di CU014 (01/11, 22 foto, lato 0 u 3.15 v -86.47): cassone intonacato rosa con piano in travertino e griglia (foto 18f516b6, 3c47dc6b, e55e325d)."
+  },
+  {
+   "id": "sw-bocchetta-2",
+   "nome": "Bocca di aerazione sul grigliato (est)",
+   "forma": "oggetto",
+   "modello": "bocchetta",
+   "ruota": 0,
+   "angolo": 2.7,
+   "box": {
+    "u0": 8.01,
+    "u1": 9.91,
+    "v0": -90.47,
+    "v1": -89.47,
+    "h0": 0.1,
+    "h1": 0.75
+   },
+   "nota": "Foto del commento all'angolo sud-ovest di CU014 (01/11, 22 foto, lato 0 u 3.15 v -86.47): seconda bocca verso l'ingresso CUSTODI (foto 48f33710, 0e6f7ff6); posizione stimata."
+  },
+  {
+   "id": "sw-tattile-sud",
+   "nome": "Percorso tattile lungo il marciapiede sud",
+   "forma": "oggetto",
+   "modello": "tattile",
+   "ruota": 90,
+   "box": {
+    "u0": -3.0,
+    "u1": 10.0,
+    "v0": -94.2,
+    "v1": -93.6,
+    "h0": 0.06,
+    "h1": 0.075
+   },
+   "nota": "Foto del commento all'angolo sud-ovest di CU014 (01/11, 22 foto, lato 0 u 3.15 v -86.47): lastre grigie a righe a forma di L (foto 5517cb39, cff9065b, 48f33710); posizione stimata."
+  },
+  {
+   "id": "sw-tattile-ovest",
+   "nome": "Percorso tattile verso la facciata ovest",
+   "forma": "oggetto",
+   "modello": "tattile",
+   "ruota": 0,
+   "box": {
+    "u0": -2.9,
+    "u1": -2.3,
+    "v0": -93.6,
+    "v1": -87.0,
+    "h0": 0.06,
+    "h1": 0.075
+   },
+   "nota": "Foto del commento all'angolo sud-ovest di CU014 (01/11, 22 foto, lato 0 u 3.15 v -86.47): braccio nord della L del percorso tattile (foto 5517cb39, ac69488f); posizione stimata."
+  },
+  {
+   "id": "sw-bacheca",
+   "nome": "Bacheca per manifesti R.S.U. all'angolo",
+   "forma": "oggetto",
+   "modello": "bacheca",
+   "ruota": 0,
+   "angolo": 315,
+   "box": {
+    "u0": -4.7,
+    "u1": -2.1,
+    "v0": -93.56,
+    "v1": -93.44,
+    "h0": 0.06,
+    "h1": 2.56
+   },
+   "nota": "Foto del commento all'angolo sud-ovest di CU014 (01/11, 22 foto, lato 0 u 3.15 v -86.47): telaio scuro con manifesti strappati e targhetta R.S.U. (foto 072b52a8, 66b97ecb, cf6abdba); orientamento stimato."
+  },
+  {
+   "id": "sw-paracarro",
+   "nome": "Paracarro di travertino davanti alla bacheca",
+   "forma": "oggetto",
+   "modello": "paracarro",
+   "ruota": 0,
+   "angolo": 315,
+   "box": {
+    "u0": -4.14,
+    "u1": -3.86,
+    "v0": -94.41,
+    "v1": -94.19,
+    "h0": 0.06,
+    "h1": 0.91
+   },
+   "nota": "Foto del commento all'angolo sud-ovest di CU014 (01/11, 22 foto, lato 0 u 3.15 v -86.47): foto 072b52a8, 66b97ecb."
+  },
+  {
+   "id": "sw-mappa",
+   "nome": "Pannello con la pianta della Città universitaria",
+   "forma": "oggetto",
+   "modello": "mappaCampus",
+   "ruota": 0,
+   "box": {
+    "u0": 2.85,
+    "u1": 4.35,
+    "v0": -95.1,
+    "v1": -94.6,
+    "h0": 0.06,
+    "h1": 2.01
+   },
+   "nota": "Foto del commento all'angolo sud-ovest di CU014 (01/11, 22 foto, lato 0 u 3.15 v -86.47): pannello su zoccolo di travertino, girato verso il grigliato (foto 18f516b6, 072b52a8); posizione stimata."
+  },
+  {
+   "id": "sw-leggio",
+   "nome": "Leggio informativo scuro",
+   "forma": "oggetto",
+   "modello": "leggio",
+   "ruota": 0,
+   "box": {
+    "u0": -1.35,
+    "u1": -0.65,
+    "v0": -93.1,
+    "v1": -92.5,
+    "h0": 0.06,
+    "h1": 1.25
+   },
+   "nota": "Foto del commento all'angolo sud-ovest di CU014 (01/11, 22 foto, lato 0 u 3.15 v -86.47): leggio grigio scuro accanto al grigliato (foto 5517cb39, cff9065b, e55e325d)."
+  },
+  {
+   "id": "sw-senso-vietato",
+   "nome": "Segnale di senso vietato",
+   "forma": "oggetto",
+   "modello": "segnale",
+   "ruota": 0,
+   "box": {
+    "u0": -1.3,
+    "u1": -0.7,
+    "v0": -94.99,
+    "v1": -94.91,
+    "h0": 0.06,
+    "h1": 2.96
+   },
+   "segnale": "divieto",
+   "nota": "Foto del commento all'angolo sud-ovest di CU014 (01/11, 22 foto, lato 0 u 3.15 v -86.47): palo con il segnale rosso di senso vietato rivolto a sud (foto cff9065b, 5517cb39)."
+  },
+  {
+   "id": "sw-direzione-destra",
+   "nome": "Segnale di direzione obbligatoria a destra",
+   "forma": "oggetto",
+   "modello": "segnale",
+   "ruota": 0,
+   "box": {
+    "u0": 1.0,
+    "u1": 1.6,
+    "v0": -94.74,
+    "v1": -94.66,
+    "h0": 0.06,
+    "h1": 2.96
+   },
+   "segnale": "destra",
+   "nota": "Foto del commento all'angolo sud-ovest di CU014 (01/11, 22 foto, lato 0 u 3.15 v -86.47): segnale blu con la freccia a destra, più basso, su un secondo palo (foto cff9065b, 5517cb39); posizione stimata."
   }
  ]
 }

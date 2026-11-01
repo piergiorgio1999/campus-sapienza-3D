@@ -24,7 +24,7 @@
   const base = { esterni: null, cortile: null, alberi: null, facciate: {} };
   const FORME = { oggetto: 'Oggetto del modello', box: 'Parallelepipedo', cilindro: 'Cilindro', sfera: 'Sfera', prisma: 'Solido a pianta libera (vertici)', cavedio: 'Vuoto nell’edificio di Chimica (cavedio, vertici)', marciapiede: 'Marciapiede', strada: 'Strada asfaltata', aiuola: 'Aiuola', albero: 'Albero', pino: 'Pino', file3d: 'File 3D (glb, gltf, obj, stl, ply, fbx, dae, 3mf)' };
   const TIPI_AIUOLA = { squadrata: 'squadrata', rotonda: 'rotonda', spezzata: 'con angoli spezzati' };
-  const TERRENI = { prato: 'prato', foglie: 'terra con foglie', terra: 'terra senza foglie' };
+  const TERRENI = { prato: 'prato', foglie: 'terra con foglie', terra: 'terra senza foglie', grigliato: 'grigliato salvaprato (masselli erbosi)' };
   const TEXTURE = { cortina: 'mattoni rossi', giallo: 'mattoni gialli', travertino: 'travertino', ocra: 'intonaco ocra', arancione: 'intonaco arancione', intonaco: 'intonaco chiaro' };
   const facadeState = new Map(); // codice edificio → { facciata, finestre: [riquadri] }
   let placing = null, removed = null, patchGroup = null;
